@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Auth\AuthController;
+use App\Http\Controllers\CategoryController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -11,4 +12,12 @@ Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/profile', [AuthController::class, 'profile']);
     });
+
+    Route::middleware('auth:sanctum')->group(function () {
+         Route::apiResource('categories', CategoryController::class);
+    });
 });
+
+
+
+

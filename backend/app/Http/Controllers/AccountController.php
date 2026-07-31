@@ -7,9 +7,13 @@ use App\Http\Resources\AccountResource;
 use App\Models\Account;
 use App\Services\AccountService;
 use Illuminate\Http\JsonResponse;
+use App\Traits\ApiResponse;
+use Illuminate\Support\Facades\Auth;
 
 class AccountController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         private AccountService $accountService
     ) {}
@@ -30,21 +34,22 @@ class AccountController extends Controller
             $request->validated()
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Account created successfully.',
-            'data' => new AccountResource($account),
-        ], 201);
+         return $this->success(
+                new AccountResource($account),
+                'Account created successfully.',
+                201
+            );
     }
 
     public function show(Account $account): JsonResponse
     {
-        abort_if($account->user_id !== auth()->id(), 403);
+        abort_if($account->user_id !== Auth::id(), 403);
 
-        return response()->json([
-            'success' => true,
-            'data' => new AccountResource($account),
-        ]);
+        return $this->success(
+            new AccountResource($account),
+            'Account retrieved successfully.',
+            200
+        );
     }
 
     public function update(AccountRequest $request, Account $account): JsonResponse
@@ -54,20 +59,21 @@ class AccountController extends Controller
             $request->validated()
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Account updated successfully.',
-            'data' => new AccountResource($account),
-        ]);
+        return $this->success(
+            new AccountResource($account),
+            'Account updated successfully.',
+            200
+        );
     }
 
     public function destroy(Account $account): JsonResponse
     {
         $this->accountService->delete($account);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Account deleted successfully.',
-        ]);
+        return $this->success(
+            null,
+            'Account deleted successfully.',
+            200
+        );
     }
 }

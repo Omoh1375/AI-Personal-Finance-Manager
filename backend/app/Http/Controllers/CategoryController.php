@@ -42,10 +42,11 @@ class CategoryController extends Controller
 
     public function show(Category $category): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => new CategoryResource($category),
-        ]);
+        return $this->success(
+            new CategoryResource($category),
+            'Category retrieved successfully.',
+            200
+        );
     }
 
     public function update(CategoryRequest $request, Category $category): JsonResponse

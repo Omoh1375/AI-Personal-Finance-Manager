@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Account;
+use App\Models\Category;
 use App\Models\Income;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -17,15 +18,24 @@ class IncomeService
             ->get();
     }
 
-    public function store(array $data): Income
+        public function store(array $data): Income
     {
         return DB::transaction(function () use ($data) {
+
+            $account = Account::where('id', $data['account_id'])
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+
+            $category = Category::where('id', $data['category_id'])
+                ->where(function ($query) {
+                    $query->where('is_default', true)
+                        ->orWhere('user_id', Auth::id());
+                })
+                ->firstOrFail();
 
             $data['user_id'] = Auth::id();
 
             $income = Income::create($data);
-
-            $account = Account::findOrFail($data['account_id']);
 
             $account->increment('balance', $income->amount);
 

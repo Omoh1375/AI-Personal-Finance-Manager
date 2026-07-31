@@ -2,64 +2,60 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\IncomeRequest;
+use App\Http\Resources\IncomeResource;
 use App\Models\Income;
-use Illuminate\Http\Request;
+use App\Services\IncomeService;
+use App\Traits\ApiResponse;
 
 class IncomeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use ApiResponse;
+
+    public function __construct(
+        private IncomeService $incomeService
+    ) {}
+
     public function index()
     {
-        //
+        return $this->success(
+            IncomeResource::collection(
+                $this->incomeService->index()
+            )
+        );
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(IncomeRequest $request)
     {
-        //
+        $income = $this->incomeService->store(
+            $request->validated()
+        );
+
+        return $this->success(
+            new IncomeResource($income),
+            'Income created successfully.',
+            201
+        );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
     public function show(Income $income)
     {
-        //
+        abort_if($income->user_id !== auth()->id(), 403);
+
+        return $this->success(
+            new IncomeResource(
+                $income->load(['account', 'category'])
+            )
+        );
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Income $income)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Income $income)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Income $income)
     {
-        //
+        $this->incomeService->delete($income);
+
+        return $this->success(
+            null,
+            'Income deleted successfully.'
+        );
     }
 }

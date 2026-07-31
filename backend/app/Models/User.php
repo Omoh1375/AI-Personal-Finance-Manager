@@ -9,7 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
+use App\Models\Income;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -51,5 +51,10 @@ class User extends Authenticatable
         public function accounts(): HasMany
     {
         return $this->hasMany(Account::class);
+    }
+
+    public function incomes(): HasMany
+    {
+        return $this->hasMany(Income::class);
     }
 }

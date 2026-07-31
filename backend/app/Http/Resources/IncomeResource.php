@@ -7,13 +7,25 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class IncomeResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+
+            'id' => $this->id,
+
+            'amount' => $this->amount,
+
+            'reference' => $this->reference,
+
+            'description' => $this->description,
+
+            'received_at' => $this->received_at,
+
+            'account' => new AccountResource($this->whenLoaded('account')),
+
+            'category' => new CategoryResource($this->whenLoaded('category')),
+
+            'created_at' => $this->created_at,
+        ];
     }
 }

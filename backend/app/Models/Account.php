@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\User;
 use App\Models\Income;
 use App\Models\Expense;
+
 // Refer to related models by fully-qualified class names to avoid import issues
 
 class Account extends Model
@@ -37,7 +38,7 @@ class Account extends Model
     }
 
     // We'll use these relationships later
-    public function incomes(): HasMany
+        public function incomes(): HasMany
     {
         return $this->hasMany(Income::class);
     }

@@ -7,9 +7,12 @@ use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use App\Services\CategoryService;
 use Illuminate\Http\JsonResponse;
+use App\Traits\ApiResponse;
 
 class CategoryController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         private CategoryService $categoryService
     ) {}
@@ -30,11 +33,11 @@ class CategoryController extends Controller
             $request->validated()
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Category created successfully.',
-            'data' => new CategoryResource($category),
-        ], 201);
+                return $this->success(
+                new CategoryResource($category),
+                'Category created successfully.',
+                201
+            );
     }
 
     public function show(Category $category): JsonResponse
@@ -52,20 +55,22 @@ class CategoryController extends Controller
             $request->validated()
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Category updated successfully.',
-            'data' => new CategoryResource($category),
-        ]);
+            return $this->success(
+            new CategoryResource($category),
+            'Category updated successfully.',
+            200
+        );
     }
 
     public function destroy(Category $category): JsonResponse
     {
         $this->categoryService->delete($category);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Category deleted successfully.',
-        ]);
+        return $this->success(
+            null,
+            'Category deleted successfully.',
+            200
+        );
+      
     }
 }

@@ -7,13 +7,31 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ExpenseResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+
+            'id' => $this->id,
+
+            'amount' => $this->amount,
+
+            'reference' => $this->reference,
+
+            'merchant' => $this->merchant,
+
+            'description' => $this->description,
+
+            'spent_at' => $this->spent_at,
+
+            'account' => new AccountResource(
+                $this->whenLoaded('account')
+            ),
+
+            'category' => new CategoryResource(
+                $this->whenLoaded('category')
+            ),
+
+            'created_at' => $this->created_at,
+        ];
     }
 }

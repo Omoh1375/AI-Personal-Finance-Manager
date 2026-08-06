@@ -2,64 +2,64 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ExpenseRequest;
+use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
-use Illuminate\Http\Request;
+use App\Services\ExpenseService;
+use App\Traits\ApiResponse;
+use Illuminate\Support\Facades\Auth;
 
 class ExpenseController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use ApiResponse;
+
+    public function __construct(
+        private ExpenseService $expenseService
+    ) {}
+
     public function index()
     {
-        //
+        return $this->success(
+            ExpenseResource::collection(
+                $this->expenseService->index()
+            )
+        );
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(ExpenseRequest $request)
     {
-        //
+        $expense = $this->expenseService->store(
+            $request->validated()
+        );
+
+        return $this->success(
+            new ExpenseResource($expense),
+            'Expense created successfully.',
+            201
+        );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
     public function show(Expense $expense)
     {
-        //
+        abort_if(
+            $expense->user_id !== Auth::id(),
+            403
+        );
+
+        return $this->success(
+            new ExpenseResource(
+                $expense->load(['account', 'category'])
+            )
+        );
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Expense $expense)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Expense $expense)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Expense $expense)
     {
-        //
+        $this->expenseService->delete($expense);
+
+        return $this->success(
+            null,
+            'Expense deleted successfully.'
+        );
     }
 }

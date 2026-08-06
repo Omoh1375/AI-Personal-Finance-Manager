@@ -47,4 +47,6 @@ class Account extends Model
     {
         return $this->hasMany(Expense::class);
     }
+
+   
 }

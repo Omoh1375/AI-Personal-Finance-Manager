@@ -37,14 +37,19 @@ class DashboardService
                 ->whereYear('spent_at', $currentMonth->year)
                 ->sum('amount'),
 
-            'accounts' => Account::where('user_id', $userId)
-                ->get(),
+            'accounts' => $this->accountAnalytics($userId),
                
              'recent_transactions' => $this->recentTransactions($userId),
 
              'expense_breakdown' => $this->expenseBreakdown($userId),
 
              'monthly_cash_flow' => $this->monthlyCashFlow($userId),
+
+             'savings_rate' => $this->savingsRate($userId),
+
+            'top_spending_categories' => $this->topSpendingCategories($userId),
+
+            'account_analytics' => $this->accountAnalytics($userId),
         ];
     }
 
@@ -125,6 +130,93 @@ class DashboardService
         }
 
         return $months;
+    }
+
+    private function savingsRate(int $userId): float
+        {
+            $totalIncome = Income::where('user_id', $userId)
+                ->sum('amount');
+
+            $totalExpenses = Expense::where('user_id', $userId)
+                ->sum('amount');
+
+            if ($totalIncome <= 0) {
+                return 0;
+            }
+
+            return round(
+                (($totalIncome - $totalExpenses) / $totalIncome) * 100,
+                2
+            );
+    }
+
+    private function topSpendingCategories(int $userId)
+    {
+        $totalExpenses = Expense::where('user_id', $userId)
+            ->sum('amount');
+
+        if ($totalExpenses <= 0) {
+            return collect();
+        }
+
+        return Expense::selectRaw('
+                categories.name as category,
+                SUM(expenses.amount) as amount
+            ')
+            ->join('categories', 'expenses.category_id', '=', 'categories.id')
+            ->where('expenses.user_id', $userId)
+            ->groupBy('categories.id', 'categories.name')
+            ->orderByDesc('amount')
+            ->get()
+            ->map(function ($item) use ($totalExpenses) {
+
+                return [
+
+                    'category' => $item->category,
+
+                    'amount' => (float) $item->amount,
+
+                    'percentage' => round(
+                        ($item->amount / $totalExpenses) * 100,
+                        2
+                    ),
+
+                ];
+            });
+    }
+
+    private function accountAnalytics(int $userId)
+    {
+        return Account::where('user_id', $userId)
+            ->get()
+            ->map(function ($account) {
+
+                $income = Income::where('account_id', $account->id)
+                    ->sum('amount');
+
+                $expenses = Expense::where('account_id', $account->id)
+                    ->sum('amount');
+
+                return [
+
+                    'id' => $account->id,
+
+                    'name' => $account->name,
+
+                    'type' => $account->type,
+
+                    'balance' => (float) $account->balance,
+
+                    'income' => (float) $income,
+
+                    'expenses' => (float) $expenses,
+
+                    'transactions' => $account->incomes()->count()
+                        + $account->expenses()->count(),
+
+                ];
+
+            });
     }
 }
 

@@ -10,6 +10,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Income;
+use App\Models\Transfer;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -61,5 +62,10 @@ class User extends Authenticatable
         public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
+    }
+
+        public function transfers(): HasMany
+    {
+        return $this->hasMany(Transfer::class);
     }
 }

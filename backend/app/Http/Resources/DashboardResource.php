@@ -22,13 +22,19 @@ class DashboardResource extends JsonResource
                 'monthly_expenses' => $this['monthly_expenses'],
             ],
 
-            'accounts' => AccountResource::collection($this['accounts']),
+            'accounts' => $this['accounts'],
 
             'recent_transactions' => $this['recent_transactions'],
 
             'expense_breakdown' => $this['expense_breakdown'],
 
             'monthly_cash_flow' => $this['monthly_cash_flow'],
+
+            'savings_rate' => $this['savings_rate'],
+
+            'top_spending_categories' => $this['top_spending_categories'],
+
+            'account_analytics' => $this['account_analytics'],
 
         ];
     }

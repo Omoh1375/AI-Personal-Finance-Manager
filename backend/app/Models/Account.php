@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\User;
 use App\Models\Income;
 use App\Models\Expense;
+use App\Models\Transfer;
 
 // Refer to related models by fully-qualified class names to avoid import issues
 
@@ -47,6 +48,18 @@ class Account extends Model
     {
         return $this->hasMany(Expense::class);
     }
+
+        public function outgoingTransfers(): HasMany
+    {
+        return $this->hasMany(Transfer::class, 'from_account_id');
+    }
+
+    public function incomingTransfers(): HasMany
+    {
+        return $this->hasMany(Transfer::class, 'to_account_id');
+    }
+
+
 
    
 }

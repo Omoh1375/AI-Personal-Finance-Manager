@@ -7,6 +7,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TransferController;
 
 // Authentication
 Route::prefix('auth')->group(function () {
@@ -30,5 +31,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('incomes', IncomeController::class);
     Route::apiResource('expenses', ExpenseController::class);
     Route::get('dashboard', [DashboardController::class, 'index']);
-
+    Route::apiResource('transfers', TransferController::class);
 });

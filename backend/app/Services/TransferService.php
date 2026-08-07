@@ -29,13 +29,15 @@ class TransferService
 
         return DB::transaction(function () use ($data, $userId) {
 
-            $fromAccount = Account::where('id', $data['from_account_id'])
-                ->where('user_id', $userId)
-                ->firstOrFail();
+        $fromAccount = Account::where('id', $data['from_account_id'])
+            ->where('user_id', Auth::id())
+            ->lockForUpdate()
+            ->firstOrFail();
 
-            $toAccount = Account::where('id', $data['to_account_id'])
-                ->where('user_id', $userId)
-                ->firstOrFail();
+        $toAccount = Account::where('id', $data['to_account_id'])
+            ->where('user_id', Auth::id())
+            ->lockForUpdate()
+            ->firstOrFail();
 
             if ($fromAccount->id === $toAccount->id) {
                 abort(422, 'Source and destination accounts must be different.');

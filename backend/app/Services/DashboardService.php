@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Account;
 use App\Models\Expense;
 use App\Models\Income;
+use App\Models\Transfer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -83,8 +84,34 @@ class DashboardService
                 ];
             });
 
+        $transfers = Transfer::with(['fromAccount', 'toAccount'])
+        ->where('user_id', $userId)
+        ->get()
+        ->map(function ($transfer) {
+
+            return [
+
+                'id' => $transfer->id,
+
+                'type' => 'transfer',
+
+                'title' => 'Transfer',
+
+                'account' => $transfer->fromAccount?->name .
+                    ' → ' .
+                    $transfer->toAccount?->name,
+
+                'amount' => (float) $transfer->amount,
+
+                'date' => $transfer->transferred_at,
+
+            ];
+
+        });
+
         return $incomes
             ->merge($expenses)
+            ->merge($transfers)
             ->sortByDesc('date')
             ->take(10)
             ->values();

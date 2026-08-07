@@ -11,6 +11,8 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Income;
 use App\Models\Transfer;
+use App\Models\Budget;
+use App\Models\SavingsGoal;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -59,13 +61,28 @@ class User extends Authenticatable
         return $this->hasMany(Income::class);
     }
 
-        public function expenses(): HasMany
+    public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
     }
 
-        public function transfers(): HasMany
+    public function transfers(): HasMany
     {
         return $this->hasMany(Transfer::class);
+    }
+
+    public function budgets(): HasMany
+    {
+        return $this->hasMany(Budget::class);
+    }
+
+    public function savingsGoals(): HasMany
+    {
+        return $this->hasMany(SavingsGoal::class);
+    }
+
+    public function savingsDeposits(): HasMany
+    {
+        return $this->hasMany(SavingsDeposit::class);
     }
 }

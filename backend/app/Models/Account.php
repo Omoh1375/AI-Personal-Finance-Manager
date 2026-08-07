@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Income;
 use App\Models\Expense;
 use App\Models\Transfer;
+use App\Models\SavingsGoal;
 
 // Refer to related models by fully-qualified class names to avoid import issues
 
@@ -57,6 +58,16 @@ class Account extends Model
     public function incomingTransfers(): HasMany
     {
         return $this->hasMany(Transfer::class, 'to_account_id');
+    }
+
+    public function savingsGoals(): HasMany
+    {
+        return $this->hasMany(SavingsGoal::class);
+    }
+
+    public function savingsDeposits(): HasMany
+    {
+        return $this->hasMany(SavingsDeposit::class);
     }
 
 

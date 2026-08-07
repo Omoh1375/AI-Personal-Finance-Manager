@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Income;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Budget;
 
 class Category extends Model
 {
@@ -39,5 +40,10 @@ class Category extends Model
         public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
+    }
+
+    public function budgets(): HasMany
+    {
+        return $this->hasMany(Budget::class);
     }
 }

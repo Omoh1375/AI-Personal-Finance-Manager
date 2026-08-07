@@ -21,6 +21,10 @@ class TransferService
             ->get();
     }
 
+    public function __construct(
+        private AccountBalanceService $accountBalanceService
+    ) {}
+
     public function store(array $data): Transfer
     {
         $userId = Auth::id();
@@ -52,9 +56,11 @@ class TransferService
                 'user_id' => $userId,
             ]);
 
-            $fromAccount->decrement('balance', $data['amount']);
-
-            $toAccount->increment('balance', $data['amount']);
+           $this->accountBalanceService->transfer(
+                $fromAccount,
+                $toAccount,
+                $data['amount']
+            );
 
             return $transfer->load([
                 'fromAccount',

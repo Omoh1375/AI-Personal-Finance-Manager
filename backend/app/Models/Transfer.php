@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Transfer extends Model
 {
@@ -38,5 +39,10 @@ class Transfer extends Model
     public function toAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'to_account_id');
+    }
+
+    public function ledgers(): MorphMany
+    {
+        return $this->morphMany(Ledger::class, 'ledgerable');
     }
 }

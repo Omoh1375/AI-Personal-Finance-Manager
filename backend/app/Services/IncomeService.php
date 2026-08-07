@@ -7,9 +7,17 @@ use App\Models\Category;
 use App\Models\Income;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Services\AccountBalanceService;
 
 class IncomeService
 {
+    private ?AccountBalanceService $accountBalanceService = null;
+
+    public function __construct(?AccountBalanceService $accountBalanceService = null)
+    {
+        $this->accountBalanceService = $accountBalanceService;
+    }
+
     public function index()
     {
         return Income::with(['account', 'category'])
@@ -18,7 +26,7 @@ class IncomeService
             ->get();
     }
 
-        public function store(array $data): Income
+    public function store(array $data): Income
     {
         return DB::transaction(function () use ($data) {
 
@@ -37,7 +45,12 @@ class IncomeService
 
             $income = Income::create($data);
 
-            $account->increment('balance', $income->amount);
+            $this->accountBalanceService ??= app(AccountBalanceService::class);
+
+            $this->accountBalanceService->deposit(
+                $account,
+                $income->amount
+            );
 
             return $income->load(['account', 'category']);
         });

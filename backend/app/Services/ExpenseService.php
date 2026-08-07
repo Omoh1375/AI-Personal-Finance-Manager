@@ -10,6 +10,13 @@ use Illuminate\Support\Facades\DB;
 
 class ExpenseService
 {
+    protected AccountBalanceService $accountBalanceService;
+
+    public function __construct(AccountBalanceService $accountBalanceService)
+    {
+        $this->accountBalanceService = $accountBalanceService;
+    }
+
     public function index()
     {
         return Expense::with(['account', 'category'])
@@ -41,7 +48,10 @@ class ExpenseService
 
             $expense = Expense::create($data);
 
-            $account->decrement('balance', $expense->amount);
+            $this->accountBalanceService->withdraw(
+                $account,
+                $expense->amount
+            );
 
             return $expense->load(['account', 'category']);
         });

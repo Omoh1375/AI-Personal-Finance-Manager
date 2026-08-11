@@ -26,7 +26,7 @@ class IncomeService
             ->get();
     }
 
-    public function store(array $data): Income
+    public function create(array $data): Income
     {
         return DB::transaction(function () use ($data) {
 
@@ -67,4 +67,6 @@ class IncomeService
             $income->delete();
         });
     }
+
+   
 }

@@ -7,6 +7,7 @@ use App\Http\Resources\IncomeResource;
 use App\Models\Income;
 use App\Services\IncomeService;
 use App\Traits\ApiResponse;
+use Illuminate\Support\Facades\Auth;
 
 class IncomeController extends Controller
 {
@@ -27,7 +28,7 @@ class IncomeController extends Controller
 
     public function store(IncomeRequest $request)
     {
-        $income = $this->incomeService->store(
+       $income = $this->incomeService->create(
             $request->validated()
         );
 
@@ -40,7 +41,7 @@ class IncomeController extends Controller
 
     public function show(Income $income)
     {
-        abort_if($income->user_id !== auth()->id(), 403);
+        abort_if($income->user_id !== Auth::id(), 403);
 
         return $this->success(
             new IncomeResource(

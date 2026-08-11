@@ -21,8 +21,8 @@ class TransferService
             ->get();
     }
 
-    public function __construct(
-        private AccountBalanceService $accountBalanceService
+   public function __construct(
+        private FinancialTransactionService $financialTransactionService
     ) {}
 
     public function store(array $data): Transfer
@@ -56,10 +56,10 @@ class TransferService
                 'user_id' => $userId,
             ]);
 
-           $this->accountBalanceService->transfer(
+           $this->financialTransactionService->transfer(
                 $fromAccount,
                 $toAccount,
-                $data['amount']
+                $transfer
             );
 
             return $transfer->load([

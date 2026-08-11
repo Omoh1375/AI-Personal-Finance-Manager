@@ -11,20 +11,37 @@ class Ledger extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
+   protected $fillable = [
         'user_id',
+
         'account_id',
+
+        'transaction_uuid',
+
+        'ledgerable_type',
+
+        'ledgerable_id',
+
         'entry_type',
+
         'amount',
+
         'balance_after',
+
         'description',
+
         'transaction_date',
+
     ];
 
     protected $casts = [
+
         'amount' => 'decimal:2',
+
         'balance_after' => 'decimal:2',
+
         'transaction_date' => 'datetime',
+
     ];
 
     public function user(): BelongsTo

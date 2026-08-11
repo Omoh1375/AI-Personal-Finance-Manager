@@ -28,8 +28,8 @@ class ExpenseController extends Controller
 
     public function store(ExpenseRequest $request)
     {
-        $expense = $this->expenseService->store(
-            $request->validated()
+        $expense = $this->expenseService->create(
+                $request->validated()
         );
 
         return $this->success(

@@ -13,6 +13,7 @@ use App\Models\Income;
 use App\Models\Transfer;
 use App\Models\Budget;
 use App\Models\SavingsGoal;
+use App\Models\Ledger;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -85,4 +86,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(SavingsDeposit::class);
     }
+
+    public function ledgers(): HasMany
+    {
+        return $this->hasMany(Ledger::class);
+    }
+
+    public function recurringTransactions(): HasMany
+{
+    return $this->hasMany(
+        RecurringTransaction::class
+    );
+}
 }

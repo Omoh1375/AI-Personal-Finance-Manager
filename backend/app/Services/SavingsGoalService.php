@@ -26,7 +26,7 @@ class SavingsGoalService
 
     public function store(array $data)
     {
-        $data['user_id'] = auth()->id();
+        $data['user_id'] = auth()->user()?->id;
 
         $goal = SavingsGoal::create($data);
 

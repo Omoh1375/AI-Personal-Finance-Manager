@@ -9,6 +9,9 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\StatementController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RecurringTransactionController;
 
 // Authentication
 Route::prefix('auth')->group(function () {
@@ -23,6 +26,8 @@ Route::prefix('auth')->group(function () {
 
 });
 
+Route::get('statements',[StatementController::class, 'index']);
+
 
 // Finance API
 Route::middleware('auth:sanctum')->group(function () {
@@ -34,4 +39,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index']);
     Route::apiResource('transfers', TransferController::class);
     Route::apiResource('budgets', BudgetController::class);
+    Route::get('statements', [StatementController::class, 'index']);
+    Route::apiResource('recurring-transactions', RecurringTransactionController::class);
+    Route::get('reports', [ReportController::class, 'index']);
+
 });

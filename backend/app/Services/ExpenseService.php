@@ -25,7 +25,7 @@ class ExpenseService
             ->get();
     }
 
-    public function store(array $data): Expense
+    public function create(array $data): Expense
     {
         return DB::transaction(function () use ($data) {
 
@@ -68,4 +68,6 @@ class ExpenseService
             $expense->delete();
         });
     }
+
+    
 }

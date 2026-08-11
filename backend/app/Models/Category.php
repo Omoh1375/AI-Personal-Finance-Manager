@@ -46,4 +46,11 @@ class Category extends Model
     {
         return $this->hasMany(Budget::class);
     }
+
+    public function recurringTransactions(): HasMany
+    {
+        return $this->hasMany(
+            RecurringTransaction::class
+        );
+    }
 }

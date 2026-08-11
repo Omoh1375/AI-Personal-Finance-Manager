@@ -25,7 +25,7 @@ class SavingsDepositService
                 'account',
                 'savingsGoal'
             ])
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
             ->latest('deposited_at')
             ->get();
     }

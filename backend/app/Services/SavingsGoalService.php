@@ -3,13 +3,16 @@
 namespace App\Services;
 
 use App\Models\SavingsGoal;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Auth;
 
 class SavingsGoalService
 {
     public function index()
     {
+        Gate::authorize('view-any', SavingsGoal::class);
         return SavingsGoal::with(['account', 'deposits'])
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
             ->latest()
             ->get()
             ->map(fn ($goal) => $this->format($goal));
@@ -17,7 +20,7 @@ class SavingsGoalService
 
     public function show(SavingsGoal $goal)
     {
-        abort_if($goal->user_id !== auth()->id(), 403);
+        Gate::authorize('view', $goal);
 
         return $this->format(
             $goal->load(['account', 'deposits'])
@@ -26,7 +29,7 @@ class SavingsGoalService
 
     public function store(array $data)
     {
-        $data['user_id'] = auth()->user()?->id;
+        $data['user_id'] = Auth::id();
 
         $goal = SavingsGoal::create($data);
 
@@ -35,7 +38,10 @@ class SavingsGoalService
 
     public function delete(SavingsGoal $goal): void
     {
-        abort_if($goal->user_id !== auth()->user()?->id, 403);
+        // abort_if($goal->user_id !== Auth::id(), 403);
+        Gate::authorize('delete', $goal);
+        
+    
 
         $goal->delete();
     }

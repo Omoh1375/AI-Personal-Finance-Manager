@@ -21,6 +21,7 @@ class IncomeService
 
     public function index()
     {
+        Gate::authorize('view-any', Income::class);
         return Income::with(['account', 'category'])
             ->where('user_id', Auth::id())
             ->latest('received_at')
@@ -29,6 +30,7 @@ class IncomeService
 
     public function create(array $data): Income
     {
+
         return DB::transaction(function () use ($data) {
 
             $account = Account::where('id', $data['account_id'])
@@ -59,6 +61,7 @@ class IncomeService
 
     public function delete(Income $income): void
     {
+        Gate::authorize('delete', $income);
         DB::transaction(function () use ($income) {
 
             $this->accountBalanceService ??= app(AccountBalanceService::class);

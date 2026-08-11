@@ -26,6 +26,11 @@ class ReportRequest extends FormRequest
                 'after_or_equal:from',
             ],
 
+            'type' => [
+            'nullable',
+            'in:summary,category',
+            ],
+
         ];
     }
 }

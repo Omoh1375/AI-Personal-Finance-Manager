@@ -13,6 +13,7 @@ use App\Http\Controllers\StatementController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RecurringTransactionController;
 use App\Http\Controllers\FinancialInsightController;
+use App\Http\Controllers\UserNotificationController;
 
 // Authentication
 Route::prefix('auth')->group(function () {
@@ -44,5 +45,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('recurring-transactions', RecurringTransactionController::class);
     Route::get('reports', [ReportController::class, 'index']);
     Route::get('financial-insights', [FinancialInsightController::class, 'index']);
+
+    Route::get(
+    'notifications',
+    [UserNotificationController::class, 'index']
+    );
+
+    Route::get(
+        'notifications/unread',
+        [UserNotificationController::class, 'unread']
+    );
+
+    Route::patch(
+        'notifications/{notification}/read',
+        [UserNotificationController::class, 'markAsRead']
+    );
+
 
 });

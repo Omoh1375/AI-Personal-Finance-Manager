@@ -2,64 +2,69 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserNotificationResource;
 use App\Models\UserNotification;
-use Illuminate\Http\Request;
+use App\Services\NotificationService;
+use App\Traits\ApiResponse;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Auth;
 
 class UserNotificationController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use ApiResponse, AuthorizesRequests;
+
+    public function __construct(
+        private NotificationService $service
+    ) {}
+
     public function index()
     {
-        //
+        $this->authorize('viewAny', UserNotification::class);
+        $this->authorize('view', UserNotification::class);
+        $user = Auth::user();
+
+        abort_if(!$user, 401);
+
+        return $this->success(
+            UserNotificationResource::collection(
+                $this->service->all($user)
+            )
+        );
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function unread()
     {
-        //
+        $this->authorize('viewAny', UserNotification::class);
+        $this->authorize('view', UserNotification::class);
+        $user = Auth::user();
+
+        abort_if(!$user, 401);
+
+        return $this->success(
+            UserNotificationResource::collection(
+                $this->service->unread($user)
+            )
+        );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function markAsRead(
+        UserNotification $notification
+    )
     {
-        //
-    }
+        $this->authorize('viewAny', UserNotification::class);
+        $this->authorize('view', $notification);
+        abort_if(
+            Auth::guest() || $notification->user_id !== Auth::id(),
+            403
+        );
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(UserNotification $userNotification)
-    {
-        //
-    }
+        $this->service->markAsRead(
+            $notification
+        );
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(UserNotification $userNotification)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, UserNotification $userNotification)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(UserNotification $userNotification)
-    {
-        //
+        return $this->success(
+            null,
+            'Notification marked as read.'
+        );
     }
 }

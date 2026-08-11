@@ -7,11 +7,12 @@ use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
 use App\Services\ExpenseService;
 use App\Traits\ApiResponse;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 
 class ExpenseController extends Controller
 {
-    use ApiResponse;
+    use AuthorizesRequests, ApiResponse;
 
     public function __construct(
         private ExpenseService $expenseService
@@ -19,6 +20,7 @@ class ExpenseController extends Controller
 
     public function index()
     {
+        $this->authorize('viewAny', Expense::class);
         return $this->success(
             ExpenseResource::collection(
                 $this->expenseService->index()
@@ -28,6 +30,7 @@ class ExpenseController extends Controller
 
     public function store(ExpenseRequest $request)
     {
+        $this->authorize('create', Expense::class);
         $expense = $this->expenseService->create(
                 $request->validated()
         );
@@ -41,10 +44,8 @@ class ExpenseController extends Controller
 
     public function show(Expense $expense)
     {
-        abort_if(
-            $expense->user_id !== Auth::id(),
-            403
-        );
+        $this->authorize('view', $expense);
+
 
         return $this->success(
             new ExpenseResource(
@@ -55,6 +56,7 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
+        $this->authorize('delete', $expense);
         $this->expenseService->delete($expense);
 
         return $this->success(

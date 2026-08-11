@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Expense;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class ExpenseService
 {
@@ -61,7 +62,7 @@ class ExpenseService
     {
         DB::transaction(function () use ($expense) {
 
-            abort_if($expense->user_id !== Auth::id(), 403);
+            Gate::authorize('delete', $expense);
 
             $expense->account->increment('balance', $expense->amount);
 

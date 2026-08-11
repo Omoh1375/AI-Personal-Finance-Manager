@@ -7,6 +7,8 @@ use App\Models\SavingsDeposit;
 use App\Models\SavingsGoal;
 use Illuminate\Support\Facades\DB;
 use App\Services\AccountBalanceService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class SavingsDepositService
 {
@@ -18,6 +20,7 @@ class SavingsDepositService
     }
     public function index()
     {
+        Gate::authorize('view-any', SavingsDeposit::class); 
         return SavingsDeposit::with([
                 'account',
                 'savingsGoal'
@@ -29,14 +32,15 @@ class SavingsDepositService
 
     public function store(array $data): SavingsDeposit
     {
+        Gate::authorize('create', SavingsDeposit::class);
         return DB::transaction(function () use ($data) {
 
             $goal = SavingsGoal::where('id', $data['savings_goal_id'])
-                ->where('user_id', auth()->id())
+                ->where('user_id', Auth::id())
                 ->firstOrFail();
 
             $account = Account::where('id', $data['account_id'])
-                ->where('user_id', auth()->id())
+                ->where('user_id', Auth::id())
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -51,7 +55,7 @@ class SavingsDepositService
 
             $deposit = SavingsDeposit::create([
                 ...$data,
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
             ]);
 
             return $deposit->load([
@@ -63,10 +67,7 @@ class SavingsDepositService
 
     public function show(SavingsDeposit $deposit)
     {
-        abort_if(
-                $deposit->user_id !== auth()->id(),
-            403
-        );
+        Gate::authorize('view', $deposit);
 
         return $deposit->load([
             'account',
@@ -76,12 +77,10 @@ class SavingsDepositService
 
     public function destroy(SavingsDeposit $deposit): void
     {
+        Gate::authorize('delete', $deposit);
         DB::transaction(function () use ($deposit) {
 
-            abort_if(
-                $deposit->user_id !== auth()->id(),
-                403
-            );
+            // Gate::authorize('delete', $deposit);
 
             $deposit->account()
                 ->lockForUpdate()

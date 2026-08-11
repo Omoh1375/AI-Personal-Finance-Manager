@@ -8,10 +8,11 @@ use App\Models\Category;
 use App\Services\CategoryService;
 use Illuminate\Http\JsonResponse;
 use App\Traits\ApiResponse;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CategoryController extends Controller
 {
-    use ApiResponse;
+    use AuthorizesRequests, ApiResponse;
 
     public function __construct(
         private CategoryService $categoryService
@@ -19,6 +20,7 @@ class CategoryController extends Controller
 
     public function index(): JsonResponse
     {
+        $this->authorize('viewAny', Category::class);
         return response()->json([
             'success' => true,
             'data' => CategoryResource::collection(
@@ -29,6 +31,7 @@ class CategoryController extends Controller
 
     public function store(CategoryRequest $request): JsonResponse
     {
+        $this->authorize('create', Category::class);
         $category = $this->categoryService->store(
             $request->validated()
         );
@@ -42,6 +45,7 @@ class CategoryController extends Controller
 
     public function show(Category $category): JsonResponse
     {
+        $this->authorize('view', $category);
         return $this->success(
             new CategoryResource($category),
             'Category retrieved successfully.',
@@ -51,6 +55,7 @@ class CategoryController extends Controller
 
     public function update(CategoryRequest $request, Category $category): JsonResponse
     {
+        $this->authorize('update', $category);
         $category = $this->categoryService->update(
             $category,
             $request->validated()
@@ -65,6 +70,7 @@ class CategoryController extends Controller
 
     public function destroy(Category $category): JsonResponse
     {
+        $this->authorize('delete', $category);
         $this->categoryService->delete($category);
 
         return $this->success(

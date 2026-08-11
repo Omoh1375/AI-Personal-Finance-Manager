@@ -5,9 +5,13 @@ namespace App\Services;
 use App\Models\Budget;
 use App\Models\Category;
 use App\Models\Expense;
-use Carbon\Carbon;use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Auth;
+
 class BudgetService
 {
+    use AuthorizesRequests;
     public function index()
     {
         return Budget::with('category')
@@ -35,7 +39,7 @@ class BudgetService
 
     public function show(Budget $budget)
     {
-        abort_if($budget->user_id !== Auth::id(), 403);
+        $this->authorize('view', $budget);
 
         return $this->formatBudget(
             $budget->load('category')
@@ -44,7 +48,7 @@ class BudgetService
 
     public function destroy(Budget $budget): void
     {
-        abort_if($budget->user_id !== Auth::id(), 403);
+        $this->authorize('delete', $budget);
 
         $budget->delete();
     }

@@ -6,14 +6,16 @@ use App\Models\Account;
 use App\Models\Transfer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class TransferService
 {
     public function index()
     {
+        Gate::authorize('view-any', Transfer::class);
         $userId = Auth::id();
 
-        abort_if(! $userId, 403);
+        // abort_if(! $userId, 403);
 
         return Transfer::with(['fromAccount', 'toAccount'])
             ->where('user_id', $userId)
@@ -27,9 +29,10 @@ class TransferService
 
     public function store(array $data): Transfer
     {
+        Gate::authorize('create', Transfer::class);
         $userId = Auth::id();
 
-        abort_if(! $userId, 403);
+        // abort_if(! $userId, 403);
 
         return DB::transaction(function () use ($data, $userId) {
 
@@ -73,10 +76,7 @@ class TransferService
     {
         DB::transaction(function () use ($transfer) {
 
-            abort_if(
-                $transfer->user_id !== Auth::id(),
-                403
-            );
+            Gate::authorize('delete', $transfer);
 
             $transfer->toAccount->decrement(
                 'balance',

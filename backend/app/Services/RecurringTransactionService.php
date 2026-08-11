@@ -6,11 +6,13 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\RecurringTransaction;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class RecurringTransactionService
 {
     public function index()
     {
+        Gate::authorize('view-any', RecurringTransaction::class);
         return RecurringTransaction::with([
                 'account',
                 'category',
@@ -22,6 +24,7 @@ class RecurringTransactionService
 
     public function store(array $data): RecurringTransaction
     {
+        Gate::authorize('create', RecurringTransaction::class);
         $account = Account::where('id', $data['account_id'])
             ->where('user_id', Auth::id())
             ->firstOrFail();
@@ -41,10 +44,8 @@ class RecurringTransactionService
 
     public function show(RecurringTransaction $transaction)
     {
-        abort_if(
-            $transaction->user_id !== Auth::id(),
-            403
-        );
+        
+        Gate::authorize('view', $transaction);
 
         return $transaction->load([
             'account',
@@ -57,10 +58,7 @@ class RecurringTransactionService
         array $data
     ): RecurringTransaction {
 
-        abort_if(
-            $transaction->user_id !== Auth::id(),
-            403
-        );
+        Gate::authorize('update', $transaction);
 
         $transaction->update($data);
 
@@ -72,10 +70,8 @@ class RecurringTransactionService
         RecurringTransaction $transaction
     ): void {
 
-        abort_if(
-            $transaction->user_id !== Auth::id(),
-            403
-        );
+        
+        Gate::authorize('delete', $transaction);
 
         $transaction->delete();
     }

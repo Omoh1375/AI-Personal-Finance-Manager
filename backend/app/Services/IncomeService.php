@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Income;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
 use App\Services\AccountBalanceService;
 
@@ -60,7 +61,8 @@ class IncomeService
     {
         DB::transaction(function () use ($income) {
 
-            abort_if($income->user_id !== Auth::id(), 403);
+            $this->accountBalanceService ??= app(AccountBalanceService::class);
+            Gate::authorize('delete', $income);
 
             $income->account->decrement('balance', $income->amount);
 

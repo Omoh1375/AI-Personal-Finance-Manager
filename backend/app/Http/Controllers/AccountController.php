@@ -7,12 +7,13 @@ use App\Http\Resources\AccountResource;
 use App\Models\Account;
 use App\Services\AccountService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Traits\ApiResponse;
-use Illuminate\Support\Facades\Auth;
+// use Illuminate\Support\Facades\Auth;
 
 class AccountController extends Controller
 {
-    use ApiResponse;
+    use AuthorizesRequests, ApiResponse;
 
     public function __construct(
         private AccountService $accountService
@@ -42,38 +43,42 @@ class AccountController extends Controller
     }
 
     public function show(Account $account): JsonResponse
-    {
-        abort_if($account->user_id !== Auth::id(), 403);
+{
+    $this->authorize('view', $account);
 
-        return $this->success(
-            new AccountResource($account),
-            'Account retrieved successfully.',
-            200
-        );
-    }
+    return $this->success(
+        new AccountResource($account),
+        'Account retrieved successfully.'
+    );
+}
 
-    public function update(AccountRequest $request, Account $account): JsonResponse
-    {
-        $account = $this->accountService->update(
-            $account,
-            $request->validated()
-        );
+public function update(
+    AccountRequest $request,
+    Account $account
+): JsonResponse {
 
-        return $this->success(
-            new AccountResource($account),
-            'Account updated successfully.',
-            200
-        );
-    }
+    $this->authorize('update', $account);
 
-    public function destroy(Account $account): JsonResponse
-    {
-        $this->accountService->delete($account);
+    $account = $this->accountService->update(
+        $account,
+        $request->validated()
+    );
 
-        return $this->success(
-            null,
-            'Account deleted successfully.',
-            200
-        );
-    }
+    return $this->success(
+        new AccountResource($account),
+        'Account updated successfully.'
+    );
+}
+
+public function destroy(Account $account): JsonResponse
+{
+    $this->authorize('delete', $account);
+
+    $this->accountService->delete($account);
+
+    return $this->success(
+        null,
+        'Account deleted successfully.'
+    );
+}
 }

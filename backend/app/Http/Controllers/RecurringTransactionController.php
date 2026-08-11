@@ -7,10 +7,11 @@ use App\Http\Resources\RecurringTransactionResource;
 use App\Models\RecurringTransaction;
 use App\Services\RecurringTransactionService;
 use App\Traits\ApiResponse;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class RecurringTransactionController extends Controller
 {
-    use ApiResponse;
+    use AuthorizesRequests, ApiResponse;
 
     public function __construct(
         private RecurringTransactionService $service
@@ -18,6 +19,8 @@ class RecurringTransactionController extends Controller
 
     public function index()
     {
+        $this->authorize('viewAny', RecurringTransaction::class);
+
         return $this->success(
             RecurringTransactionResource::collection(
                 $this->service->index()
@@ -29,6 +32,7 @@ class RecurringTransactionController extends Controller
         RecurringTransactionRequest $request
     )
     {
+        $this->authorize('create', RecurringTransaction::class);
         return $this->success(
             new RecurringTransactionResource(
                 $this->service->store(
@@ -44,6 +48,7 @@ class RecurringTransactionController extends Controller
         RecurringTransaction $recurringTransaction
     )
     {
+        $this->authorize('view', $recurringTransaction);
         return $this->success(
             new RecurringTransactionResource(
                 $this->service->show(
@@ -58,6 +63,7 @@ class RecurringTransactionController extends Controller
         RecurringTransaction $recurringTransaction
     )
     {
+        $this->authorize('update', $recurringTransaction);
         return $this->success(
             new RecurringTransactionResource(
                 $this->service->update(
@@ -73,6 +79,7 @@ class RecurringTransactionController extends Controller
         RecurringTransaction $recurringTransaction
     )
     {
+        $this->authorize('delete', $recurringTransaction);
         $this->service->destroy(
             $recurringTransaction
         );

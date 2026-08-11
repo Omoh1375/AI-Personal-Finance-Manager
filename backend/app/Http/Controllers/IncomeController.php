@@ -7,11 +7,12 @@ use App\Http\Resources\IncomeResource;
 use App\Models\Income;
 use App\Services\IncomeService;
 use App\Traits\ApiResponse;
-use Illuminate\Support\Facades\Auth;
+// use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class IncomeController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, AuthorizesRequests;
 
     public function __construct(
         private IncomeService $incomeService
@@ -19,6 +20,7 @@ class IncomeController extends Controller
 
     public function index()
     {
+        $this->authorize('viewAny', Income::class);
         return $this->success(
             IncomeResource::collection(
                 $this->incomeService->index()
@@ -28,6 +30,7 @@ class IncomeController extends Controller
 
     public function store(IncomeRequest $request)
     {
+        $this->authorize('create', Income::class);
        $income = $this->incomeService->create(
             $request->validated()
         );
@@ -41,7 +44,7 @@ class IncomeController extends Controller
 
     public function show(Income $income)
     {
-        abort_if($income->user_id !== Auth::id(), 403);
+        $this->authorize('view', $income);
 
         return $this->success(
             new IncomeResource(
@@ -52,6 +55,8 @@ class IncomeController extends Controller
 
     public function destroy(Income $income)
     {
+        $this->authorize('delete', $income);
+
         $this->incomeService->delete($income);
 
         return $this->success(

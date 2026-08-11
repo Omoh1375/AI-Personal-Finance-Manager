@@ -12,6 +12,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\StatementController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RecurringTransactionController;
+use App\Http\Controllers\FinancialInsightController;
 
 // Authentication
 Route::prefix('auth')->group(function () {
@@ -42,5 +43,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('statements', [StatementController::class, 'index']);
     Route::apiResource('recurring-transactions', RecurringTransactionController::class);
     Route::get('reports', [ReportController::class, 'index']);
+    Route::get('financial-insights', [FinancialInsightController::class, 'index']);
 
 });

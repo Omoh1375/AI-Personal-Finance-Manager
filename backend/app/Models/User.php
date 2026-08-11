@@ -93,9 +93,15 @@ class User extends Authenticatable
     }
 
     public function recurringTransactions(): HasMany
-{
-    return $this->hasMany(
-        RecurringTransaction::class
-    );
-}
+    {
+        return $this->hasMany(
+            RecurringTransaction::class
+        );
+    }
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(
+            UserNotification::class
+        );
+    }
 }

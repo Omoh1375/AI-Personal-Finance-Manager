@@ -6,62 +6,56 @@ use App\Models\Account;
 use App\Models\Transfer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 
 class TransferService
 {
+    public function __construct(
+        private FinancialTransactionService $financialTransactionService
+    ) {}
+
     public function index()
     {
-        Gate::authorize('view-any', Transfer::class);
-        $userId = Auth::id();
-
-        // abort_if(! $userId, 403);
-
-        return Transfer::with(['fromAccount', 'toAccount'])
-            ->where('user_id', $userId)
+        return Transfer::with([
+                'fromAccount',
+                'toAccount',
+            ])
+            ->where('user_id', Auth::id())
             ->latest('transferred_at')
             ->get();
     }
 
-   public function __construct(
-        private FinancialTransactionService $financialTransactionService
-    ) {}
-
     public function store(array $data): Transfer
     {
-        Gate::authorize('create', Transfer::class);
-        $userId = Auth::id();
+        return DB::transaction(function () use ($data) {
 
-        // abort_if(! $userId, 403);
+            $fromAccount = Account::where('id', $data['from_account_id'])
+                ->where('user_id', Auth::id())
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        return DB::transaction(function () use ($data, $userId) {
-
-        $fromAccount = Account::where('id', $data['from_account_id'])
-            ->where('user_id', Auth::id())
-            ->lockForUpdate()
-            ->firstOrFail();
-
-        $toAccount = Account::where('id', $data['to_account_id'])
-            ->where('user_id', Auth::id())
-            ->lockForUpdate()
-            ->firstOrFail();
+            $toAccount = Account::where('id', $data['to_account_id'])
+                ->where('user_id', Auth::id())
+                ->lockForUpdate()
+                ->firstOrFail();
 
             if ($fromAccount->id === $toAccount->id) {
                 abort(422, 'Source and destination accounts must be different.');
             }
 
-            if ($fromAccount->balance < $data['amount']) {
-                abort(422, 'Insufficient balance.');
-            }
+            $this->financialTransactionService->ensureSufficientTransferBalance(
+                $fromAccount,
+                (float) $data['amount']
+            );
 
             $transfer = Transfer::create([
                 ...$data,
-                'user_id' => $userId,
+                'user_id' => Auth::id(),
             ]);
 
-           $this->financialTransactionService->transfer(
+            $this->financialTransactionService->transfer(
                 $fromAccount,
                 $toAccount,
+                (float) $transfer->amount,
                 $transfer
             );
 
@@ -72,21 +66,31 @@ class TransferService
         });
     }
 
+    public function show(Transfer $transfer): Transfer
+    {
+        return $transfer->load([
+            'fromAccount',
+            'toAccount',
+        ]);
+    }
+
     public function delete(Transfer $transfer): void
     {
         DB::transaction(function () use ($transfer) {
 
-            Gate::authorize('delete', $transfer);
+            $fromAccount = Account::where('id', $transfer->from_account_id)
+                ->where('user_id', $transfer->user_id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            $transfer->toAccount->decrement(
-                'balance',
-                $transfer->amount
-            );
+            $toAccount = Account::where('id', $transfer->to_account_id)
+                ->where('user_id', $transfer->user_id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            $transfer->fromAccount->increment(
-                'balance',
-                $transfer->amount
-            );
+            $toAccount->decrement('balance', $transfer->amount);
+
+            $fromAccount->increment('balance', $transfer->amount);
 
             $transfer->delete();
         });

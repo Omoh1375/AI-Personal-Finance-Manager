@@ -28,6 +28,9 @@ class AccountBalanceService
         float $amount
     ): void {
         $account->increment('balance', $amount);
+
+        // Keep the current model instance in sync
+        $account->refresh();
     }
 
     public function withdraw(
@@ -40,5 +43,8 @@ class AccountBalanceService
         );
 
         $account->decrement('balance', $amount);
+
+        // Keep the current model instance in sync
+        $account->refresh();
     }
 }

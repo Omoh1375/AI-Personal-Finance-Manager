@@ -5,39 +5,36 @@ namespace App\Services;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Income;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
-use App\Services\AccountBalanceService;
+use Illuminate\Support\Facades\DB;
 
 class IncomeService
 {
-    private ?AccountBalanceService $accountBalanceService = null;
-
-    public function __construct(?AccountBalanceService $accountBalanceService = null)
-    {
-        $this->accountBalanceService = $accountBalanceService;
-    }
+    public function __construct(
+        private AccountBalanceService $accountBalanceService
+    ) {}
 
     public function index()
     {
-        Gate::authorize('view-any', Income::class);
-        return Income::with(['account', 'category'])
+        return Income::with([
+                'account',
+                'category',
+            ])
             ->where('user_id', Auth::id())
             ->latest('received_at')
             ->get();
     }
 
-    public function create(array $data): Income
+    public function store(array $data): Income
     {
-
         return DB::transaction(function () use ($data) {
 
             $account = Account::where('id', $data['account_id'])
                 ->where('user_id', Auth::id())
+                ->lockForUpdate()
                 ->firstOrFail();
 
-            $category = Category::where('id', $data['category_id'])
+            Category::where('id', $data['category_id'])
                 ->where(function ($query) {
                     $query->where('is_default', true)
                         ->orWhere('user_id', Auth::id());
@@ -48,30 +45,41 @@ class IncomeService
 
             $income = Income::create($data);
 
-            $this->accountBalanceService ??= app(AccountBalanceService::class);
-
             $this->accountBalanceService->deposit(
                 $account,
-                $income->amount
+                (float) $income->amount
             );
 
-            return $income->load(['account', 'category']);
+            return $income->load([
+                'account',
+                'category',
+            ]);
         });
+    }
+
+    public function show(Income $income): Income
+    {
+        return $income->load([
+            'account',
+            'category',
+        ]);
     }
 
     public function delete(Income $income): void
     {
-        Gate::authorize('delete', $income);
         DB::transaction(function () use ($income) {
 
-            $this->accountBalanceService ??= app(AccountBalanceService::class);
-            Gate::authorize('delete', $income);
+            $account = Account::where('id', $income->account_id)
+                ->where('user_id', $income->user_id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            $income->account->decrement('balance', $income->amount);
+            $account->decrement(
+                'balance',
+                $income->amount
+            );
 
             $income->delete();
         });
     }
-
-   
 }

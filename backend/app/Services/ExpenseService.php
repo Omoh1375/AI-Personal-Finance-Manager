@@ -7,43 +7,44 @@ use App\Models\Category;
 use App\Models\Expense;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 
 class ExpenseService
 {
-    protected AccountBalanceService $accountBalanceService;
-
-    public function __construct(AccountBalanceService $accountBalanceService)
-    {
-        $this->accountBalanceService = $accountBalanceService;
-    }
+    public function __construct(
+        private AccountBalanceService $accountBalanceService
+    ) {}
 
     public function index()
     {
-        return Expense::with(['account', 'category'])
+        return Expense::with([
+                'account',
+                'category',
+            ])
             ->where('user_id', Auth::id())
             ->latest('spent_at')
             ->get();
     }
 
-    public function create(array $data): Expense
+    public function store(array $data): Expense
     {
         return DB::transaction(function () use ($data) {
 
             $account = Account::where('id', $data['account_id'])
                 ->where('user_id', Auth::id())
+                ->lockForUpdate()
                 ->firstOrFail();
 
             Category::where('id', $data['category_id'])
                 ->where(function ($query) {
                     $query->where('is_default', true)
-                          ->orWhere('user_id', Auth::id());
+                        ->orWhere('user_id', Auth::id());
                 })
                 ->firstOrFail();
 
-            if ($account->balance < $data['amount']) {
-                abort(422, 'Insufficient account balance.');
-            }
+            $this->accountBalanceService->ensureSufficientBalance(
+                $account,
+                (float) $data['amount']
+            );
 
             $data['user_id'] = Auth::id();
 
@@ -51,24 +52,39 @@ class ExpenseService
 
             $this->accountBalanceService->withdraw(
                 $account,
-                $expense->amount
+                (float) $expense->amount
             );
 
-            return $expense->load(['account', 'category']);
+            return $expense->load([
+                'account',
+                'category',
+            ]);
         });
+    }
+
+    public function show(Expense $expense): Expense
+    {
+        return $expense->load([
+            'account',
+            'category',
+        ]);
     }
 
     public function delete(Expense $expense): void
     {
         DB::transaction(function () use ($expense) {
 
-            Gate::authorize('delete', $expense);
+            $account = Account::where('id', $expense->account_id)
+                ->where('user_id', $expense->user_id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            $expense->account->increment('balance', $expense->amount);
+            $account->increment(
+                'balance',
+                $expense->amount
+            );
 
             $expense->delete();
         });
     }
-
-    
 }

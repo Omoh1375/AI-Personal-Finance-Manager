@@ -2,53 +2,124 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Auth\AuthController;
-use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AccountController;
-use App\Http\Controllers\IncomeController;
-use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\TransferController;
 use App\Http\Controllers\BudgetController;
-use App\Http\Controllers\StatementController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\RecurringTransactionController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FinancialInsightController;
+use App\Http\Controllers\IncomeController;
+use App\Http\Controllers\RecurringTransactionController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\StatementController;
+use App\Http\Controllers\TransferController;
 use App\Http\Controllers\UserNotificationController;
 
-// Authentication
+/*
+|--------------------------------------------------------------------------
+| Authentication Routes
+|--------------------------------------------------------------------------
+*/
+
 Route::prefix('auth')->group(function () {
 
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 
     Route::middleware('auth:sanctum')->group(function () {
+
         Route::post('/logout', [AuthController::class, 'logout']);
+
         Route::get('/profile', [AuthController::class, 'profile']);
+
     });
 
 });
 
-Route::get('statements',[StatementController::class, 'index']);
+/*
+|--------------------------------------------------------------------------
+| Protected Finance Routes
+|--------------------------------------------------------------------------
+*/
 
-
-// Finance API
 Route::middleware('auth:sanctum')->group(function () {
 
+    /*
+    |--------------------------------------------------------------------------
+    | Core Resources
+    |--------------------------------------------------------------------------
+    */
+
     Route::apiResource('categories', CategoryController::class);
+
     Route::apiResource('accounts', AccountController::class);
+
     Route::apiResource('incomes', IncomeController::class);
+
     Route::apiResource('expenses', ExpenseController::class);
-    Route::get('dashboard', [DashboardController::class, 'index']);
+
     Route::apiResource('transfers', TransferController::class);
+
     Route::apiResource('budgets', BudgetController::class);
-    Route::get('statements', [StatementController::class, 'index']);
-    Route::apiResource('recurring-transactions', RecurringTransactionController::class);
-    Route::get('reports', [ReportController::class, 'index']);
-    Route::get('financial-insights', [FinancialInsightController::class, 'index']);
+
+    Route::apiResource(
+        'recurring-transactions',
+        RecurringTransactionController::class
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard
+    |--------------------------------------------------------------------------
+    */
 
     Route::get(
-    'notifications',
-    [UserNotificationController::class, 'index']
+        'dashboard',
+        [DashboardController::class, 'index']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Statements
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        'statements',
+        [StatementController::class, 'index']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reports
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        'reports',
+        [ReportController::class, 'index']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Financial Insights
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        'financial-insights',
+        [FinancialInsightController::class, 'index']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        'notifications',
+        [UserNotificationController::class, 'index']
     );
 
     Route::get(
@@ -60,6 +131,5 @@ Route::middleware('auth:sanctum')->group(function () {
         'notifications/{notification}/read',
         [UserNotificationController::class, 'markAsRead']
     );
-
 
 });

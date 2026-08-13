@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
@@ -11,37 +11,24 @@ class Ledger extends Model
 {
     use HasFactory;
 
-   protected $fillable = [
+    protected $fillable = [
         'user_id',
-
         'account_id',
-
         'transaction_uuid',
-
         'ledgerable_type',
-
         'ledgerable_id',
-
-        'entry_type',
-
+        'type',
         'amount',
-
         'balance_after',
-
+        'reference',
         'description',
-
         'transaction_date',
-
     ];
 
     protected $casts = [
-
         'amount' => 'decimal:2',
-
         'balance_after' => 'decimal:2',
-
         'transaction_date' => 'datetime',
-
     ];
 
     public function user(): BelongsTo

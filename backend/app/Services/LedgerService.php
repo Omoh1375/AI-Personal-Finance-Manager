@@ -10,25 +10,21 @@ use Illuminate\Support\Str;
 class LedgerService
 {
     public function credit(
-    Account $account,
-    Model $source,
-    float $amount,
-    string $description,
-    ?string $date = null,
-    ?string $transactionUuid = null
-): Ledger {
-
+        Account $account,
+        Model $source,
+        float $amount,
+        string $description,
+        ?string $date = null,
+        ?string $transactionUuid = null
+    ): Ledger {
         return Ledger::create([
-
             'user_id' => $account->user_id,
-
             'account_id' => $account->id,
 
             'ledgerable_type' => $source::class,
-
             'ledgerable_id' => $source->id,
 
-            'entry_type' => 'credit',
+            'type' => 'credit',
 
             'amount' => $amount,
 
@@ -37,8 +33,9 @@ class LedgerService
             'description' => $description,
 
             'transaction_date' => $date ?? now(),
-            'transaction_uuid' => $transactionUuid ?? Str::uuid()->toString(),
 
+            'transaction_uuid' =>
+                $transactionUuid ?? Str::uuid()->toString(),
         ]);
     }
 
@@ -50,18 +47,14 @@ class LedgerService
         ?string $date = null,
         ?string $transactionUuid = null
     ): Ledger {
-
         return Ledger::create([
-
             'user_id' => $account->user_id,
-
             'account_id' => $account->id,
 
             'ledgerable_type' => $source::class,
-
             'ledgerable_id' => $source->id,
 
-            'entry_type' => 'debit',
+            'type' => 'debit',
 
             'amount' => $amount,
 
@@ -70,8 +63,9 @@ class LedgerService
             'description' => $description,
 
             'transaction_date' => $date ?? now(),
-            'transaction_uuid' => $transactionUuid ?? Str::uuid()->toString(),
 
+            'transaction_uuid' =>
+                $transactionUuid ?? Str::uuid()->toString(),
         ]);
     }
 }

@@ -584,7 +584,7 @@
 
     display: block;
 
-    min-height: auto;
+    min-height: 0;
 
     border-radius: 20px;
   }
@@ -618,7 +618,7 @@
   }
 
   .register-panel {
-    min-height: auto;
+    min-height: 0;
 
     padding: 22px 14px 28px;
   }

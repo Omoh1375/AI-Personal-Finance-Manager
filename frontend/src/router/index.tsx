@@ -8,6 +8,9 @@ import Register from "../pages/auth/Register";
 import Login from "../pages/auth/Login";
 import Dashboard from "../pages/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
+import Accounts from "../pages/Accounts";
+import Transactions from "../pages/Transactions";
+import Transfers from "../pages/Transfers";
 
 export default function AppRouter() {
   return (
@@ -39,6 +42,28 @@ export default function AppRouter() {
         </Route>
 
         <Route
+            path="/accounts"
+            element={<Accounts />}
+        />
+
+        <Route
+        path="/transactions"
+        element={<Transactions />}
+        />
+         <Route
+            path="/income"
+            element={<Transactions />}
+         />
+
+        <Route
+            path="/expenses"
+            element={<Transactions />}
+        />
+        <Route
+          path="/transfers"
+          element={<Transfers />}
+        />
+        <Route
           path="*"
           element={
             <Navigate
@@ -47,6 +72,7 @@ export default function AppRouter() {
             />
           }
         />
+
       </Routes>
     </BrowserRouter>
   );

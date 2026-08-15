@@ -12,6 +12,7 @@ import Accounts from "../pages/Accounts";
 import Transactions from "../pages/Transactions";
 import Transfers from "../pages/Transfers";
 import Budgets from "../pages/Budgets";
+import Savings from "../pages/Savings";
 
 export default function AppRouter() {
   return (
@@ -67,6 +68,14 @@ export default function AppRouter() {
         <Route
           path="/budgets"
           element={<Budgets />}
+        />
+        <Route
+          path="/savings"
+          element={<Savings />}
+        />
+        <Route
+          path="/savings-goals"
+          element={<Savings />}
         />
         <Route
           path="*"

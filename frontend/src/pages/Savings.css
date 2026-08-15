@@ -1,0 +1,1037 @@
+.savings-page {
+  min-height: 100vh;
+  padding: 32px 42px 50px;
+
+  background:
+    radial-gradient(
+      circle at 90% 0,
+      rgba(16, 185, 129, 0.07),
+      transparent 28%
+    ),
+    #f5f8f7;
+}
+
+.savings-header,
+.savings-summary,
+.savings-progress-card,
+.savings-workspace {
+  width: min(1380px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.savings-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 25px;
+}
+
+.savings-eyebrow {
+  margin: 0 0 7px;
+  color: #0c9279;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.savings-header h1 {
+  margin: 0;
+  color: #15231f;
+  font-size: clamp(30px, 3vw, 42px);
+  letter-spacing: -0.04em;
+}
+
+.savings-subtitle {
+  margin: 9px 0 0;
+  color: #7b8783;
+  font-size: 14px;
+}
+
+.create-goal-button,
+.savings-empty button {
+  min-height: 43px;
+  padding: 0 17px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border-radius: 10px;
+
+  color: #fff;
+  background: #0d9278;
+
+  cursor: pointer;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  box-shadow:
+    0 8px 18px rgba(13, 146, 120, 0.16);
+}
+
+.create-goal-button span {
+  font-size: 19px;
+}
+
+.create-goal-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.savings-summary {
+  margin-top: 30px;
+
+  display: grid;
+  grid-template-columns:
+    1.4fr 1fr 1fr;
+  gap: 15px;
+}
+
+.savings-summary-card {
+  min-height: 130px;
+  padding: 21px;
+
+  border: 1px solid #e3ebe8;
+  border-radius: 16px;
+
+  background: #fff;
+
+  box-shadow:
+    0 8px 23px rgba(22, 54, 50, 0.035);
+}
+
+.savings-summary-card span,
+.savings-summary-card small {
+  display: block;
+  color: #84908d;
+  font-size: 12px;
+}
+
+.savings-summary-card strong {
+  display: block;
+  margin-top: 10px;
+
+  color: #182622;
+  font-size: 25px;
+  letter-spacing: -0.03em;
+}
+
+.savings-summary-card small {
+  margin-top: 8px;
+  color: #a0aaa7;
+  font-size: 10px;
+}
+
+.savings-summary-card.featured {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  color: #fff;
+  border-color: transparent;
+
+  background:
+    linear-gradient(
+      135deg,
+      #123f38,
+      #0c735d
+    );
+}
+
+.savings-summary-card.featured span,
+.savings-summary-card.featured strong,
+.savings-summary-card.featured small {
+  color: #fff;
+}
+
+.savings-summary-icon {
+  width: 46px;
+  height: 46px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 12px;
+
+  color: #7aeed0;
+  background: rgba(255, 255, 255, 0.1);
+
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.savings-progress-card {
+  margin-top: 18px;
+
+  padding: 22px;
+
+  border: 1px solid #e3ebe8;
+  border-radius: 16px;
+
+  background: #fff;
+
+  box-shadow:
+    0 8px 23px rgba(22, 54, 50, 0.035);
+}
+
+.savings-progress-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.savings-progress-heading h2 {
+  margin: 0;
+  color: #1d2b27;
+  font-size: 17px;
+}
+
+.savings-progress-heading p {
+  margin: 4px 0 0;
+  color: #8b9692;
+  font-size: 11px;
+}
+
+.savings-progress-heading > strong {
+  color: #0d9278;
+  font-size: 20px;
+}
+
+.savings-progress-track,
+.goal-progress-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #e8efed;
+}
+
+.savings-progress-track {
+  margin-top: 18px;
+}
+
+.savings-progress-fill,
+.goal-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      #0c9278,
+      #48c8ac
+    );
+
+  transition: width 0.3s ease;
+}
+
+.savings-progress-labels,
+.goal-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+
+  color: #99a39f;
+  font-size: 10px;
+}
+
+.savings-progress-labels {
+  margin-top: 8px;
+}
+
+.savings-workspace {
+  margin-top: 24px;
+
+  overflow: hidden;
+
+  border: 1px solid #e2eae7;
+  border-radius: 17px;
+
+  background: #fff;
+
+  box-shadow:
+    0 8px 28px rgba(22, 54, 50, 0.04);
+}
+
+.savings-toolbar {
+  min-height: 82px;
+  padding: 16px 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  border-bottom: 1px solid #edf1ef;
+}
+
+.savings-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.savings-tabs button {
+  min-height: 40px;
+  padding: 0 13px;
+
+  border-radius: 9px;
+
+  color: #78847f;
+  background: transparent;
+
+  cursor: pointer;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.savings-tabs button.active {
+  color: #087e69;
+  background: #eaf7f3;
+}
+
+.savings-search {
+  width: 240px;
+  height: 39px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 0 11px;
+
+  border: 1px solid #dfe7e4;
+  border-radius: 8px;
+}
+
+.savings-search svg {
+  width: 17px;
+  height: 17px;
+
+  fill: none;
+  stroke: #8d9995;
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.savings-search input {
+  width: 100%;
+
+  border: 0;
+  outline: 0;
+
+  color: #27332f;
+  background: transparent;
+
+  font-size: 12px;
+}
+
+.savings-search input::placeholder {
+  color: #a0aaa7;
+}
+
+.savings-goals-grid {
+  padding: 20px;
+
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.savings-goal-card {
+  padding: 19px;
+
+  border: 1px solid #e2eae7;
+  border-radius: 15px;
+
+  background: #fff;
+
+  box-shadow:
+    0 6px 18px rgba(22, 54, 50, 0.025);
+}
+
+.goal-card-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.goal-icon {
+  width: 44px;
+  height: 44px;
+
+  flex: 0 0 44px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 12px;
+
+  color: #0d9278;
+  background: #e8f7f3;
+
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.goal-title {
+  min-width: 0;
+  flex: 1;
+}
+
+.goal-title h3 {
+  margin: 0;
+
+  overflow: hidden;
+
+  color: #26332f;
+  font-size: 14px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goal-title span {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #929d99;
+  font-size: 10px;
+}
+
+.savings-status {
+  padding: 5px 8px;
+
+  border-radius: 20px;
+
+  flex: 0 0 auto;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.savings-status.completed {
+  color: #087e69;
+  background: #e7f7f2;
+}
+
+.savings-status.almost {
+  color: #896919;
+  background: #fff7df;
+}
+
+.savings-status.progress {
+  color: #526b9f;
+  background: #eef2ff;
+}
+
+.goal-card-values {
+  margin-top: 21px;
+
+  display: grid;
+  grid-template-columns:
+    repeat(3, 1fr);
+  gap: 10px;
+}
+
+.goal-card-values span {
+  display: block;
+
+  color: #97a19e;
+  font-size: 9px;
+}
+
+.goal-card-values strong {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #24312e;
+  font-size: 13px;
+}
+
+.goal-progress-track {
+  margin-top: 19px;
+}
+
+.goal-progress-labels {
+  margin-top: 7px;
+}
+
+.goal-description {
+  margin: 16px 0 0;
+  padding-top: 13px;
+
+  border-top: 1px solid #edf1ef;
+
+  color: #7d8985;
+
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.goal-card-actions {
+  margin-top: 17px;
+
+  padding-top: 13px;
+
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+
+  border-top: 1px solid #edf1ef;
+}
+
+.deposit-button,
+.delete-goal-button {
+  min-height: 34px;
+  padding: 0 11px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.deposit-button {
+  color: #087e69;
+  background: #e9f7f3;
+}
+
+.delete-goal-button {
+  color: #b85b48;
+  background: #fff1ed;
+}
+
+.deposit-button:disabled,
+.delete-goal-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deposit-history {
+  display: grid;
+}
+
+.deposit-history-row {
+  min-height: 84px;
+
+  padding: 13px 20px;
+
+  display: grid;
+
+  grid-template-columns:
+    auto minmax(0, 1fr) 120px 125px 40px;
+
+  align-items: center;
+  gap: 15px;
+
+  border-bottom: 1px solid #eff2f1;
+}
+
+.deposit-history-row:last-child {
+  border-bottom: 0;
+}
+
+.deposit-history-icon {
+  width: 40px;
+  height: 40px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 11px;
+
+  color: #0b9278;
+  background: #e7f7f2;
+
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.deposit-history-main {
+  min-width: 0;
+}
+
+.deposit-history-main strong,
+.deposit-history-main span,
+.deposit-history-main small {
+  display: block;
+}
+
+.deposit-history-main strong {
+  overflow: hidden;
+
+  color: #283530;
+
+  font-size: 12px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deposit-history-main span {
+  margin-top: 4px;
+
+  color: #8e9995;
+  font-size: 10px;
+}
+
+.deposit-history-main small {
+  margin-top: 4px;
+
+  overflow: hidden;
+
+  color: #a1aaa7;
+
+  font-size: 9px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deposit-history-date {
+  color: #707d78;
+  font-size: 11px;
+}
+
+.deposit-history-amount {
+  color: #0a8d74;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.delete-deposit-button {
+  width: 30px;
+  height: 30px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 8px;
+
+  color: #9ba5a2;
+  background: transparent;
+
+  cursor: pointer;
+
+  font-size: 20px;
+}
+
+.delete-deposit-button:hover {
+  color: #c65c45;
+  background: #fff0ec;
+}
+
+.delete-deposit-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.savings-empty {
+  min-height: 330px;
+
+  display: grid;
+  place-items: center;
+  align-content: center;
+
+  padding: 30px;
+
+  text-align: center;
+}
+
+.empty-savings-icon {
+  width: 50px;
+  height: 50px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  color: #0d9278;
+  background: #e7f7f2;
+
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.savings-empty h3 {
+  margin: 14px 0 5px;
+
+  color: #283530;
+  font-size: 16px;
+}
+
+.savings-empty p {
+  max-width: 370px;
+
+  margin: 0;
+
+  color: #8b9692;
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.savings-empty button {
+  margin-top: 15px;
+}
+
+.savings-modal-backdrop {
+  position: fixed;
+  inset: 0;
+
+  z-index: 100;
+
+  display: grid;
+  place-items: center;
+
+  padding: 20px;
+
+  background: rgba(9, 31, 27, 0.42);
+
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+.savings-modal {
+  width: min(100%, 570px);
+
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+
+  padding: 28px;
+
+  border-radius: 20px;
+
+  background: #fff;
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.19);
+}
+
+.savings-modal-heading {
+  margin-bottom: 21px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.savings-modal-heading p {
+  margin: 0 0 5px;
+
+  color: #0d9278;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.savings-modal-heading h2 {
+  margin: 0;
+
+  color: #182622;
+
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.savings-modal-close {
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  color: #66736f;
+  background: #f3f6f5;
+
+  cursor: pointer;
+
+  font-size: 22px;
+}
+
+.savings-form-error {
+  margin-bottom: 16px;
+
+  padding: 10px 12px;
+
+  border-radius: 9px;
+
+  color: #991b1b;
+
+  background: #fff3f2;
+
+  border: 1px solid #fecaca;
+
+  font-size: 12px;
+}
+
+.savings-field {
+  margin-bottom: 16px;
+}
+
+.savings-field label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #2a3632;
+
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.savings-field input,
+.savings-field select,
+.savings-field textarea {
+  width: 100%;
+
+  border: 1px solid #dce4e1;
+
+  border-radius: 9px;
+
+  outline: 0;
+
+  color: #26332f;
+  background: #fff;
+
+  font-size: 13px;
+}
+
+.savings-field input,
+.savings-field select {
+  height: 47px;
+
+  padding: 0 11px;
+}
+
+.savings-field textarea {
+  padding: 10px 11px;
+
+  resize: vertical;
+
+  line-height: 1.5;
+}
+
+.savings-field input:focus,
+.savings-field select:focus,
+.savings-field textarea:focus {
+  border-color: #0d9278;
+
+  box-shadow:
+    0 0 0 3px rgba(13, 146, 120, 0.09);
+}
+
+.selected-goal-preview,
+.selected-account-balance {
+  margin-bottom: 16px;
+
+  padding: 13px 14px;
+
+  border-radius: 10px;
+
+  background: #f1f7f5;
+
+  color: #61706b;
+
+  font-size: 11px;
+}
+
+.selected-goal-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.selected-goal-preview strong {
+  color: #0b8f75;
+  font-size: 12px;
+}
+
+.selected-account-balance strong {
+  color: #26332f;
+}
+
+.savings-modal-actions {
+  margin-top: 23px;
+
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.savings-cancel {
+  min-height: 43px;
+  padding: 0 15px;
+
+  border-radius: 9px;
+
+  color: #56635f;
+  background: #f1f4f3;
+
+  cursor: pointer;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.savings-submit {
+  min-height: 43px;
+  padding: 0 18px;
+
+  border-radius: 9px;
+
+  color: #fff;
+  background: #0d9278;
+
+  cursor: pointer;
+
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.savings-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.savings-loading,
+.savings-error {
+  min-height: 70vh;
+
+  display: grid;
+  place-items: center;
+
+  align-content: center;
+
+  text-align: center;
+}
+
+.savings-spinner {
+  width: 32px;
+  height: 32px;
+
+  border-radius: 50%;
+
+  border: 3px solid #d7e8e4;
+  border-top-color: #0b9278;
+
+  animation:
+    savings-spin 0.7s linear infinite;
+}
+
+.savings-loading p {
+  margin-top: 12px;
+
+  color: #7f8a86;
+
+  font-size: 12px;
+}
+
+.savings-error h2 {
+  color: #283530;
+}
+
+.savings-error p {
+  color: #7f8a86;
+}
+
+.savings-error button {
+  margin-top: 10px;
+
+  padding: 10px 15px;
+
+  border-radius: 9px;
+
+  color: #fff;
+  background: #0d9278;
+
+  cursor: pointer;
+}
+
+@keyframes savings-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1000px) {
+  .savings-page {
+    padding: 26px 24px 40px;
+  }
+
+  .savings-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .savings-summary-card.featured {
+    grid-column: 1 / -1;
+  }
+
+  .savings-goals-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .savings-page {
+    padding: 20px 15px 35px;
+  }
+
+  .savings-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .create-goal-button {
+    width: 100%;
+  }
+
+  .savings-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .savings-summary-card.featured {
+    grid-column: auto;
+  }
+
+  .savings-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .savings-search {
+    width: 100%;
+  }
+
+  .goal-card-values {
+    grid-template-columns: 1fr;
+  }
+
+  .deposit-history {
+    overflow-x: auto;
+  }
+
+  .deposit-history-row {
+    min-width: 680px;
+  }
+}

@@ -14,6 +14,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StatementController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\UserNotificationController;
+use App\Http\Controllers\SavingsGoalController;
+use App\Http\Controllers\SavingsDepositController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,6 +68,26 @@ Route::middleware('auth:sanctum')->group(function () {
         'recurring-transactions',
         RecurringTransactionController::class
     );
+
+    Route::apiResource(
+            'savings-goals',
+            SavingsGoalController::class
+        )->only([
+            'index',
+            'store',
+            'show',
+            'destroy',
+        ]);
+
+        Route::apiResource(
+            'savings-deposits',
+            SavingsDepositController::class
+        )->only([
+            'index',
+            'store',
+            'show',
+            'destroy',
+        ]);
 
     /*
     |--------------------------------------------------------------------------
@@ -131,5 +153,7 @@ Route::middleware('auth:sanctum')->group(function () {
         'notifications/{notification}/read',
         [UserNotificationController::class, 'markAsRead']
     );
+
+
 
 });

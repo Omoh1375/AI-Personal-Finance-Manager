@@ -2,73 +2,86 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SavingsDepositRequest;
+use App\Http\Resources\SavingsDepositResource;
 use App\Models\SavingsDeposit;
+use App\Services\SavingsDepositService;
+use App\Traits\ApiResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\Request;
 
 class SavingsDepositController extends Controller
 {
-    use AuthorizesRequests;
-    /**
-     * Display a listing of the resource.
-     */
+    use AuthorizesRequests, ApiResponse;
+
+    public function __construct(
+        private SavingsDepositService $savingsDepositService
+    ) {}
+
     public function index()
     {
-        $this->authorize('viewAny', SavingsDeposit::class);
-        //
+        $this->authorize(
+            'viewAny',
+            SavingsDeposit::class
+        );
+
+        return $this->success(
+            SavingsDepositResource::collection(
+                $this->savingsDepositService->index()
+            )
+        );
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        $this->authorize('create', SavingsDeposit::class);
-        //
+    public function store(
+        SavingsDepositRequest $request
+    ) {
+        $this->authorize(
+            'create',
+            SavingsDeposit::class
+        );
+
+        $deposit = $this->savingsDepositService->store(
+            $request->validated()
+        );
+
+        return $this->success(
+            new SavingsDepositResource($deposit),
+            'Savings deposit created successfully.',
+            201
+        );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $this->authorize('create', SavingsDeposit::class);
-        //
+    public function show(
+        SavingsDeposit $savingsDeposit
+    ) {
+        $this->authorize(
+            'view',
+            $savingsDeposit
+        );
+
+        return $this->success(
+            new SavingsDepositResource(
+                $this->savingsDepositService->show(
+                    $savingsDeposit
+                )
+            )
+        );
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(SavingsDeposit $savingsDeposit)
-    {
-        $this->authorize('view', $savingsDeposit);
-        //
-    }
+    public function destroy(
+        SavingsDeposit $savingsDeposit
+    ) {
+        $this->authorize(
+            'delete',
+            $savingsDeposit
+        );
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(SavingsDeposit $savingsDeposit)
-    {
-        $this->authorize('update', $savingsDeposit);
-        //
-    }
+        $this->savingsDepositService->destroy(
+            $savingsDeposit
+        );
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, SavingsDeposit $savingsDeposit)
-    {
-        $this->authorize('update', $savingsDeposit);
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(SavingsDeposit $savingsDeposit)
-    {
-        $this->authorize('delete', $savingsDeposit);
-        //
+        return $this->success(
+            null,
+            'Savings deposit deleted successfully.'
+        );
     }
 }

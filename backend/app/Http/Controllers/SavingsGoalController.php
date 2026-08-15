@@ -2,74 +2,86 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SavingsGoalRequest;
+use App\Http\Resources\SavingsGoalResource;
 use App\Models\SavingsGoal;
+use App\Services\SavingsGoalService;
+use App\Traits\ApiResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\Request;
 
 class SavingsGoalController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, ApiResponse;
 
-    /**
-     * Display a listing of the resource.
-     */
+    public function __construct(
+        private SavingsGoalService $savingsGoalService
+    ) {}
+
     public function index()
     {
-        $this->authorize('viewAny', SavingsGoal::class);
-        //
+        $this->authorize(
+            'viewAny',
+            SavingsGoal::class
+        );
+
+        return $this->success(
+            SavingsGoalResource::collection(
+                $this->savingsGoalService->index()
+            )
+        );
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        $this->authorize('create', SavingsGoal::class);
-        //
+    public function store(
+        SavingsGoalRequest $request
+    ) {
+        $this->authorize(
+            'create',
+            SavingsGoal::class
+        );
+
+        $goal = $this->savingsGoalService->store(
+            $request->validated()
+        );
+
+        return $this->success(
+            new SavingsGoalResource($goal),
+            'Savings goal created successfully.',
+            201
+        );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $this->authorize('create', SavingsGoal::class);
-        //
+    public function show(
+        SavingsGoal $savingsGoal
+    ) {
+        $this->authorize(
+            'view',
+            $savingsGoal
+        );
+
+        return $this->success(
+            new SavingsGoalResource(
+                $this->savingsGoalService->show(
+                    $savingsGoal
+                )
+            )
+        );
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(SavingsGoal $savingsGoal)
-    {
-        $this->authorize('view', $savingsGoal);
-        //
-    }
+    public function destroy(
+        SavingsGoal $savingsGoal
+    ) {
+        $this->authorize(
+            'delete',
+            $savingsGoal
+        );
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(SavingsGoal $savingsGoal)
-    {
-        $this->authorize('update', $savingsGoal);
-        //
-    }
+        $this->savingsGoalService->delete(
+            $savingsGoal
+        );
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, SavingsGoal $savingsGoal)
-    {
-        $this->authorize('update', $savingsGoal);
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(SavingsGoal $savingsGoal)
-    {
-        $this->authorize('delete', $savingsGoal);
-        //
+        return $this->success(
+            null,
+            'Savings goal deleted successfully.'
+        );
     }
 }

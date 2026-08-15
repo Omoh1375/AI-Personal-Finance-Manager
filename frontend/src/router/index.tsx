@@ -11,6 +11,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import Accounts from "../pages/Accounts";
 import Transactions from "../pages/Transactions";
 import Transfers from "../pages/Transfers";
+import Budgets from "../pages/Budgets";
 
 export default function AppRouter() {
   return (
@@ -62,6 +63,10 @@ export default function AppRouter() {
         <Route
           path="/transfers"
           element={<Transfers />}
+        />
+        <Route
+          path="/budgets"
+          element={<Budgets />}
         />
         <Route
           path="*"

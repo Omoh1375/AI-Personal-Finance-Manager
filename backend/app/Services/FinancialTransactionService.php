@@ -16,9 +16,6 @@ class FinancialTransactionService
         private LedgerService $ledger
     ) {}
 
-    /**
-     * Ensure an account has enough balance for a transfer.
-     */
     public function ensureSufficientTransferBalance(
         Account $account,
         float $amount
@@ -29,84 +26,77 @@ class FinancialTransactionService
         );
     }
 
-    /**
-     * Process an income transaction.
-     */
     public function income(
         Account $account,
         Income $income
     ): void {
+        $amount = (float) $income->amount;
 
         $this->balances->deposit(
             $account,
-            (float) $income->amount
+            $amount
         );
 
-        $this->ledger->credit(
+        $this->ledger->income(
             account: $account,
             source: $income,
-            amount: (float) $income->amount,
+            amount: $amount,
             description: $income->description ?? 'Income',
             date: $income->received_at
         );
     }
 
-    /**
-     * Process an expense transaction.
-     */
     public function expense(
         Account $account,
         Expense $expense
     ): void {
+        $amount = (float) $expense->amount;
 
         $this->balances->withdraw(
             $account,
-            (float) $expense->amount
+            $amount
         );
 
-        $this->ledger->debit(
+        $this->ledger->expense(
             account: $account,
             source: $expense,
-            amount: (float) $expense->amount,
+            amount: $amount,
             description: $expense->description ?? 'Expense',
             date: $expense->spent_at
         );
     }
 
-    /**
-     * Process a savings deposit.
-     */
     public function savingsDeposit(
         Account $account,
         SavingsDeposit $deposit
     ): void {
+        $amount = (float) $deposit->amount;
 
         $this->balances->withdraw(
             $account,
-            (float) $deposit->amount
+            $amount
         );
 
-        $this->ledger->debit(
+        $this->ledger->saving(
             account: $account,
             source: $deposit,
-            amount: (float) $deposit->amount,
+            amount: $amount,
             description: $deposit->description ?? 'Savings Deposit',
             date: $deposit->deposited_at
         );
     }
 
-    /**
-     * Process an account-to-account transfer.
-     */
     public function transfer(
         Account $from,
         Account $to,
         float $amount,
         Transfer $transfer
     ): void {
-
         if ($from->id === $to->id) {
-            abort(422, 'Source and destination accounts must be different.');
+            abort(
+                422,
+                'Source and destination accounts must be different.'
+            );
         }
 
         $this->balances->ensureSufficientBalance(
@@ -121,7 +111,7 @@ class FinancialTransactionService
             $amount
         );
 
-        $this->ledger->debit(
+        $this->ledger->transferOut(
             account: $from,
             source: $transfer,
             amount: $amount,
@@ -135,7 +125,7 @@ class FinancialTransactionService
             $amount
         );
 
-        $this->ledger->credit(
+        $this->ledger->transferIn(
             account: $to,
             source: $transfer,
             amount: $amount,

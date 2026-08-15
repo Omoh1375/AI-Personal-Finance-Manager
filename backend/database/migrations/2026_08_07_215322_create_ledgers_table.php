@@ -6,13 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-   public function up(): void
+    public function up(): void
     {
         Schema::create('ledgers', function (Blueprint $table) {
-
             $table->id();
 
             $table->foreignId('user_id')
@@ -23,29 +19,52 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->morphs('ledgerable');
+            $table->uuid('transaction_uuid')
+                ->nullable();
 
-            $table->enum('entry_type', [
-                'credit',
-                'debit',
+            $table->string('ledgerable_type')
+                ->nullable();
+
+            $table->unsignedBigInteger('ledgerable_id')
+                ->nullable();
+
+            $table->enum('type', [
+                'income',
+                'expense',
+                'transfer_in',
+                'transfer_out',
+                'saving',
+                'refund',
+                'adjustment',
             ]);
 
             $table->decimal('amount', 15, 2);
 
             $table->decimal('balance_after', 15, 2);
 
+            $table->string('reference')
+                ->nullable();
+
             $table->text('description')
                 ->nullable();
 
-            $table->timestamp('transaction_date');
+            $table->timestamp('transaction_date')
+                ->useCurrent();
 
             $table->timestamps();
+
+            $table->index(
+                ['ledgerable_type', 'ledgerable_id'],
+                'ledgers_ledgerable_index'
+            );
+
+            $table->index(
+                'transaction_uuid',
+                'ledgers_transaction_uuid_index'
+            );
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('ledgers');

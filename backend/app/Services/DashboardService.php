@@ -18,7 +18,6 @@ class DashboardService
         $currentMonth = Carbon::now();
 
         return [
-
             'total_balance' => Account::where('user_id', $userId)
                 ->sum('balance'),
 
@@ -29,24 +28,36 @@ class DashboardService
                 ->sum('amount'),
 
             'monthly_income' => Income::where('user_id', $userId)
-                ->whereMonth('received_at', $currentMonth->month)
-                ->whereYear('received_at', $currentMonth->year)
+                ->whereMonth(
+                    'received_at',
+                    $currentMonth->month
+                )
+                ->whereYear(
+                    'received_at',
+                    $currentMonth->year
+                )
                 ->sum('amount'),
 
             'monthly_expenses' => Expense::where('user_id', $userId)
-                ->whereMonth('spent_at', $currentMonth->month)
-                ->whereYear('spent_at', $currentMonth->year)
+                ->whereMonth(
+                    'spent_at',
+                    $currentMonth->month
+                )
+                ->whereYear(
+                    'spent_at',
+                    $currentMonth->year
+                )
                 ->sum('amount'),
 
             'accounts' => $this->accountAnalytics($userId),
-               
-             'recent_transactions' => $this->recentTransactions($userId),
 
-             'expense_breakdown' => $this->expenseBreakdown($userId),
+            'recent_transactions' => $this->recentTransactions($userId),
 
-             'monthly_cash_flow' => $this->monthlyCashFlow($userId),
+            'expense_breakdown' => $this->expenseBreakdown($userId),
 
-             'savings_rate' => $this->savingsRate($userId),
+            'monthly_cash_flow' => $this->monthlyCashFlow($userId),
+
+            'savings_rate' => $this->savingsRate($userId),
 
             'top_spending_categories' => $this->topSpendingCategories($userId),
 
@@ -56,7 +67,10 @@ class DashboardService
 
     private function recentTransactions(int $userId)
     {
-        $incomes = Income::with(['account', 'category'])
+        $incomes = Income::with([
+                'account',
+                'category',
+            ])
             ->where('user_id', $userId)
             ->get()
             ->map(function ($income) {
@@ -68,9 +82,13 @@ class DashboardService
                     'amount' => (float) $income->amount,
                     'date' => $income->received_at,
                 ];
-            });
+            })
+            ->all();
 
-        $expenses = Expense::with(['account', 'category'])
+        $expenses = Expense::with([
+                'account',
+                'category',
+            ])
             ->where('user_id', $userId)
             ->get()
             ->map(function ($expense) {
@@ -82,51 +100,64 @@ class DashboardService
                     'amount' => (float) $expense->amount,
                     'date' => $expense->spent_at,
                 ];
-            });
+            })
+            ->all();
 
-        $transfers = Transfer::with(['fromAccount', 'toAccount'])
-        ->where('user_id', $userId)
-        ->get()
-        ->map(function ($transfer) {
+        $transfers = Transfer::with([
+                'fromAccount',
+                'toAccount',
+            ])
+            ->where('user_id', $userId)
+            ->get()
+            ->map(function ($transfer) {
+                return [
+                    'id' => $transfer->id,
+                    'type' => 'transfer',
+                    'title' => 'Transfer',
+                    'account' =>
+                        ($transfer->fromAccount?->name ?? 'Account') .
+                        ' → ' .
+                        ($transfer->toAccount?->name ?? 'Account'),
+                    'amount' => (float) $transfer->amount,
+                    'date' => $transfer->transferred_at,
+                ];
+            })
+            ->all();
 
-            return [
-
-                'id' => $transfer->id,
-
-                'type' => 'transfer',
-
-                'title' => 'Transfer',
-
-                'account' => $transfer->fromAccount?->name .
-                    ' → ' .
-                    $transfer->toAccount?->name,
-
-                'amount' => (float) $transfer->amount,
-
-                'date' => $transfer->transferred_at,
-
-            ];
-
-        });
-
-        return $incomes
+        return collect()
+            ->merge($incomes)
             ->merge($expenses)
             ->merge($transfers)
             ->sortByDesc('date')
             ->take(10)
             ->values();
     }
+
     private function expenseBreakdown(int $userId)
     {
         return Expense::selectRaw('
                 categories.name as category,
                 SUM(expenses.amount) as amount
             ')
-            ->join('categories', 'expenses.category_id', '=', 'categories.id')
+            ->join(
+                'categories',
+                'expenses.category_id',
+                '=',
+                'categories.id'
+            )
             ->where('expenses.user_id', $userId)
-            ->groupBy('categories.id', 'categories.name')
+            ->groupBy(
+                'categories.id',
+                'categories.name'
+            )
             ->orderByDesc('amount')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'category' => $item->category,
+                    'amount' => (float) $item->amount,
+                ];
+            });
     }
 
     private function monthlyCashFlow(int $userId)
@@ -134,17 +165,28 @@ class DashboardService
         $months = collect();
 
         for ($i = 11; $i >= 0; $i--) {
-
             $date = now()->subMonths($i);
 
             $income = Income::where('user_id', $userId)
-                ->whereYear('received_at', $date->year)
-                ->whereMonth('received_at', $date->month)
+                ->whereYear(
+                    'received_at',
+                    $date->year
+                )
+                ->whereMonth(
+                    'received_at',
+                    $date->month
+                )
                 ->sum('amount');
 
             $expense = Expense::where('user_id', $userId)
-                ->whereYear('spent_at', $date->year)
-                ->whereMonth('spent_at', $date->month)
+                ->whereYear(
+                    'spent_at',
+                    $date->year
+                )
+                ->whereMonth(
+                    'spent_at',
+                    $date->month
+                )
                 ->sum('amount');
 
             $months->push([
@@ -152,7 +194,8 @@ class DashboardService
                 'year' => $date->year,
                 'income' => (float) $income,
                 'expense' => (float) $expense,
-                'net_cash_flow' => (float) ($income - $expense),
+                'net_cash_flow' =>
+                    (float) ($income - $expense),
             ]);
         }
 
@@ -160,21 +203,24 @@ class DashboardService
     }
 
     private function savingsRate(int $userId): float
-        {
-            $totalIncome = Income::where('user_id', $userId)
-                ->sum('amount');
+    {
+        $totalIncome = Income::where('user_id', $userId)
+            ->sum('amount');
 
-            $totalExpenses = Expense::where('user_id', $userId)
-                ->sum('amount');
+        $totalExpenses = Expense::where('user_id', $userId)
+            ->sum('amount');
 
-            if ($totalIncome <= 0) {
-                return 0;
-            }
+        if ($totalIncome <= 0) {
+            return 0.0;
+        }
 
-            return round(
-                (($totalIncome - $totalExpenses) / $totalIncome) * 100,
-                2
-            );
+        return round(
+            (
+                ($totalIncome - $totalExpenses)
+                / $totalIncome
+            ) * 100,
+            2
+        );
     }
 
     private function topSpendingCategories(int $userId)
@@ -190,26 +236,32 @@ class DashboardService
                 categories.name as category,
                 SUM(expenses.amount) as amount
             ')
-            ->join('categories', 'expenses.category_id', '=', 'categories.id')
+            ->join(
+                'categories',
+                'expenses.category_id',
+                '=',
+                'categories.id'
+            )
             ->where('expenses.user_id', $userId)
-            ->groupBy('categories.id', 'categories.name')
+            ->groupBy(
+                'categories.id',
+                'categories.name'
+            )
             ->orderByDesc('amount')
             ->get()
             ->map(function ($item) use ($totalExpenses) {
+                $amount = (float) $item->amount;
 
                 return [
-
                     'category' => $item->category,
-
-                    'amount' => (float) $item->amount,
-
+                    'amount' => $amount,
                     'percentage' => round(
-                        ($item->amount / $totalExpenses) * 100,
+                        ($amount / $totalExpenses) * 100,
                         2
                     ),
-
                 ];
-            });
+            })
+            ->values();
     }
 
     private function accountAnalytics(int $userId)
@@ -217,34 +269,28 @@ class DashboardService
         return Account::where('user_id', $userId)
             ->get()
             ->map(function ($account) {
+                $income = Income::where(
+                    'account_id',
+                    $account->id
+                )->sum('amount');
 
-                $income = Income::where('account_id', $account->id)
-                    ->sum('amount');
-
-                $expenses = Expense::where('account_id', $account->id)
-                    ->sum('amount');
+                $expenses = Expense::where(
+                    'account_id',
+                    $account->id
+                )->sum('amount');
 
                 return [
-
                     'id' => $account->id,
-
                     'name' => $account->name,
-
                     'type' => $account->type,
-
                     'balance' => (float) $account->balance,
-
                     'income' => (float) $income,
-
                     'expenses' => (float) $expenses,
-
-                    'transactions' => $account->incomes()->count()
+                    'transactions' =>
+                        $account->incomes()->count()
                         + $account->expenses()->count(),
-
                 ];
-
-            });
+            })
+            ->values();
     }
 }
-
-

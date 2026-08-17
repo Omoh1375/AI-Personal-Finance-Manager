@@ -5,14 +5,14 @@ namespace App\Insights;
 use App\Models\Expense;
 use App\Models\Income;
 use Illuminate\Support\Facades\Auth;
+use App\Insights\Contracts\InsightInterface;
 
-class SpendingInsight
+class SpendingInsight implements InsightInterface
 {
     public function generate(
         string $from,
         string $to
     ): array {
-
         $userId = Auth::id();
 
         $income = Income::where('user_id', $userId)
@@ -24,11 +24,11 @@ class SpendingInsight
             ->sum('amount');
 
         if ($income <= 0) {
-
             return [
                 'type' => 'info',
                 'title' => 'No Income',
-                'message' => 'No income has been recorded for the selected period.',
+                'message' =>
+                    'No income has been recorded for the selected period.',
             ];
         }
 
@@ -38,27 +38,28 @@ class SpendingInsight
         );
 
         if ($percentage >= 100) {
-
             return [
                 'type' => 'danger',
                 'title' => 'Overspending',
-                'message' => "You spent {$percentage}% of your income during this period.",
+                'message' =>
+                    "You spent {$percentage}% of your income during this period.",
             ];
         }
 
         if ($percentage >= 80) {
-
             return [
                 'type' => 'warning',
                 'title' => 'High Spending',
-                'message' => "You spent {$percentage}% of your income during this period.",
+                'message' =>
+                    "You spent {$percentage}% of your income during this period.",
             ];
         }
 
         return [
             'type' => 'success',
             'title' => 'Healthy Spending',
-            'message' => "You spent {$percentage}% of your income during this period.",
+            'message' =>
+                "You spent {$percentage}% of your income during this period.",
         ];
     }
 }

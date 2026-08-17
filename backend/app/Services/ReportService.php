@@ -16,7 +16,6 @@ class ReportService
         string $from,
         string $to
     ): array {
-
         return $this->summaryReport->generate(
             $from,
             $to
@@ -27,7 +26,6 @@ class ReportService
         string $from,
         string $to
     ): array {
-
         return $this->categoryReport->generate(
             $from,
             $to

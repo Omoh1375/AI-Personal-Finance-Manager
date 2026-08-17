@@ -4,20 +4,31 @@ import {
   Route,
   Routes,
 } from "react-router-dom";
+
 import Register from "../pages/auth/Register";
 import Login from "../pages/auth/Login";
+
 import Dashboard from "../pages/Dashboard";
-import ProtectedRoute from "./ProtectedRoute";
 import Accounts from "../pages/Accounts";
 import Transactions from "../pages/Transactions";
 import Transfers from "../pages/Transfers";
 import Budgets from "../pages/Budgets";
 import Savings from "../pages/Savings";
+import Reports from "../pages/Reports";
+import FinancialInsights from "../pages/FinancialInsights";
+import Notifications from "../pages/Notifications";
+
+import ProtectedRoute from "./ProtectedRoute";
+import AppLayout from "../layouts/AppLayout";
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* ============================================================
+            PUBLIC ROUTES
+        ============================================================ */}
+
         <Route
           path="/"
           element={
@@ -32,51 +43,123 @@ export default function AppRouter() {
           path="/login"
           element={<Login />}
         />
+
         <Route
-            path="/register"
-            element={<Register />}
+          path="/register"
+          element={<Register />}
         />
-        <Route element={<ProtectedRoute />}>
+
+        {/* ============================================================
+            PROTECTED APPLICATION
+        ============================================================ */}
+
+        <Route
+          element={
+            <ProtectedRoute />
+          }
+        >
           <Route
-            path="/dashboard"
-            element={<Dashboard />}
-          />
+            element={
+              <AppLayout />
+            }
+          >
+            <Route
+              path="/dashboard"
+              element={
+                <Dashboard />
+              }
+            />
+
+            <Route
+              path="/accounts"
+              element={
+                <Accounts />
+              }
+            />
+
+            <Route
+              path="/transactions"
+              element={
+                <Transactions />
+              }
+            />
+
+            <Route
+              path="/income"
+              element={
+                <Transactions />
+              }
+            />
+
+            <Route
+              path="/expenses"
+              element={
+                <Transactions />
+              }
+            />
+
+            <Route
+              path="/transfers"
+              element={
+                <Transfers />
+              }
+            />
+
+            <Route
+              path="/budgets"
+              element={
+                <Budgets />
+              }
+            />
+
+            <Route
+              path="/savings"
+              element={
+                <Savings />
+              }
+            />
+
+            <Route
+              path="/savings-goals"
+              element={
+                <Savings />
+              }
+            />
+
+            <Route
+              path="/reports"
+              element={
+                <Reports />
+              }
+            />
+
+            <Route
+              path="/statements"
+              element={
+                <Reports />
+              }
+            />
+
+            <Route
+              path="/financial-insights"
+              element={
+                <FinancialInsights />
+              }
+            />
+
+            <Route
+              path="/notifications"
+              element={
+                <Notifications />
+              }
+            />
+          </Route>
         </Route>
 
-        <Route
-            path="/accounts"
-            element={<Accounts />}
-        />
+        {/* ============================================================
+            FALLBACK
+        ============================================================ */}
 
-        <Route
-        path="/transactions"
-        element={<Transactions />}
-        />
-         <Route
-            path="/income"
-            element={<Transactions />}
-         />
-
-        <Route
-            path="/expenses"
-            element={<Transactions />}
-        />
-        <Route
-          path="/transfers"
-          element={<Transfers />}
-        />
-        <Route
-          path="/budgets"
-          element={<Budgets />}
-        />
-        <Route
-          path="/savings"
-          element={<Savings />}
-        />
-        <Route
-          path="/savings-goals"
-          element={<Savings />}
-        />
         <Route
           path="*"
           element={
@@ -86,7 +169,6 @@ export default function AppRouter() {
             />
           }
         />
-
       </Routes>
     </BrowserRouter>
   );

@@ -13,11 +13,9 @@ class StatementService
         string $from,
         string $to
     ): array {
-
         $account = $this->findAccount($accountId);
 
         $fromDate = Carbon::parse($from)->startOfDay();
-
         $toDate = Carbon::parse($to)->endOfDay();
 
         $transactions = $this->getTransactions(
@@ -31,16 +29,39 @@ class StatementService
             $fromDate
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | Ledger types
+        |--------------------------------------------------------------------------
+        |
+        | income       = money entering the account
+        | transfer_in  = money entering the account
+        | refund       = money entering the account
+        |
+        | expense      = money leaving the account
+        | transfer_out = money leaving the account
+        | saving       = money leaving the account
+        | adjustment   = handled according to its balance_after
+        |
+        */
+
         $credits = $transactions
-            ->where('entry_type', 'credit')
+            ->whereIn('type', [
+                'income',
+                'transfer_in',
+                'refund',
+            ])
             ->sum('amount');
 
         $debits = $transactions
-            ->where('entry_type', 'debit')
+            ->whereIn('type', [
+                'expense',
+                'transfer_out',
+                'saving',
+            ])
             ->sum('amount');
 
         return [
-
             'account' => [
                 'id' => $account->id,
                 'name' => $account->name,
@@ -60,22 +81,23 @@ class StatementService
             'total_debits' => (float) $debits,
 
             'closing_balance' => (float) (
-                $openingBalance +
-                $credits -
-                $debits
+                $openingBalance
+                + $credits
+                - $debits
             ),
 
             'transactions' => $transactions->values(),
-
         ];
     }
 
     private function findAccount(
         int $accountId
     ): Account {
-
         return Account::where('id', $accountId)
-            ->where('user_id', auth()->user()->id)
+            ->where(
+                'user_id',
+                auth()->user()->id
+            )
             ->firstOrFail();
     }
 
@@ -84,10 +106,16 @@ class StatementService
         Carbon $from,
         Carbon $to
     ) {
-        return Ledger::where('account_id', $account->id)
+        return Ledger::where(
+                'account_id',
+                $account->id
+            )
             ->whereBetween(
                 'transaction_date',
-                [$from, $to]
+                [
+                    $from,
+                    $to,
+                ]
             )
             ->orderBy('transaction_date')
             ->get();
@@ -97,7 +125,6 @@ class StatementService
         Account $account,
         Carbon $from
     ): float {
-
         $previous = Ledger::where(
                 'account_id',
                 $account->id
@@ -110,8 +137,15 @@ class StatementService
             ->latest('transaction_date')
             ->first();
 
+        /*
+        |--------------------------------------------------------------------------
+        | If there is no previous ledger entry, use
+        | the account's balance as the fallback.
+        |--------------------------------------------------------------------------
+        */
+
         return $previous
             ? (float) $previous->balance_after
-            : 0;
+            : 0.0;
     }
 }

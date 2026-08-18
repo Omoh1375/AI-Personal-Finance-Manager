@@ -17,6 +17,22 @@ import type {
 
 import "./FinancialInsights.css";
 
+function formatMoney(
+  value: number | string,
+  currency = "NGN",
+) {
+  return new Intl.NumberFormat(
+    "en-NG",
+    {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    },
+  ).format(
+    Number(value) || 0,
+  );
+}
+
 function formatDate(
   value?: string | null,
 ) {
@@ -31,15 +47,26 @@ function formatDate(
       month: "short",
       year: "numeric",
     },
-  ).format(new Date(value));
+  ).format(
+    new Date(value),
+  );
 }
 
 function getToday() {
   const date = new Date();
 
-  return date
-    .toISOString()
-    .split("T")[0];
+  const year =
+    date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1,
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate(),
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function getMonthStart() {
@@ -47,9 +74,18 @@ function getMonthStart() {
 
   date.setDate(1);
 
-  return date
-    .toISOString()
-    .split("T")[0];
+  const year =
+    date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1,
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate(),
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function insightIcon(
@@ -70,10 +106,43 @@ function insightIcon(
   }
 }
 
+function insightLabel(
+  type: string,
+) {
+  switch (type) {
+    case "success":
+      return "Healthy";
+
+    case "warning":
+      return "Needs attention";
+
+    case "danger":
+      return "Critical";
+
+    default:
+      return "Information";
+  }
+}
+
 function insightClass(
   type: string,
 ) {
-  return `insight-card ${type}`;
+  return `insights-card ${type}`;
+}
+
+function getHealthDescription(
+  status: string,
+) {
+  switch (status) {
+    case "danger":
+      return "One or more areas need immediate attention.";
+
+    case "warning":
+      return "Your finances are generally okay, but there are areas worth reviewing.";
+
+    default:
+      return "Your recent financial activity is showing healthy patterns.";
+  }
 }
 
 export default function FinancialInsights() {
@@ -83,12 +152,15 @@ export default function FinancialInsights() {
     );
 
   const [to, setTo] =
-    useState(getToday());
+    useState(
+      getToday(),
+    );
 
   const {
     data,
     isLoading,
     isError,
+    isFetching,
     refetch,
   } = useQuery({
     queryKey: [
@@ -107,6 +179,8 @@ export default function FinancialInsights() {
       Boolean(from) &&
       Boolean(to) &&
       from <= to,
+
+    staleTime: 60_000,
   });
 
   const insights =
@@ -118,48 +192,73 @@ export default function FinancialInsights() {
   const dangerCount =
     insights.filter(
       (item) =>
-        item.type === "danger",
+        item.type ===
+        "danger",
     ).length;
 
   const warningCount =
     insights.filter(
       (item) =>
-        item.type === "warning",
+        item.type ===
+        "warning",
     ).length;
 
   const successCount =
     insights.filter(
       (item) =>
-        item.type === "success",
+        item.type ===
+        "success",
+    ).length;
+
+  const infoCount =
+    insights.filter(
+      (item) =>
+        item.type ===
+        "info",
     ).length;
 
   const overallStatus =
     useMemo(() => {
       if (dangerCount > 0) {
         return {
-          label: "Needs attention",
-          className: "danger",
+          label:
+            "Needs attention",
+          className:
+            "danger",
         };
       }
 
       if (warningCount > 0) {
         return {
-          label: "Worth reviewing",
-          className: "warning",
+          label:
+            "Worth reviewing",
+          className:
+            "warning",
         };
       }
 
       return {
-        label: "Looking healthy",
-        className: "success",
+        label:
+          "Looking healthy",
+        className:
+          "success",
       };
     }, [
       dangerCount,
       warningCount,
     ]);
 
+  const healthDescription =
+    getHealthDescription(
+      overallStatus.className,
+    );
+
   return (
     <main className="insights-page">
+      {/* ================================================================
+          HEADER
+      ================================================================= */}
+
       <header className="insights-header">
         <div>
           <p className="insights-eyebrow">
@@ -171,12 +270,23 @@ export default function FinancialInsights() {
           </h1>
 
           <p className="insights-subtitle">
-            Understand what your money is telling
-            you and act before small issues become
-            big ones.
+            Understand what your money is telling you
+            and act before small issues become big ones.
           </p>
         </div>
+
+        <div className="insights-header-status">
+          <span>
+            {isFetching
+              ? "Updating..."
+              : "Analysis ready"}
+          </span>
+        </div>
       </header>
+
+      {/* ================================================================
+          CONTROLS
+      ================================================================= */}
 
       <section className="insights-controls">
         <div className="insight-date-field">
@@ -212,7 +322,41 @@ export default function FinancialInsights() {
             }
           />
         </div>
+
+        <button
+          className="insights-refresh"
+          onClick={() =>
+            refetch()
+          }
+          disabled={
+            isFetching ||
+            from > to
+          }
+        >
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M20 11a8 8 0 0 0-14.5-4.7L4 8" />
+            <path d="M4 4v4h4" />
+            <path d="M4 13a8 8 0 0 0 14.5 4.7L20 16" />
+            <path d="M20 20v-4h-4" />
+          </svg>
+
+          Refresh insights
+        </button>
       </section>
+
+      {from > to && (
+        <div className="insights-date-error">
+          The "From" date cannot be later than the "To"
+          date.
+        </div>
+      )}
+
+      {/* ================================================================
+          LOADING
+      ================================================================= */}
 
       {isLoading ? (
         <div className="insights-loading">
@@ -224,23 +368,32 @@ export default function FinancialInsights() {
         </div>
       ) : isError ? (
         <div className="insights-error">
+          <div className="insights-error-icon">
+            !
+          </div>
+
           <h2>
             Unable to generate insights
           </h2>
 
           <p>
-            Please check your connection and
-            try again.
+            Please check your connection and try again.
           </p>
 
           <button
-            onClick={() => refetch()}
+            onClick={() =>
+              refetch()
+            }
           >
             Try again
           </button>
         </div>
       ) : (
         <>
+          {/* ============================================================
+              HEALTH SUMMARY
+          ============================================================ */}
+
           <section className="insights-health">
             <div className="insights-health-main">
               <span>
@@ -253,9 +406,14 @@ export default function FinancialInsights() {
 
               <p>
                 Based on activity between{" "}
-                {formatDate(from)} and{" "}
+                {formatDate(from)}{" "}
+                and{" "}
                 {formatDate(to)}.
               </p>
+
+              <small>
+                {healthDescription}
+              </small>
             </div>
 
             <div className="insights-health-counts">
@@ -298,6 +456,16 @@ export default function FinancialInsights() {
                   Critical
                 </span>
               </div>
+
+              <div>
+                <strong className="info-text">
+                  {infoCount}
+                </strong>
+
+                <span>
+                  Info
+                </span>
+              </div>
             </div>
 
             <div
@@ -306,6 +474,10 @@ export default function FinancialInsights() {
               {overallStatus.label}
             </div>
           </section>
+
+          {/* ============================================================
+              INSIGHT CARDS
+          ============================================================ */}
 
           <section className="insights-grid">
             {insights.length ===
@@ -330,148 +502,160 @@ export default function FinancialInsights() {
                 (
                   insight: FinancialInsight,
                   index,
-                ) => (
-                  <article
-                    className={insightClass(
-                      insight.type,
-                    )}
-                    key={`${insight.title}-${index}`}
-                  >
-                    <div className="insight-top">
-                      <div
-                        className="insight-icon"
-                      >
-                        {insightIcon(
-                          insight.type,
-                        )}
-                      </div>
+                ) => {
+                  const progress =
+                    typeof insight.percentage ===
+                    "number"
+                      ? Math.max(
+                          0,
+                          Math.min(
+                            100,
+                            insight.percentage,
+                          ),
+                        )
+                      : 0;
 
-                      <span className="insight-type">
-                        {insight.type}
-                      </span>
-                    </div>
+                  /*
+                  |--------------------------------------------------------------------------
+                  | Currency
+                  |--------------------------------------------------------------------------
+                  |
+                  | Some insight payloads may not contain a currency yet.
+                  | NGN remains the safe fallback.
+                  |
+                  */
 
-                    <h3>
-                      {insight.title}
-                    </h3>
+                  const insightCurrency =
+                    (
+                      insight as FinancialInsight & {
+                        currency?: string;
+                      }
+                    ).currency ??
+                    "NGN";
 
-                    <p>
-                      {insight.message}
-                    </p>
-
-                    {typeof insight.rate ===
-                      "number" && (
-                      <div className="insight-metric">
-                        <strong>
-                          {insight.rate.toFixed(
-                            1,
+                  return (
+                    <article
+                      className={insightClass(
+                        insight.type,
+                      )}
+                      key={`${insight.title}-${index}`}
+                    >
+                      <div className="insight-top">
+                        <div className="insight-icon">
+                          {insightIcon(
+                            insight.type,
                           )}
-                          %
-                        </strong>
+                        </div>
 
-                        <span>
-                          savings rate
+                        <span className="insight-type">
+                          {insightLabel(
+                            insight.type,
+                          )}
                         </span>
                       </div>
-                    )}
 
-                    {typeof insight.percentage ===
-                      "number" && (
-                      <div className="goal-insight-progress">
-                        <div className="goal-insight-values">
-                          <span>
-                            Progress
-                          </span>
+                      <h3>
+                        {insight.title}
+                      </h3>
 
+                      <p>
+                        {insight.message}
+                      </p>
+
+                      {/* SAVINGS RATE */}
+
+                      {typeof insight.rate ===
+                        "number" && (
+                        <div className="insight-metric">
                           <strong>
-                            {insight.percentage.toFixed(
+                            {insight.rate.toFixed(
                               1,
                             )}
                             %
                           </strong>
-                        </div>
-
-                        <div className="goal-insight-track">
-                          <div
-                            style={{
-                              width: `${Math.min(
-                                100,
-                                insight.percentage,
-                              )}%`,
-                            }}
-                          />
-                        </div>
-
-                        <div className="goal-insight-money">
-                          <span>
-                            Saved{" "}
-                            {new Intl.NumberFormat(
-                              "en-NG",
-                              {
-                                style:
-                                  "currency",
-                                currency:
-                                  "NGN",
-                                maximumFractionDigits:
-                                  2,
-                              },
-                            ).format(
-                              Number(
-                                insight.current_amount ??
-                                  0,
-                              ),
-                            )}
-                          </span>
 
                           <span>
-                            Target{" "}
-                            {new Intl.NumberFormat(
-                              "en-NG",
-                              {
-                                style:
-                                  "currency",
-                                currency:
-                                  "NGN",
-                                maximumFractionDigits:
-                                  2,
-                              },
-                            ).format(
-                              Number(
-                                insight.target_amount ??
-                                  0,
-                              ),
-                            )}
+                            savings rate
                           </span>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {typeof insight.remaining ===
-                      "number" && (
-                      <div className="insight-remaining">
-                        Remaining:{" "}
-                        <strong>
-                          {new Intl.NumberFormat(
-                            "en-NG",
-                            {
-                              style:
-                                "currency",
-                              currency:
-                                "NGN",
-                              maximumFractionDigits:
-                                2,
-                            },
-                          ).format(
-                            insight.remaining,
-                          )}
-                        </strong>
-                      </div>
-                    )}
-                  </article>
-                ),
+                      {/* GOAL PROGRESS */}
+
+                      {typeof insight.percentage ===
+                        "number" && (
+                        <div className="goal-insight-progress">
+                          <div className="goal-insight-values">
+                            <span>
+                              Progress
+                            </span>
+
+                            <strong>
+                              {insight.percentage.toFixed(
+                                1,
+                              )}
+                              %
+                            </strong>
+                          </div>
+
+                          <div className="goal-insight-track">
+                            <div
+                              style={{
+                                width: `${progress}%`,
+                              }}
+                            />
+                          </div>
+
+                          <div className="goal-insight-money">
+                            <span>
+                              Saved{" "}
+                              {formatMoney(
+                                Number(
+                                  insight.current_amount ??
+                                    0,
+                                ),
+                                insightCurrency,
+                              )}
+                            </span>
+
+                            <span>
+                              Target{" "}
+                              {formatMoney(
+                                Number(
+                                  insight.target_amount ??
+                                    0,
+                                ),
+                                insightCurrency,
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* REMAINING */}
+
+                      {typeof insight.remaining ===
+                        "number" && (
+                        <div className="insight-remaining">
+                          Remaining:{" "}
+                          <strong>
+                            {formatMoney(
+                              insight.remaining,
+                              insightCurrency,
+                            )}
+                          </strong>
+                        </div>
+                      )}
+                    </article>
+                  );
+                },
               )
             )}
           </section>
+
+          {/* ============================================================
+              FOOTER
+          ============================================================ */}
 
           <section className="insights-footer-card">
             <div>
@@ -480,8 +664,7 @@ export default function FinancialInsights() {
               </span>
 
               <h2>
-                Generated from your real financial
-                activity.
+                Generated from your real financial activity.
               </h2>
 
               <p>

@@ -2,7 +2,10 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 
-import { useMemo, useState } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
 
 import {
   getAccounts,
@@ -16,15 +19,25 @@ import {
 
 import "./Reports.css";
 
+type ReportTab =
+  | "overview"
+  | "statement"
+  | "category";
+
 function formatMoney(
   value: number | string,
   currency = "NGN",
 ) {
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(Number(value) || 0);
+  return new Intl.NumberFormat(
+    "en-NG",
+    {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    },
+  ).format(
+    Number(value) || 0,
+  );
 }
 
 function formatDate(
@@ -34,17 +47,33 @@ function formatDate(
     return "—";
   }
 
-  return new Intl.DateTimeFormat("en-NG", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat(
+    "en-NG",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  ).format(
+    new Date(value),
+  );
 }
 
 function getToday() {
   const date = new Date();
 
-  return date.toISOString().split("T")[0];
+  const year =
+    date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1,
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate(),
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function getMonthStart() {
@@ -52,7 +81,18 @@ function getMonthStart() {
 
   date.setDate(1);
 
-  return date.toISOString().split("T")[0];
+  const year =
+    date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1,
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate(),
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function getTransactionLabel(
@@ -110,14 +150,25 @@ function getTypeClass(
   }
 }
 
+function getPercentage(
+  value: number,
+) {
+  return Math.max(
+    0,
+    Math.min(100, value),
+  );
+}
+
 export default function Reports() {
   const [activeTab, setActiveTab] =
-    useState<
-      "overview" | "statement" | "category"
-    >("overview");
+    useState<ReportTab>(
+      "overview",
+    );
 
   const [from, setFrom] =
-    useState(getMonthStart());
+    useState(
+      getMonthStart(),
+    );
 
   const [to, setTo] =
     useState(getToday());
@@ -127,11 +178,22 @@ export default function Reports() {
     setSelectedAccountId,
   ] = useState<number>(0);
 
+  /*
+  |--------------------------------------------------------------------------
+  | ACCOUNTS
+  |--------------------------------------------------------------------------
+  */
+
   const {
     data: accounts = [],
-    isLoading: accountsLoading,
+    isLoading:
+      accountsLoading,
+    isError:
+      accountsError,
   } = useQuery({
-    queryKey: ["accounts"],
+    queryKey: [
+      "accounts",
+    ],
     queryFn: getAccounts,
   });
 
@@ -140,31 +202,49 @@ export default function Reports() {
     accounts[0]?.id ||
     0;
 
+  /*
+  |--------------------------------------------------------------------------
+  | FINANCIAL SUMMARY
+  |--------------------------------------------------------------------------
+  */
+
   const {
     data: summary,
-    isLoading: summaryLoading,
-    isError: summaryError,
+    isLoading:
+      summaryLoading,
+    isError:
+      summaryError,
   } = useQuery({
     queryKey: [
       "financial-summary",
       from,
       to,
     ],
+
     queryFn: () =>
       getFinancialSummary({
         from,
         to,
       }),
+
     enabled:
       Boolean(from) &&
       Boolean(to) &&
       from <= to,
   });
 
+  /*
+  |--------------------------------------------------------------------------
+  | STATEMENT
+  |--------------------------------------------------------------------------
+  */
+
   const {
     data: statement,
-    isLoading: statementLoading,
-    isError: statementError,
+    isLoading:
+      statementLoading,
+    isError:
+      statementError,
   } = useQuery({
     queryKey: [
       "statement",
@@ -172,50 +252,107 @@ export default function Reports() {
       from,
       to,
     ],
+
     queryFn: () =>
       getStatement({
-        account_id: accountId,
+        account_id:
+          accountId,
+
         from,
+
         to,
       }),
+
     enabled:
-      activeTab === "statement" &&
+      activeTab ===
+        "statement" &&
       accountId > 0 &&
       Boolean(from) &&
       Boolean(to) &&
       from <= to,
   });
 
+  /*
+  |--------------------------------------------------------------------------
+  | CATEGORY SPENDING
+  |--------------------------------------------------------------------------
+  */
+
   const {
     data: categories = [],
-    isLoading: categoriesLoading,
-    isError: categoriesError,
+    isLoading:
+      categoriesLoading,
+    isError:
+      categoriesError,
   } = useQuery({
     queryKey: [
       "category-spending",
       from,
       to,
     ],
+
     queryFn: () =>
       getCategorySpending({
         from,
         to,
       }),
+
     enabled:
-      activeTab === "category" &&
+      activeTab ===
+        "category" &&
       Boolean(from) &&
       Boolean(to) &&
       from <= to,
   });
 
+  /*
+  |--------------------------------------------------------------------------
+  | CURRENCY ANALYSIS
+  |--------------------------------------------------------------------------
+  */
+
+  const currencies = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          accounts
+            .map(
+              (
+                account,
+              ) =>
+                account.currency,
+            )
+            .filter(Boolean),
+        ),
+      ),
+    [accounts],
+  );
+
+  const hasMultipleCurrencies =
+    currencies.length > 1;
+
+  const primaryCurrency =
+    currencies[0] ||
+    "NGN";
+
+  /*
+  |--------------------------------------------------------------------------
+  | CATEGORY ANALYTICS
+  |--------------------------------------------------------------------------
+  */
+
   const totalCategorySpend =
     useMemo(
       () =>
         categories.reduce(
-          (sum, item) =>
+          (
+            sum,
+            item,
+          ) =>
             sum +
             Number(
-              item.amount || 0,
+              item.amount ||
+                0,
             ),
           0,
         ),
@@ -224,16 +361,65 @@ export default function Reports() {
 
   const netSavings =
     Number(
-      summary?.summary?.net_savings ??
+      summary?.summary
+        ?.net_savings ??
         0,
     );
 
-  const summaryCurrency =
-    accounts[0]?.currency ||
+  const incomeTotal =
+    Number(
+      summary?.summary
+        ?.income ??
+        0,
+    );
+
+  const expenseTotal =
+    Number(
+      summary?.summary
+        ?.expenses ??
+        0,
+    );
+
+  const savingsRate =
+    incomeTotal > 0
+      ? (
+          (netSavings /
+            incomeTotal) *
+          100
+        )
+      : 0;
+
+  /*
+  |--------------------------------------------------------------------------
+  | ACCOUNT HELPERS
+  |--------------------------------------------------------------------------
+  */
+
+  const selectedAccount =
+    accounts.find(
+      (account) =>
+        account.id ===
+        accountId,
+    );
+
+  const statementCurrency =
+    statement?.account
+      ?.currency ||
+    selectedAccount?.currency ||
     "NGN";
+
+  /*
+  |--------------------------------------------------------------------------
+  | RENDER
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <main className="reports-page">
+      {/* ================================================================
+          HEADER
+      ================================================================= */}
+
       <header className="reports-header">
         <div>
           <p className="reports-eyebrow">
@@ -251,6 +437,10 @@ export default function Reports() {
         </div>
       </header>
 
+      {/* ================================================================
+          CONTROLS
+      ================================================================= */}
+
       <section className="reports-controls">
         <div className="report-date-field">
           <label htmlFor="report-from">
@@ -261,8 +451,13 @@ export default function Reports() {
             id="report-from"
             type="date"
             value={from}
-            onChange={(event) =>
-              setFrom(event.target.value)
+            onChange={(
+              event,
+            ) =>
+              setFrom(
+                event.target
+                  .value,
+              )
             }
           />
         </div>
@@ -276,8 +471,13 @@ export default function Reports() {
             id="report-to"
             type="date"
             value={to}
-            onChange={(event) =>
-              setTo(event.target.value)
+            onChange={(
+              event,
+            ) =>
+              setTo(
+                event.target
+                  .value,
+              )
             }
           />
         </div>
@@ -291,11 +491,16 @@ export default function Reports() {
 
             <select
               id="statement-account"
-              value={accountId || ""}
-              onChange={(event) =>
+              value={
+                accountId || ""
+              }
+              onChange={(
+                event,
+              ) =>
                 setSelectedAccountId(
                   Number(
-                    event.target.value,
+                    event.target
+                      .value,
                   ),
                 )
               }
@@ -308,12 +513,24 @@ export default function Reports() {
               </option>
 
               {accounts.map(
-                (account) => (
+                (
+                  account,
+                ) => (
                   <option
-                    key={account.id}
-                    value={account.id}
+                    key={
+                      account.id
+                    }
+                    value={
+                      account.id
+                    }
                   >
-                    {account.name}
+                    {
+                      account.name
+                    }{" "}
+                    —{" "}
+                    {
+                      account.currency
+                    }
                   </option>
                 ),
               )}
@@ -322,15 +539,58 @@ export default function Reports() {
         )}
       </section>
 
+      {/* ================================================================
+          MULTI-CURRENCY NOTICE
+      ================================================================= */}
+
+      {hasMultipleCurrencies && (
+        <section className="reports-currency-notice">
+          <div>
+            <strong>
+              Multiple currencies detected
+            </strong>
+
+            <p>
+              Account balances and statements are shown
+              in their own currencies. Report totals use
+              the selected reporting period and should not
+              be interpreted as converted foreign-currency
+              values.
+            </p>
+          </div>
+
+          <div className="reports-currency-list">
+            {currencies.map(
+              (currency) => (
+                <span
+                  key={
+                    currency
+                  }
+                >
+                  {currency}
+                </span>
+              ),
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ================================================================
+          TABS
+      ================================================================= */}
+
       <nav className="reports-tabs">
         <button
           className={
-            activeTab === "overview"
+            activeTab ===
+            "overview"
               ? "active"
               : ""
           }
           onClick={() =>
-            setActiveTab("overview")
+            setActiveTab(
+              "overview",
+            )
           }
         >
           Overview
@@ -338,12 +598,15 @@ export default function Reports() {
 
         <button
           className={
-            activeTab === "statement"
+            activeTab ===
+            "statement"
               ? "active"
               : ""
           }
           onClick={() =>
-            setActiveTab("statement")
+            setActiveTab(
+              "statement",
+            )
           }
         >
           Statement
@@ -351,28 +614,37 @@ export default function Reports() {
 
         <button
           className={
-            activeTab === "category"
+            activeTab ===
+            "category"
               ? "active"
               : ""
           }
           onClick={() =>
-            setActiveTab("category")
+            setActiveTab(
+              "category",
+            )
           }
         >
           Category spending
         </button>
       </nav>
 
+      {/* ================================================================
+          OVERVIEW
+      ================================================================= */}
+
       {activeTab ===
         "overview" && (
         <section className="report-section">
-          {summaryLoading ? (
-            <div className="report-loading">
-              Loading financial report...
-            </div>
-          ) : summaryError ? (
+          {accountsError ||
+          summaryError ? (
             <div className="report-error">
               Unable to load the financial report.
+            </div>
+          ) : summaryLoading ||
+            accountsLoading ? (
+            <div className="report-loading">
+              Loading financial report...
             </div>
           ) : (
             <>
@@ -384,9 +656,8 @@ export default function Reports() {
 
                   <strong>
                     {formatMoney(
-                      summary?.summary
-                        ?.income ?? 0,
-                      summaryCurrency,
+                      incomeTotal,
+                      primaryCurrency,
                     )}
                   </strong>
 
@@ -402,9 +673,8 @@ export default function Reports() {
 
                   <strong>
                     {formatMoney(
-                      summary?.summary
-                        ?.expenses ?? 0,
-                      summaryCurrency,
+                      expenseTotal,
+                      primaryCurrency,
                     )}
                   </strong>
 
@@ -420,7 +690,8 @@ export default function Reports() {
 
                   <strong
                     className={
-                      netSavings >= 0
+                      netSavings >=
+                      0
                         ? "positive"
                         : "negative"
                     }
@@ -429,22 +700,26 @@ export default function Reports() {
                     0
                       ? "+"
                       : "-"}
-
                     {formatMoney(
                       Math.abs(
                         netSavings,
                       ),
-                      summaryCurrency,
+                      primaryCurrency,
                     )}
                   </strong>
 
                   <small>
-                    Income minus expenses
+                    {savingsRate.toFixed(
+                      1,
+                    )}
+                    % savings rate
                   </small>
                 </article>
               </div>
 
               <div className="report-main-grid">
+                {/* ACCOUNTS */}
+
                 <section className="report-panel">
                   <div className="report-panel-heading">
                     <div>
@@ -453,7 +728,7 @@ export default function Reports() {
                       </h2>
 
                       <p>
-                        Balances across your accounts
+                        Current balances across your accounts
                       </p>
                     </div>
                   </div>
@@ -462,43 +737,59 @@ export default function Reports() {
                     {(
                       summary?.accounts ??
                       []
-                    ).map(
-                      (account) => (
-                        <div
-                          className="report-account-row"
-                          key={account.id}
-                        >
-                          <div className="report-account-avatar">
-                            {account.name
-                              .charAt(
-                                0,
-                              )
-                              .toUpperCase()}
-                          </div>
+                    ).length ===
+                    0 ? (
+                      <div className="report-empty">
+                        No accounts found.
+                      </div>
+                    ) : (
+                      (
+                        summary?.accounts ??
+                        []
+                      ).map(
+                        (
+                          account,
+                        ) => (
+                          <div
+                            className="report-account-row"
+                            key={
+                              account.id
+                            }
+                          >
+                            <div className="report-account-avatar">
+                              {account.name
+                                .charAt(
+                                  0,
+                                )
+                                .toUpperCase()}
+                            </div>
 
-                          <div className="report-account-main">
+                            <div className="report-account-main">
+                              <strong>
+                                {
+                                  account.name
+                                }
+                              </strong>
+
+                              <span>
+                                Current balance
+                              </span>
+                            </div>
+
                             <strong>
-                              {
-                                account.name
-                              }
+                              {formatMoney(
+                                account.balance,
+                                primaryCurrency,
+                              )}
                             </strong>
-
-                            <span>
-                              Current balance
-                            </span>
                           </div>
-
-                          <strong>
-                            {formatMoney(
-                              account.balance,
-                              summaryCurrency,
-                            )}
-                          </strong>
-                        </div>
-                      ),
+                        ),
+                      )
                     )}
                   </div>
                 </section>
+
+                {/* TOP CATEGORIES */}
 
                 <section className="report-panel">
                   <div className="report-panel-heading">
@@ -527,85 +818,81 @@ export default function Reports() {
                     {(
                       summary?.top_categories ??
                       []
-                    ).map(
-                      (
-                        item,
-                        index,
-                      ) => {
-                        const amount =
-                          Number(
-                            item.total ??
-                              0,
-                          );
-
-                        const total =
-                          Number(
-                            summary?.summary
-                              ?.expenses ??
-                              0,
-                          );
-
-                        const percentage =
-                          total > 0
-                            ? Math.min(
-                                100,
-                                (amount /
-                                  total) *
-                                  100,
-                              )
-                            : 0;
-
-                        return (
-                          <div
-                            className="category-row"
-                            key={
-                              item.category_id
-                            }
-                          >
-                            <div className="category-index">
-                              {index +
-                                1}
-                            </div>
-
-                            <div className="category-main">
-                              <div className="category-row-heading">
-                                <strong>
-                                  {item
-                                    .category
-                                    ?.name ??
-                                    "Uncategorized"}
-                                </strong>
-
-                                <span>
-                                  {formatMoney(
-                                    amount,
-                                    summaryCurrency,
-                                  )}
-                                </span>
-                              </div>
-
-                              <div className="category-track">
-                                <div
-                                  style={{
-                                    width: `${percentage}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      },
-                    )}
-
-                    {(
-                      summary?.top_categories ??
-                      []
                     ).length ===
-                      0 && (
+                    0 ? (
                       <div className="report-empty">
-                        No spending data for
-                        this period.
+                        No spending data for this
+                        period.
                       </div>
+                    ) : (
+                      (
+                        summary?.top_categories ??
+                        []
+                      ).map(
+                        (
+                          item,
+                          index,
+                        ) => {
+                          const amount =
+                            Number(
+                              item.total ??
+                                0,
+                            );
+
+                          const total =
+                            expenseTotal;
+
+                          const percentage =
+                            total >
+                            0
+                              ? getPercentage(
+                                  (amount /
+                                    total) *
+                                    100,
+                                )
+                              : 0;
+
+                          return (
+                            <div
+                              className="category-row"
+                              key={
+                                item.category_id
+                              }
+                            >
+                              <div className="category-index">
+                                {index +
+                                  1}
+                              </div>
+
+                              <div className="category-main">
+                                <div className="category-row-heading">
+                                  <strong>
+                                    {item
+                                      .category
+                                      ?.name ??
+                                      "Uncategorized"}
+                                  </strong>
+
+                                  <span>
+                                    {formatMoney(
+                                      amount,
+                                      primaryCurrency,
+                                    )}
+                                  </span>
+                                </div>
+
+                                <div className="category-track">
+                                  <div
+                                    style={{
+                                      width: `${percentage}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        },
+                      )
                     )}
                   </div>
                 </section>
@@ -614,6 +901,10 @@ export default function Reports() {
           )}
         </section>
       )}
+
+      {/* ================================================================
+          STATEMENT
+      ================================================================= */}
 
       {activeTab ===
         "statement" && (
@@ -625,8 +916,8 @@ export default function Reports() {
               </h2>
 
               <p>
-                Choose an account to generate
-                its statement.
+                Choose an account to generate its
+                statement.
               </p>
             </div>
           ) : statementLoading ? (
@@ -646,16 +937,24 @@ export default function Reports() {
                   </span>
 
                   <h2>
-                    {statement.account.name}
+                    {
+                      statement
+                        .account
+                        .name
+                    }
                   </h2>
 
                   <p>
                     {formatDate(
-                      statement.period.from,
+                      statement
+                        .period
+                        .from,
                     )}{" "}
                     —{" "}
                     {formatDate(
-                      statement.period.to,
+                      statement
+                        .period
+                        .to,
                     )}
                   </p>
                 </div>
@@ -663,7 +962,7 @@ export default function Reports() {
                 <strong>
                   {formatMoney(
                     statement.closing_balance,
-                    statement.account.currency,
+                    statementCurrency,
                   )}
                 </strong>
               </div>
@@ -677,7 +976,7 @@ export default function Reports() {
                   <strong>
                     {formatMoney(
                       statement.opening_balance,
-                      statement.account.currency,
+                      statementCurrency,
                     )}
                   </strong>
                 </article>
@@ -691,7 +990,7 @@ export default function Reports() {
                     +
                     {formatMoney(
                       statement.total_credits,
-                      statement.account.currency,
+                      statementCurrency,
                     )}
                   </strong>
                 </article>
@@ -705,7 +1004,7 @@ export default function Reports() {
                     -
                     {formatMoney(
                       statement.total_debits,
-                      statement.account.currency,
+                      statementCurrency,
                     )}
                   </strong>
                 </article>
@@ -718,7 +1017,7 @@ export default function Reports() {
                   <strong>
                     {formatMoney(
                       statement.closing_balance,
-                      statement.account.currency,
+                      statementCurrency,
                     )}
                   </strong>
                 </article>
@@ -732,9 +1031,15 @@ export default function Reports() {
                     </h2>
 
                     <p>
-                      {statement.transactions.length}{" "}
+                      {
+                        statement
+                          .transactions
+                          .length
+                      }{" "}
                       transaction
-                      {statement.transactions.length ===
+                      {statement
+                        .transactions
+                        .length ===
                       1
                         ? ""
                         : "s"}{" "}
@@ -743,7 +1048,9 @@ export default function Reports() {
                   </div>
                 </div>
 
-                {statement.transactions.length ===
+                {statement
+                  .transactions
+                  .length ===
                 0 ? (
                   <div className="report-empty">
                     No transactions found for this
@@ -784,89 +1091,82 @@ export default function Reports() {
                         {statement.transactions.map(
                           (
                             transaction,
-                          ) => (
-                            <tr
-                              key={
-                                transaction.id
-                              }
-                            >
-                              <td>
-                                {formatDate(
-                                  transaction.transaction_date,
-                                )}
-                              </td>
+                          ) => {
+                            const typeClass =
+                              getTypeClass(
+                                transaction.type,
+                              );
 
-                              <td>
-                                <strong>
-                                  {transaction.description ??
-                                    getTransactionLabel(
-                                      transaction.type,
-                                    )}
-                                </strong>
-                              </td>
-
-                              <td>
-                                {transaction.reference ??
-                                  "—"}
-                              </td>
-
-                              <td>
-                                <span
-                                  className={`statement-type ${getTypeClass(
-                                    transaction.type,
-                                  )}`}
-                                >
-                                  {getTransactionLabel(
-                                    transaction.type,
-                                  )}
-                                </span>
-                              </td>
-
-                              <td
-                                className={
-                                  getTypeClass(
-                                    transaction.type,
-                                  ) ===
-                                  "debit"
-                                    ? "table-debit"
-                                    : getTypeClass(
-                                          transaction.type,
-                                        ) ===
-                                        "credit"
-                                      ? "table-credit"
-                                      : ""
+                            return (
+                              <tr
+                                key={
+                                  transaction.id
                                 }
                               >
-                                {getTypeClass(
-                                  transaction.type,
-                                ) ===
-                                "debit"
-                                  ? "-"
-                                  : getTypeClass(
+                                <td>
+                                  {formatDate(
+                                    transaction.transaction_date,
+                                  )}
+                                </td>
+
+                                <td>
+                                  <strong>
+                                    {transaction.description ??
+                                      getTransactionLabel(
                                         transaction.type,
-                                      ) ===
-                                      "credit"
-                                    ? "+"
-                                    : ""}
+                                      )}
+                                  </strong>
+                                </td>
 
-                                {formatMoney(
-                                  transaction.amount,
-                                  statement
-                                    .account
-                                    .currency,
-                                )}
-                              </td>
+                                <td>
+                                  {transaction.reference ??
+                                    "—"}
+                                </td>
 
-                              <td>
-                                {formatMoney(
-                                  transaction.balance_after,
-                                  statement
-                                    .account
-                                    .currency,
-                                )}
-                              </td>
-                            </tr>
-                          ),
+                                <td>
+                                  <span
+                                    className={`statement-type ${typeClass}`}
+                                  >
+                                    {getTransactionLabel(
+                                      transaction.type,
+                                    )}
+                                  </span>
+                                </td>
+
+                                <td
+                                  className={
+                                    typeClass ===
+                                    "debit"
+                                      ? "table-debit"
+                                      : typeClass ===
+                                          "credit"
+                                        ? "table-credit"
+                                        : ""
+                                  }
+                                >
+                                  {typeClass ===
+                                  "debit"
+                                    ? "-"
+                                    : typeClass ===
+                                        "credit"
+                                      ? "+"
+                                      : ""}
+
+                                  {formatMoney(
+                                    transaction.amount,
+                                    statementCurrency,
+                                  )}
+                                </td>
+
+                                <td>
+                                  {formatMoney(
+                                    transaction.balance_after,
+                                    statementCurrency,
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          },
                         )}
                       </tbody>
                     </table>
@@ -877,6 +1177,10 @@ export default function Reports() {
           ) : null}
         </section>
       )}
+
+      {/* ================================================================
+          CATEGORY SPENDING
+      ================================================================= */}
 
       {activeTab ===
         "category" && (
@@ -902,16 +1206,20 @@ export default function Reports() {
                   </h2>
 
                   <span>
-                    {formatDate(from)}{" "}
+                    {formatDate(
+                      from,
+                    )}{" "}
                     —{" "}
-                    {formatDate(to)}
+                    {formatDate(
+                      to,
+                    )}
                   </span>
                 </div>
 
                 <strong>
                   {formatMoney(
                     totalCategorySpend,
-                    summaryCurrency,
+                    primaryCurrency,
                   )}
                 </strong>
               </div>
@@ -934,59 +1242,65 @@ export default function Reports() {
                     (
                       category,
                       index,
-                    ) => (
-                      <article
-                        className="category-report-row"
-                        key={
-                          category.category_id
-                        }
-                      >
-                        <div className="category-report-number">
-                          {String(
-                            index + 1,
-                          ).padStart(
-                            2,
-                            "0",
-                          )}
-                        </div>
+                    ) => {
+                      const percentage =
+                        getPercentage(
+                          Number(
+                            category.percentage ||
+                              0,
+                          ),
+                        );
 
-                        <div className="category-report-main">
-                          <div className="category-report-title">
-                            <strong>
-                              {category.category ??
-                                "Uncategorized"}
-                            </strong>
-
-                            <span>
-                              {
-                                category.percentage
-                              }
-                              %
-                            </span>
+                      return (
+                        <article
+                          className="category-report-row"
+                          key={
+                            category.category_id
+                          }
+                        >
+                          <div className="category-report-number">
+                            {String(
+                              index +
+                                1,
+                            ).padStart(
+                              2,
+                              "0",
+                            )}
                           </div>
 
-                          <div className="category-track large">
-                            <div
-                              style={{
-                                width: `${Math.min(
-                                  100,
-                                  Number(
-                                    category.percentage,
-                                  ),
-                                )}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
+                          <div className="category-report-main">
+                            <div className="category-report-title">
+                              <strong>
+                                {category.category ??
+                                  "Uncategorized"}
+                              </strong>
 
-                        <strong className="category-report-amount">
-                          {formatMoney(
-                            category.amount,
-                            summaryCurrency,
-                          )}
-                        </strong>
-                      </article>
-                    ),
+                              <span>
+                                {
+                                  category.percentage
+                                }
+                                %
+                              </span>
+                            </div>
+
+                            <div className="category-track large">
+                              <div
+                                style={{
+                                  width: `${percentage}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          <strong className="category-report-amount">
+                            {formatMoney(
+                              category.amount,
+                              primaryCurrency,
+                            )}
+                          </strong>
+                        </article>
+                      );
+                    },
                   )
                 )}
               </div>

@@ -17,6 +17,17 @@ import {
 
 import "./Notifications.css";
 
+type NotificationFilter =
+  | "all"
+  | "unread";
+
+type NotificationType =
+  | "all"
+  | "success"
+  | "warning"
+  | "danger"
+  | "info";
+
 function formatDate(
   value: string,
 ) {
@@ -29,7 +40,9 @@ function formatDate(
       hour: "2-digit",
       minute: "2-digit",
     },
-  ).format(new Date(value));
+  ).format(
+    new Date(value),
+  );
 }
 
 function notificationIcon(
@@ -50,6 +63,24 @@ function notificationIcon(
   }
 }
 
+function notificationLabel(
+  type: string,
+) {
+  switch (type) {
+    case "success":
+      return "Positive";
+
+    case "warning":
+      return "Warning";
+
+    case "danger":
+      return "Critical";
+
+    default:
+      return "Information";
+  }
+}
+
 export default function Notifications() {
   const queryClient =
     useQueryClient();
@@ -57,9 +88,18 @@ export default function Notifications() {
   const [
     activeFilter,
     setActiveFilter,
-  ] = useState<
-    "all" | "unread"
-  >("all");
+  ] =
+    useState<NotificationFilter>(
+      "all",
+    );
+
+  const [
+    typeFilter,
+    setTypeFilter,
+  ] =
+    useState<NotificationType>(
+      "all",
+    );
 
   const [search, setSearch] =
     useState("");
@@ -67,22 +107,36 @@ export default function Notifications() {
   const {
     data: allNotifications = [],
     isLoading: allLoading,
+    isFetching: allFetching,
     isError: allError,
+    refetch: refetchAll,
   } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: getNotifications,
+    queryKey: [
+      "notifications",
+    ],
+
+    queryFn:
+      getNotifications,
+
+    staleTime: 30_000,
   });
 
   const {
     data: unreadNotifications = [],
     isLoading: unreadLoading,
+    isFetching:
+      unreadFetching,
+    refetch: refetchUnread,
   } = useQuery({
     queryKey: [
       "notifications",
       "unread",
     ],
+
     queryFn:
       getUnreadNotifications,
+
+    staleTime: 30_000,
   });
 
   const readMutation =
@@ -92,7 +146,16 @@ export default function Notifications() {
 
       onSuccess: () => {
         queryClient.invalidateQueries({
-          queryKey: ["notifications"],
+          queryKey: [
+            "notifications",
+          ],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: [
+            "notifications",
+            "unread",
+          ],
         });
       },
     });
@@ -109,21 +172,32 @@ export default function Notifications() {
           .trim()
           .toLowerCase();
 
-      if (!term) {
-        return source;
-      }
-
       return source.filter(
-        (notification) =>
-          notification.title
-            .toLowerCase()
-            .includes(term) ||
-          notification.message
-            .toLowerCase()
-            .includes(term),
+        (notification) => {
+          const matchesSearch =
+            !term ||
+            notification.title
+              .toLowerCase()
+              .includes(term) ||
+            notification.message
+              .toLowerCase()
+              .includes(term);
+
+          const matchesType =
+            typeFilter ===
+              "all" ||
+            notification.type ===
+              typeFilter;
+
+          return (
+            matchesSearch &&
+            matchesType
+          );
+        },
       );
     }, [
       activeFilter,
+      typeFilter,
       unreadNotifications,
       allNotifications,
       search,
@@ -153,8 +227,22 @@ export default function Notifications() {
         "danger",
     ).length;
 
+  const isRefreshing =
+    allFetching ||
+    unreadFetching;
+
+  const handleRefresh =
+    () => {
+      refetchAll();
+      refetchUnread();
+    };
+
   return (
     <main className="notifications-page">
+      {/* ================================================================
+          HEADER
+      ================================================================= */}
+
       <header className="notifications-header">
         <div>
           <p className="notifications-eyebrow">
@@ -171,16 +259,43 @@ export default function Notifications() {
           </p>
         </div>
 
-        <div className="notification-header-count">
-          <strong>
-            {unreadCount}
-          </strong>
+        <div className="notification-header-actions">
+          <button
+            className="notification-refresh"
+            onClick={
+              handleRefresh
+            }
+            disabled={
+              isRefreshing
+            }
+            title="Refresh notifications"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M20 11a8 8 0 0 0-14.5-4.7L4 8" />
+              <path d="M4 4v4h4" />
+              <path d="M4 13a8 8 0 0 0 14.5 4.7L20 16" />
+              <path d="M20 20v-4h-4" />
+            </svg>
+          </button>
 
-          <span>
-            unread
-          </span>
+          <div className="notification-header-count">
+            <strong>
+              {unreadCount}
+            </strong>
+
+            <span>
+              unread
+            </span>
+          </div>
         </div>
       </header>
+
+      {/* ================================================================
+          SUMMARY
+      ================================================================= */}
 
       <section className="notification-summary">
         <article>
@@ -191,6 +306,10 @@ export default function Notifications() {
           <strong>
             {allNotifications.length}
           </strong>
+
+          <small>
+            All notifications
+          </small>
         </article>
 
         <article className="success">
@@ -201,6 +320,10 @@ export default function Notifications() {
           <strong>
             {successCount}
           </strong>
+
+          <small>
+            Successful events
+          </small>
         </article>
 
         <article className="warning">
@@ -211,6 +334,10 @@ export default function Notifications() {
           <strong>
             {warningCount}
           </strong>
+
+          <small>
+            Needs attention
+          </small>
         </article>
 
         <article className="danger">
@@ -221,8 +348,16 @@ export default function Notifications() {
           <strong>
             {dangerCount}
           </strong>
+
+          <small>
+            Important alerts
+          </small>
         </article>
       </section>
+
+      {/* ================================================================
+          PANEL
+      ================================================================= */}
 
       <section className="notifications-panel">
         <div className="notifications-toolbar">
@@ -258,7 +393,8 @@ export default function Notifications() {
             >
               Unread
 
-              {unreadCount > 0 && (
+              {unreadCount >
+                0 && (
                 <span>
                   {unreadCount}
                 </span>
@@ -266,32 +402,78 @@ export default function Notifications() {
             </button>
           </div>
 
-          <div className="notification-search">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="7"
-              />
-
-              <path d="m16 16 5 5" />
-            </svg>
-
-            <input
-              type="search"
-              placeholder="Search notifications..."
-              value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value,
+          <div className="notification-toolbar-right">
+            <select
+              className="notification-type-filter"
+              value={
+                typeFilter
+              }
+              onChange={(
+                event,
+              ) =>
+                setTypeFilter(
+                  event.target
+                    .value as NotificationType,
                 )
               }
-            />
+            >
+              <option value="all">
+                All types
+              </option>
+
+              <option value="success">
+                Positive
+              </option>
+
+              <option value="warning">
+                Warnings
+              </option>
+
+              <option value="danger">
+                Critical
+              </option>
+
+              <option value="info">
+                Information
+              </option>
+            </select>
+
+            <div className="notification-search">
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="7"
+                />
+
+                <path d="m16 16 5 5" />
+              </svg>
+
+              <input
+                type="search"
+                placeholder="Search notifications..."
+                value={
+                  search
+                }
+                onChange={(
+                  event,
+                ) =>
+                  setSearch(
+                    event.target
+                      .value,
+                  )
+                }
+              />
+            </div>
           </div>
         </div>
+
+        {/* ==============================================================
+            CONTENT
+        ============================================================== */}
 
         {allLoading ||
         (activeFilter ===
@@ -306,6 +488,10 @@ export default function Notifications() {
           </div>
         ) : allError ? (
           <div className="notifications-error">
+            <div className="notifications-error-icon">
+              !
+            </div>
+
             <h2>
               Unable to load notifications
             </h2>
@@ -314,6 +500,14 @@ export default function Notifications() {
               Please check your connection and try
               again.
             </p>
+
+            <button
+              onClick={
+                handleRefresh
+              }
+            >
+              Try again
+            </button>
           </div>
         ) : displayedNotifications.length ===
           0 ? (
@@ -326,7 +520,9 @@ export default function Notifications() {
               {activeFilter ===
               "unread"
                 ? "You're all caught up"
-                : search
+                : search ||
+                    typeFilter !==
+                      "all"
                   ? "No matching notifications"
                   : "No notifications yet"}
             </h3>
@@ -335,13 +531,35 @@ export default function Notifications() {
               {activeFilter ===
               "unread"
                 ? "There are no unread notifications waiting for you."
-                : "Important financial updates will appear here."}
+                : search ||
+                    typeFilter !==
+                      "all"
+                  ? "Try changing your search or notification filter."
+                  : "Important financial updates will appear here."}
             </p>
+
+            {(search ||
+              typeFilter !==
+                "all") && (
+              <button
+                className="clear-notification-filters"
+                onClick={() => {
+                  setSearch("");
+                  setTypeFilter(
+                    "all",
+                  );
+                }}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="notifications-list">
             {displayedNotifications.map(
-              (notification) => (
+              (
+                notification,
+              ) => (
                 <article
                   className={`notification-row ${
                     notification.is_read
@@ -362,11 +580,21 @@ export default function Notifications() {
 
                   <div className="notification-content">
                     <div className="notification-title-row">
-                      <h3>
-                        {
-                          notification.title
-                        }
-                      </h3>
+                      <div className="notification-title-group">
+                        <h3>
+                          {
+                            notification.title
+                          }
+                        </h3>
+
+                        <span
+                          className={`notification-type-label ${notification.type}`}
+                        >
+                          {notificationLabel(
+                            notification.type,
+                          )}
+                        </span>
+                      </div>
 
                       {!notification.is_read && (
                         <span className="unread-dot" />
@@ -389,7 +617,7 @@ export default function Notifications() {
                   <div className="notification-action">
                     {notification.is_read ? (
                       <span className="read-label">
-                        Read
+                        ✓ Read
                       </span>
                     ) : (
                       <button

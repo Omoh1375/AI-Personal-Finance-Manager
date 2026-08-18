@@ -1,6 +1,7 @@
 import {
   useMemo,
   useState,
+  type FormEvent,
 } from "react";
 
 import {
@@ -13,17 +14,27 @@ import { Link } from "react-router-dom";
 
 import { getDashboard } from "../api/dashboard";
 import { getAccounts } from "../api/accounts";
+
 import {
   createSavingsDeposit,
   getSavingsGoals,
 } from "../api/savings";
+
 import { getBudgets } from "../api/budgets";
 
 import { useAuth } from "../context/AuthContext";
 
-import type { SavingsDepositPayload } from "../types/savings";
+import type {
+  SavingsDepositPayload,
+} from "../types/savings";
 
 import "./Dashboard.css";
+
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
 
 function formatMoney(
   value: number | string,
@@ -34,11 +45,14 @@ function formatMoney(
       ? Number(value)
       : value;
 
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(amount || 0);
+  return new Intl.NumberFormat(
+    "en-NG",
+    {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    },
+  ).format(amount || 0);
 }
 
 function formatDate(
@@ -48,34 +62,50 @@ function formatDate(
     return "—";
   }
 
-  return new Intl.DateTimeFormat("en-NG", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat(
+    "en-NG",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  ).format(new Date(value));
 }
 
-function formatAccountType(type: string) {
+function formatAccountType(
+  type: string,
+) {
   return type
     .replaceAll("_", " ")
-    .replace(/\b\w/g, (letter) =>
-      letter.toUpperCase(),
+    .replace(
+      /\b\w/g,
+      (letter) =>
+        letter.toUpperCase(),
     );
 }
 
 function getToday() {
   const date = new Date();
 
-  const year = date.getFullYear();
+  const year =
+    date.getFullYear();
+
   const month = String(
     date.getMonth() + 1,
   ).padStart(2, "0");
+
   const day = String(
     date.getDate(),
   ).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
+
+/*
+|--------------------------------------------------------------------------
+| ACCOUNT ICON
+|--------------------------------------------------------------------------
+*/
 
 function AccountIcon({
   type,
@@ -140,8 +170,14 @@ function AccountIcon({
         viewBox="0 0 24 24"
         aria-hidden="true"
       >
-        <circle cx="12" cy="12" r="9" />
+        <circle
+          cx="12"
+          cy="12"
+          r="9"
+        />
+
         <path d="M10 7v10M14 7v10" />
+
         <path d="M8 9h5a2 2 0 0 1 0 4H8m0 0h6a2 2 0 0 1 0 4H8" />
       </svg>
     );
@@ -159,6 +195,12 @@ function AccountIcon({
     </svg>
   );
 }
+
+/*
+|--------------------------------------------------------------------------
+| TRANSACTION ICON
+|--------------------------------------------------------------------------
+*/
 
 function TransactionIcon({
   type,
@@ -188,6 +230,12 @@ function TransactionIcon({
   );
 }
 
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD
+|--------------------------------------------------------------------------
+*/
+
 export default function Dashboard() {
   const {
     user,
@@ -196,6 +244,12 @@ export default function Dashboard() {
 
   const queryClient =
     useQueryClient();
+
+  /*
+  |--------------------------------------------------------------------------
+  | STATE
+  |--------------------------------------------------------------------------
+  */
 
   const [
     showDepositModal,
@@ -208,6 +262,11 @@ export default function Dashboard() {
   ] = useState("");
 
   const [
+    selectedCurrency,
+    setSelectedCurrency,
+  ] = useState("NGN");
+
+  const [
     depositForm,
     setDepositForm,
   ] =
@@ -217,12 +276,13 @@ export default function Dashboard() {
       amount: 0,
       reference: "",
       description: "",
-      deposited_at: getToday(),
+      deposited_at:
+        getToday(),
     });
 
   /*
   |--------------------------------------------------------------------------
-  | Dashboard
+  | DASHBOARD QUERY
   |--------------------------------------------------------------------------
   */
 
@@ -238,16 +298,12 @@ export default function Dashboard() {
 
   /*
   |--------------------------------------------------------------------------
-  | Accounts
+  | ACCOUNTS QUERY
   |--------------------------------------------------------------------------
-  |
-  | This is the source of truth for the Dashboard balance.
-  |
   */
 
   const {
     data: accounts = [],
-    isLoading: accountsLoading,
   } = useQuery({
     queryKey: ["accounts"],
     queryFn: getAccounts,
@@ -255,7 +311,7 @@ export default function Dashboard() {
 
   /*
   |--------------------------------------------------------------------------
-  | Savings
+  | SAVINGS GOALS QUERY
   |--------------------------------------------------------------------------
   */
 
@@ -263,12 +319,13 @@ export default function Dashboard() {
     data: savingsGoals = [],
   } = useQuery({
     queryKey: ["savings-goals"],
-    queryFn: getSavingsGoals,
+    queryFn:
+      getSavingsGoals,
   });
 
   /*
   |--------------------------------------------------------------------------
-  | Budgets
+  | BUDGETS QUERY
   |--------------------------------------------------------------------------
   */
 
@@ -281,7 +338,106 @@ export default function Dashboard() {
 
   /*
   |--------------------------------------------------------------------------
-  | Savings Deposit Mutation
+  | DASHBOARD DATA
+  |--------------------------------------------------------------------------
+  |
+  | Keep this BEFORE conditional returns so everything below can safely
+  | use memoized values without changing the Hooks order.
+  |
+  */
+
+  const dashboard =
+    data?.success && data.data
+      ? data.data
+      : null;
+
+  /*
+  |--------------------------------------------------------------------------
+  | AVAILABLE CURRENCIES
+  |--------------------------------------------------------------------------
+  */
+
+  const availableCurrencies =
+  useMemo(() => {
+    const currencies = accounts
+      .map(
+        (account) =>
+          account.currency,
+      )
+      .filter(
+        (
+          currency,
+        ): currency is string =>
+          Boolean(currency),
+      );
+
+    return Array.from(
+      new Set(currencies),
+    );
+  }, [accounts]);
+
+const defaultCurrency =
+  availableCurrencies.includes("NGN")
+    ? "NGN"
+    : availableCurrencies[0] || "NGN";
+
+const activeCurrency =
+  availableCurrencies.includes(
+    selectedCurrency,
+  )
+    ? selectedCurrency
+    : defaultCurrency;
+
+  /*
+  |--------------------------------------------------------------------------
+  | SELECTED-CURRENCY ACCOUNTS
+  |--------------------------------------------------------------------------
+  */
+
+  const currencyAccounts =
+    useMemo(() => {
+      if (!dashboard) {
+        return [];
+      }
+
+      return dashboard.accounts.filter(
+        (account) =>
+          (
+            account.currency ||
+            "NGN"
+          ) === activeCurrency,
+      );
+    }, [
+      dashboard,
+      activeCurrency,
+    ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | SELECTED-CURRENCY TOTAL BALANCE
+  |--------------------------------------------------------------------------
+  */
+
+  const selectedCurrencyBalance =
+    useMemo(() => {
+      return currencyAccounts.reduce(
+        (
+          total,
+          account,
+        ) =>
+          total +
+          Number(
+            account.balance || 0,
+          ),
+        0,
+      );
+    }, [
+      currencyAccounts,
+    ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | DEPOSIT MUTATION
   |--------------------------------------------------------------------------
   */
 
@@ -291,78 +447,93 @@ export default function Dashboard() {
         createSavingsDeposit,
 
       onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: ["dashboard"],
-        });
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "dashboard",
+            ],
+          },
+        );
 
-        queryClient.invalidateQueries({
-          queryKey: ["accounts"],
-        });
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "accounts",
+            ],
+          },
+        );
 
-        queryClient.invalidateQueries({
-          queryKey: ["savings-goals"],
-        });
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "savings-goals",
+            ],
+          },
+        );
 
-        queryClient.invalidateQueries({
-          queryKey: [
-            "savings-deposits",
-          ],
-        });
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "savings-deposits",
+            ],
+          },
+        );
 
-        closeDepositModal();
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "transactions",
+            ],
+          },
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "budgets",
+            ],
+          },
+        );
+
+        setShowDepositModal(false);
+
+        setDepositError("");
       },
 
-      onError: (error: any) => {
+      onError: (
+        error: any,
+      ) => {
         const errors =
           error?.response?.data
             ?.errors;
 
         const firstError =
           errors
-            ? Object.values(errors)
+            ? Object.values(
+                errors,
+              )
                 .flat()
                 .find(Boolean)
             : null;
 
         setDepositError(
-          typeof firstError === "string"
+          typeof firstError ===
+            "string"
             ? firstError
-            : error?.response?.data
+            : error?.response
+                ?.data
                 ?.message ??
-                "Unable to make this deposit.",
+              error?.message ??
+              "Unable to make this deposit.",
         );
       },
     });
 
   /*
   |--------------------------------------------------------------------------
-  | Deposit Modal
+  | SELECTED DEPOSIT ACCOUNT
   |--------------------------------------------------------------------------
   */
-
-  const openDepositModal = () => {
-    setDepositError("");
-
-    setDepositForm({
-      savings_goal_id:
-        savingsGoals[0]?.id ?? 0,
-
-      account_id:
-        accounts[0]?.id ?? 0,
-
-      amount: 0,
-      reference: "",
-      description: "",
-      deposited_at: getToday(),
-    });
-
-    setShowDepositModal(true);
-  };
-
-  const closeDepositModal = () => {
-    setShowDepositModal(false);
-    setDepositError("");
-  };
 
   const selectedDepositAccount =
     accounts.find(
@@ -373,6 +544,12 @@ export default function Dashboard() {
         ),
     );
 
+  /*
+  |--------------------------------------------------------------------------
+  | SELECTED SAVINGS GOAL
+  |--------------------------------------------------------------------------
+  */
+
   const selectedSavingsGoal =
     savingsGoals.find(
       (goal) =>
@@ -382,8 +559,63 @@ export default function Dashboard() {
         ),
     );
 
+  /*
+  |--------------------------------------------------------------------------
+  | OPEN DEPOSIT MODAL
+  |--------------------------------------------------------------------------
+  */
+
+  const openDepositModal =
+    () => {
+      setDepositError("");
+
+      setDepositForm({
+        savings_goal_id:
+          savingsGoals[0]?.id ??
+          0,
+
+        account_id:
+          accounts[0]?.id ??
+          0,
+
+        amount: 0,
+
+        reference: "",
+
+        description: "",
+
+        deposited_at:
+          getToday(),
+      });
+
+      setShowDepositModal(
+        true,
+      );
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | CLOSE DEPOSIT MODAL
+  |--------------------------------------------------------------------------
+  */
+
+  const closeDepositModal =
+    () => {
+      setShowDepositModal(
+        false,
+      );
+
+      setDepositError("");
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | DEPOSIT SUBMIT
+  |--------------------------------------------------------------------------
+  */
+
   const handleDeposit = (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
 
@@ -399,7 +631,9 @@ export default function Dashboard() {
       return;
     }
 
-    if (!depositForm.account_id) {
+    if (
+      !depositForm.account_id
+    ) {
       setDepositError(
         "Please select a source account.",
       );
@@ -409,7 +643,9 @@ export default function Dashboard() {
 
     if (
       !depositForm.amount ||
-      Number(depositForm.amount) <= 0
+      Number(
+        depositForm.amount,
+      ) <= 0
     ) {
       setDepositError(
         "Enter a valid deposit amount.",
@@ -434,6 +670,19 @@ export default function Dashboard() {
       return;
     }
 
+    if (
+      selectedSavingsGoal?.account_currency &&
+      selectedDepositAccount &&
+      selectedSavingsGoal.account_currency !==
+        selectedDepositAccount.currency
+    ) {
+      setDepositError(
+        `The selected account must use ${selectedSavingsGoal.account_currency}.`,
+      );
+
+      return;
+    }
+
     depositMutation.mutate({
       ...depositForm,
 
@@ -443,21 +692,23 @@ export default function Dashboard() {
 
       reference:
         depositForm.reference
-          ?.trim() || undefined,
+          ?.trim() ||
+        undefined,
 
       description:
         depositForm.description
-          ?.trim() || undefined,
+          ?.trim() ||
+        undefined,
     });
   };
 
   /*
   |--------------------------------------------------------------------------
-  | Loading
+  | LOADING
   |--------------------------------------------------------------------------
   */
 
-  if (isLoading || accountsLoading) {
+  if (isLoading) {
     return (
       <main className="dashboard-page">
         <div className="dashboard-loading">
@@ -473,13 +724,13 @@ export default function Dashboard() {
 
   /*
   |--------------------------------------------------------------------------
-  | Error
+  | ERROR
   |--------------------------------------------------------------------------
   */
 
   if (
     isError ||
-    !data?.success
+    !dashboard
   ) {
     return (
       <main className="dashboard-page">
@@ -493,7 +744,9 @@ export default function Dashboard() {
           </p>
 
           <button
-            onClick={() => refetch()}
+            onClick={() =>
+              refetch()
+            }
           >
             Try again
           </button>
@@ -502,47 +755,35 @@ export default function Dashboard() {
     );
   }
 
-  const dashboard = data.data;
-
   /*
   |--------------------------------------------------------------------------
-  | IMPORTANT:
-  | Calculate the total balance from the actual accounts endpoint.
+  | CURRENT CURRENCY
   |--------------------------------------------------------------------------
-  */
-
-  const totalBalance =
-    accounts.reduce(
-      (total, account) =>
-        total +
-        Number(account.balance || 0),
-      0,
-    );
-
-  /*
-  |--------------------------------------------------------------------------
-  | Currency
-  |--------------------------------------------------------------------------
+  |
+  | Keep this alias because several existing Dashboard sections use
+  | firstCurrency.
+  |
   */
 
   const firstCurrency =
-    accounts[0]?.currency ||
-    "NGN";
+    activeCurrency;
 
   /*
   |--------------------------------------------------------------------------
-  | Monthly Metrics
+  | MONTHLY METRICS
   |--------------------------------------------------------------------------
   */
 
   const monthlyIncome =
     Number(
-      dashboard.monthly_income || 0,
+      dashboard.monthly_income ||
+        0,
     );
 
   const monthlyExpenses =
     Number(
-      dashboard.monthly_expenses || 0,
+      dashboard.monthly_expenses ||
+        0,
     );
 
   const monthlyNet =
@@ -558,23 +799,30 @@ export default function Dashboard() {
 
   /*
   |--------------------------------------------------------------------------
-  | Savings Metrics
+  | SAVINGS
   |--------------------------------------------------------------------------
   */
 
   const totalSavingsTarget =
     savingsGoals.reduce(
-      (sum, goal) =>
+      (
+        sum,
+        goal,
+      ) =>
         sum +
         Number(
-          goal.target_amount || 0,
+          goal.target_amount ||
+            0,
         ),
       0,
     );
 
   const totalSavings =
     savingsGoals.reduce(
-      (sum, goal) =>
+      (
+        sum,
+        goal,
+      ) =>
         sum +
         Number(
           goal.saved || 0,
@@ -583,7 +831,8 @@ export default function Dashboard() {
     );
 
   const savingsProgress =
-    totalSavingsTarget > 0
+    totalSavingsTarget >
+    0
       ? Math.min(
           100,
           (totalSavings /
@@ -594,7 +843,7 @@ export default function Dashboard() {
 
   /*
   |--------------------------------------------------------------------------
-  | Budget Metrics
+  | BUDGETS
   |--------------------------------------------------------------------------
   */
 
@@ -606,7 +855,10 @@ export default function Dashboard() {
 
   const totalBudget =
     activeBudgets.reduce(
-      (sum, budget) =>
+      (
+        sum,
+        budget,
+      ) =>
         sum +
         Number(
           budget.budget || 0,
@@ -616,7 +868,10 @@ export default function Dashboard() {
 
   const totalBudgetSpent =
     activeBudgets.reduce(
-      (sum, budget) =>
+      (
+        sum,
+        budget,
+      ) =>
         sum +
         Number(
           budget.spent || 0,
@@ -636,7 +891,7 @@ export default function Dashboard() {
 
   /*
   |--------------------------------------------------------------------------
-  | Recent Transactions
+  | RECENT TRANSACTIONS
   |--------------------------------------------------------------------------
   */
 
@@ -646,32 +901,21 @@ export default function Dashboard() {
       []
     ).slice(0, 8);
 
+  /*
+  |--------------------------------------------------------------------------
+  | TOP CATEGORY
+  |--------------------------------------------------------------------------
+  */
+
   const topCategory =
     dashboard
       .top_spending_categories?.[0];
 
   /*
   |--------------------------------------------------------------------------
-  | Financial Health Score
+  | RENDER
   |--------------------------------------------------------------------------
   */
-
-  const financialHealthScore =
-    Math.max(
-      0,
-      Math.min(
-        100,
-        Math.round(
-          100 -
-            Math.max(
-              0,
-              budgetProgress -
-                savingsProgress /
-                  2,
-            ),
-        ),
-      ),
-    );
 
   return (
     <main className="dashboard-page">
@@ -721,13 +965,14 @@ export default function Dashboard() {
           >
             {user?.name
               ?.charAt(0)
-              .toUpperCase() ?? "U"}
+              .toUpperCase() ??
+              "U"}
           </button>
         </div>
       </header>
 
       {/* ================================================================
-          MAIN FINANCIAL METRICS
+          SUMMARY
       ================================================================= */}
 
       <section className="dashboard-summary">
@@ -737,20 +982,59 @@ export default function Dashboard() {
               Total balance
             </span>
 
-            <span className="balance-badge">
-              {accounts.length}{" "}
-              {accounts.length === 1
-                ? "account"
-                : "accounts"}
-            </span>
+            <select
+              className="balance-currency-select"
+              value={
+                activeCurrency
+              }
+              onChange={(
+                event,
+              ) =>
+                setSelectedCurrency(
+                  event.target.value,
+                )
+              }
+              aria-label="Select balance currency"
+            >
+              {availableCurrencies.map(
+                (
+                  currency,
+                ) => (
+                  <option
+                    key={
+                      currency
+                    }
+                    value={
+                      currency
+                    }
+                  >
+                    {currency}
+                  </option>
+                ),
+              )}
+            </select>
           </div>
 
           <strong>
             {formatMoney(
-              totalBalance,
-              firstCurrency,
+              selectedCurrencyBalance,
+              activeCurrency,
             )}
           </strong>
+
+          <div className="balance-meta">
+            <span>
+              {
+                currencyAccounts.length
+              }{" "}
+              {currencyAccounts.length ===
+              1
+                ? "account"
+                : "accounts"}{" "}
+              •{" "}
+              {activeCurrency}
+            </span>
+          </div>
 
           <div className="balance-footer">
             <span>
@@ -759,16 +1043,20 @@ export default function Dashboard() {
 
             <span
               className={
-                monthlyNet >= 0
+                monthlyNet >=
+                0
                   ? "positive"
                   : "negative"
               }
             >
-              {monthlyNet >= 0
+              {monthlyNet >=
+              0
                 ? "+"
                 : "-"}
               {formatMoney(
-                Math.abs(monthlyNet),
+                Math.abs(
+                  monthlyNet,
+                ),
                 firstCurrency,
               )}
             </span>
@@ -793,7 +1081,7 @@ export default function Dashboard() {
             </strong>
 
             <small>
-              Total{" "}
+              Total:{" "}
               {formatMoney(
                 dashboard.total_income,
                 firstCurrency,
@@ -820,7 +1108,7 @@ export default function Dashboard() {
             </strong>
 
             <small>
-              Total{" "}
+              Total:{" "}
               {formatMoney(
                 dashboard.total_expenses,
                 firstCurrency,
@@ -840,7 +1128,10 @@ export default function Dashboard() {
             </span>
 
             <strong>
-              {savingsRate.toFixed(1)}%
+              {savingsRate.toFixed(
+                1,
+              )}
+              %
             </strong>
 
             <small>
@@ -863,8 +1154,8 @@ export default function Dashboard() {
               </h2>
 
               <p>
-                Everything you need to manage
-                your money quickly.
+                Everything you need to manage your
+                money quickly.
               </p>
             </div>
 
@@ -949,7 +1240,8 @@ export default function Dashboard() {
                 openDepositModal
               }
               disabled={
-                accounts.length === 0 ||
+                accounts.length ===
+                  0 ||
                 savingsGoals.length ===
                   0
               }
@@ -1028,7 +1320,21 @@ export default function Dashboard() {
 
           <div className="score-circle">
             <strong>
-              {financialHealthScore}
+              {Math.max(
+                0,
+                Math.min(
+                  100,
+                  Math.round(
+                    100 -
+                      Math.max(
+                        0,
+                        budgetProgress -
+                          savingsProgress /
+                            2,
+                      ),
+                  ),
+                ),
+              )}
             </strong>
 
             <span>
@@ -1043,7 +1349,7 @@ export default function Dashboard() {
           <p>
             Keep savings growing and stay below
             your budget limits to strengthen your
-            financial position.
+            position.
           </p>
 
           <Link to="/financial-insights">
@@ -1074,7 +1380,7 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          {accounts.length ===
+          {dashboard.accounts.length ===
           0 ? (
             <div className="empty-state">
               <div>◎</div>
@@ -1094,85 +1400,185 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="accounts-grid">
-              {accounts
+              {dashboard.accounts
                 .slice(0, 6)
-                .map((account) => (
-                  <article
-                    className="account-card"
-                    key={account.id}
-                  >
-                    <div className="account-top">
-                      <div
-                        className="account-icon"
-                        style={{
-                          backgroundColor:
-                            account.color
-                              ? `${account.color}18`
-                              : "#eef7f5",
+                .map(
+                  (
+                    account,
+                  ) => (
+                    <article
+                      className="account-card"
+                      key={
+                        account.id
+                      }
+                    >
+                      <div className="account-top">
+                        <div
+                          className="account-icon"
+                          style={{
+                            backgroundColor:
+                              "#eef7f5",
 
-                          color:
-                            account.color ||
-                            "#07977c",
-                        }}
-                      >
-                        <AccountIcon
-                          type={
-                            account.type
-                          }
-                        />
+                            color:
+                              "#07977c",
+                          }}
+                        >
+                          <AccountIcon
+                            type={
+                              account.type
+                            }
+                          />
+                        </div>
                       </div>
 
-                      {account.is_default && (
-                        <span className="default-label">
-                          Default
+                      <p>
+                        {
+                          account.name
+                        }
+                      </p>
+
+                      <small>
+                        {formatAccountType(
+                          account.type,
+                        )}
+                      </small>
+
+                      <strong>
+                        {formatMoney(
+                          account.balance,
+                          account.currency ||
+                            firstCurrency,
+                        )}
+                      </strong>
+
+                      <div className="account-mini-stats">
+                        <span>
+                          In{" "}
+                          {formatMoney(
+                            account.income ??
+                              0,
+                            account.currency ||
+                              firstCurrency,
+                          )}
                         </span>
-                      )}
-                    </div>
 
-                    <p>
-                      {account.name}
-                    </p>
-
-                    <small>
-                      {formatAccountType(
-                        account.type,
-                      )}
-                    </small>
-
-                    <strong>
-                      {formatMoney(
-                        account.balance,
-                        account.currency ||
-                          firstCurrency,
-                      )}
-                    </strong>
-
-                    <div className="account-mini-stats">
-                      <span>
-                        In{" "}
-                        {formatMoney(
-                          account.income ??
-                            0,
-                          account.currency ||
-                            firstCurrency,
-                        )}
-                      </span>
-
-                      <span>
-                        Out{" "}
-                        {formatMoney(
-                          account.expenses ??
-                            0,
-                          account.currency ||
-                            firstCurrency,
-                        )}
-                      </span>
-                    </div>
-                  </article>
-                ))}
+                        <span>
+                          Out{" "}
+                          {formatMoney(
+                            account.expenses ??
+                              0,
+                            account.currency ||
+                              firstCurrency,
+                          )}
+                        </span>
+                      </div>
+                    </article>
+                  ),
+                )}
             </div>
           )}
         </div>
+
+        <aside className="dashboard-side">
+          <div className="quick-card">
+            <div className="section-heading compact">
+              <div>
+                <h2>
+                  Quick actions
+                </h2>
+
+                <p>
+                  Manage your finances
+                </p>
+              </div>
+            </div>
+
+            <div className="quick-actions">
+              <Link to="/income">
+                <span className="quick-action-icon income-icon">
+                  ↑
+                </span>
+
+                <span>
+                  <strong>
+                    Add income
+                  </strong>
+
+                  <small>
+                    Record money received
+                  </small>
+                </span>
+              </Link>
+
+              <Link to="/expenses">
+                <span className="quick-action-icon expense-icon">
+                  ↓
+                </span>
+
+                <span>
+                  <strong>
+                    Add expense
+                  </strong>
+
+                  <small>
+                    Record money spent
+                  </small>
+                </span>
+              </Link>
+
+              <Link to="/transfers">
+                <span className="quick-action-icon transfer-icon">
+                  ↔
+                </span>
+
+                <span>
+                  <strong>
+                    Transfer money
+                  </strong>
+
+                  <small>
+                    Move money between accounts
+                  </small>
+                </span>
+              </Link>
+
+              <Link to="/budgets">
+                <span className="quick-action-icon budget-icon">
+                  ◫
+                </span>
+
+                <span>
+                  <strong>
+                    Manage budget
+                  </strong>
+
+                  <small>
+                    Stay on top of spending
+                  </small>
+                </span>
+              </Link>
+            </div>
+          </div>
+
+          <div className="insight-card">
+            <span className="insight-kicker">
+              FINANCIAL INSIGHT
+            </span>
+
+            <h3>
+              Build better money habits.
+            </h3>
+
+            <p>
+              Use your dashboard, budgets and savings
+              goals to stay intentional with your money.
+            </p>
+
+            <Link to="/financial-insights">
+              View insights →
+            </Link>
+          </div>
+        </aside>
       </section>
 
       {/* ================================================================
@@ -1211,7 +1617,9 @@ export default function Dashboard() {
           ) : (
             <div className="activity-list">
               {recentTransactions.map(
-                (transaction: any) => (
+                (
+                  transaction: any,
+                ) => (
                   <div
                     className="activity-row"
                     key={`${transaction.type}-${transaction.id}`}
@@ -1269,8 +1677,6 @@ export default function Dashboard() {
         </div>
 
         <aside className="planning-panel">
-          {/* SAVINGS */}
-
           <div className="planning-section">
             <div className="section-heading compact">
               <div>
@@ -1327,8 +1733,6 @@ export default function Dashboard() {
               </Link>
             </div>
           </div>
-
-          {/* BUDGETS */}
 
           <div className="planning-section">
             <div className="section-heading compact">
@@ -1427,22 +1831,28 @@ export default function Dashboard() {
 
             <strong
               className={
-                monthlyNet >= 0
+                monthlyNet >=
+                0
                   ? "positive"
                   : "negative"
               }
             >
-              {monthlyNet >= 0
+              {monthlyNet >=
+              0
                 ? "+"
                 : "-"}
+
               {formatMoney(
-                Math.abs(monthlyNet),
+                Math.abs(
+                  monthlyNet,
+                ),
                 firstCurrency,
               )}
             </strong>
 
             <p>
-              {monthlyNet >= 0
+              {monthlyNet >=
+              0
                 ? "You're bringing in more than you're spending this month."
                 : "Your expenses are currently higher than your income this month."}
             </p>
@@ -1476,11 +1886,14 @@ export default function Dashboard() {
             </span>
 
             <strong>
-              {activeBudgets.length}
+              {
+                activeBudgets.length
+              }
             </strong>
 
             <p>
-              {budgetProgress >= 80
+              {budgetProgress >=
+              80
                 ? "You're getting close to your overall budget limit."
                 : "Your active budgets are currently under control."}
             </p>
@@ -1492,7 +1905,9 @@ export default function Dashboard() {
             </span>
 
             <strong>
-              {savingsGoals.length}
+              {
+                savingsGoals.length
+              }
             </strong>
 
             <p>
@@ -1538,7 +1953,9 @@ export default function Dashboard() {
       {showDepositModal && (
         <div
           className="dashboard-modal-backdrop"
-          onMouseDown={(event) => {
+          onMouseDown={(
+            event,
+          ) => {
             if (
               event.target ===
               event.currentTarget
@@ -1577,7 +1994,9 @@ export default function Dashboard() {
 
             {depositError && (
               <div className="dashboard-form-error">
-                {depositError}
+                {
+                  depositError
+                }
               </div>
             )}
 
@@ -1634,12 +2053,15 @@ export default function Dashboard() {
                       depositForm.savings_goal_id ||
                       ""
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setDepositForm({
                         ...depositForm,
                         savings_goal_id:
                           Number(
-                            event.target
+                            event
+                              .target
                               .value,
                           ),
                       })
@@ -1651,14 +2073,25 @@ export default function Dashboard() {
                     </option>
 
                     {savingsGoals.map(
-                      (goal) => (
+                      (
+                        goal,
+                      ) => (
                         <option
-                          key={goal.id}
-                          value={goal.id}
+                          key={
+                            goal.id
+                          }
+                          value={
+                            goal.id
+                          }
                         >
-                          {goal.name} —{" "}
+                          {
+                            goal.name
+                          }{" "}
+                          —{" "}
                           {formatMoney(
                             goal.remaining,
+                            goal.account_currency ||
+                              "NGN",
                           )}{" "}
                           remaining
                         </option>
@@ -1676,12 +2109,28 @@ export default function Dashboard() {
                     <strong>
                       {formatMoney(
                         selectedSavingsGoal.saved,
+                        selectedSavingsGoal.account_currency ||
+                          "NGN",
                       )}{" "}
                       /{" "}
                       {formatMoney(
                         selectedSavingsGoal.target_amount,
+                        selectedSavingsGoal.account_currency ||
+                          "NGN",
                       )}
                     </strong>
+                  </div>
+                )}
+
+                {selectedSavingsGoal?.account_currency && (
+                  <div className="dashboard-currency-note">
+                    This goal accepts{" "}
+                    <strong>
+                      {
+                        selectedSavingsGoal.account_currency
+                      }
+                    </strong>{" "}
+                    deposits only.
                   </div>
                 )}
 
@@ -1696,12 +2145,15 @@ export default function Dashboard() {
                       depositForm.account_id ||
                       ""
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setDepositForm({
                         ...depositForm,
                         account_id:
                           Number(
-                            event.target
+                            event
+                              .target
                               .value,
                           ),
                       })
@@ -1712,20 +2164,38 @@ export default function Dashboard() {
                       Select account
                     </option>
 
-                    {accounts.map(
-                      (account) => (
-                        <option
-                          key={account.id}
-                          value={account.id}
-                        >
-                          {account.name} —{" "}
-                          {formatMoney(
-                            account.balance,
-                            account.currency,
-                          )}
-                        </option>
-                      ),
-                    )}
+                    {accounts
+                      .filter(
+                        (
+                          account,
+                        ) =>
+                          !selectedSavingsGoal?.account_currency ||
+                          account.currency ===
+                            selectedSavingsGoal.account_currency,
+                      )
+                      .map(
+                        (
+                          account,
+                        ) => (
+                          <option
+                            key={
+                              account.id
+                            }
+                            value={
+                              account.id
+                            }
+                          >
+                            {
+                              account.name
+                            }{" "}
+                            —{" "}
+                            {formatMoney(
+                              account.balance,
+                              account.currency,
+                            )}
+                          </option>
+                        ),
+                      )}
                   </select>
                 </div>
 
@@ -1755,12 +2225,15 @@ export default function Dashboard() {
                       depositForm.amount ||
                       ""
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setDepositForm({
                         ...depositForm,
                         amount:
                           Number(
-                            event.target
+                            event
+                              .target
                               .value,
                           ),
                       })
@@ -1781,11 +2254,15 @@ export default function Dashboard() {
                     value={
                       depositForm.deposited_at
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setDepositForm({
                         ...depositForm,
                         deposited_at:
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                       })
                     }
                     required
@@ -1804,11 +2281,15 @@ export default function Dashboard() {
                       depositForm.reference ??
                       ""
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setDepositForm({
                         ...depositForm,
                         reference:
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                       })
                     }
                     placeholder="Optional"
@@ -1827,11 +2308,15 @@ export default function Dashboard() {
                       depositForm.description ??
                       ""
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setDepositForm({
                         ...depositForm,
                         description:
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                       })
                     }
                     placeholder="Add a note..."

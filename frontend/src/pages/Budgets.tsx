@@ -3,9 +3,15 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+
+import {
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 
 import { getCategories } from "../api/categories";
+
 import {
   createBudget,
   deleteBudget,
@@ -13,6 +19,7 @@ import {
 } from "../api/budgets";
 
 import type { Category } from "../types/category";
+
 import type {
   BudgetPayload,
   BudgetStatus,
@@ -20,32 +27,53 @@ import type {
 
 import "./Budgets.css";
 
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
+
 function formatMoney(
   value: number | string,
   currency = "NGN",
 ) {
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(Number(value) || 0);
+  return new Intl.NumberFormat(
+    "en-NG",
+    {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    },
+  ).format(Number(value) || 0);
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-NG", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+function formatDate(
+  value?: string | null,
+) {
+  if (!value) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-NG",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  ).format(new Date(value));
 }
 
 function getToday() {
   const date = new Date();
 
-  const year = date.getFullYear();
+  const year =
+    date.getFullYear();
+
   const month = String(
     date.getMonth() + 1,
   ).padStart(2, "0");
+
   const day = String(
     date.getDate(),
   ).padStart(2, "0");
@@ -54,16 +82,21 @@ function getToday() {
 }
 
 function getMonthEnd() {
+  const now = new Date();
+
   const date = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth() + 1,
+    now.getFullYear(),
+    now.getMonth() + 1,
     0,
   );
 
-  const year = date.getFullYear();
+  const year =
+    date.getFullYear();
+
   const month = String(
     date.getMonth() + 1,
   ).padStart(2, "0");
+
   const day = String(
     date.getDate(),
   ).padStart(2, "0");
@@ -101,8 +134,36 @@ function progressClass(
   }
 }
 
+function getStatusMessage(
+  status: BudgetStatus,
+  spent: number,
+  budget: number,
+) {
+  const difference =
+    spent - budget;
+
+  if (status === "Exceeded") {
+    return `${formatMoney(
+      difference,
+    )} over budget`;
+  }
+
+  if (status === "Near Limit") {
+    return "You're getting close to the limit.";
+  }
+
+  return "You're on track with this budget.";
+}
+
+/*
+|--------------------------------------------------------------------------
+| COMPONENT
+|--------------------------------------------------------------------------
+*/
+
 export default function Budgets() {
-  const queryClient = useQueryClient();
+  const queryClient =
+    useQueryClient();
 
   const [showModal, setShowModal] =
     useState(false);
@@ -110,8 +171,17 @@ export default function Budgets() {
   const [search, setSearch] =
     useState("");
 
-  const [statusFilter, setStatusFilter] =
-    useState("");
+  const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState("");
+
+  const [
+    activityFilter,
+    setActivityFilter,
+  ] = useState<
+    "" | "active" | "inactive"
+  >("");
 
   const [formError, setFormError] =
     useState("");
@@ -125,6 +195,12 @@ export default function Budgets() {
       is_active: true,
     });
 
+  /*
+  |--------------------------------------------------------------------------
+  | BUDGETS
+  |--------------------------------------------------------------------------
+  */
+
   const {
     data: budgets = [],
     isLoading: budgetsLoading,
@@ -134,135 +210,304 @@ export default function Budgets() {
     queryFn: getBudgets,
   });
 
+  /*
+  |--------------------------------------------------------------------------
+  | CATEGORIES
+  |--------------------------------------------------------------------------
+  */
+
   const {
     data: categories = [],
     isLoading: categoriesLoading,
   } = useQuery({
-    queryKey: ["categories", "expense"],
-    queryFn: () => getCategories("expense"),
+    queryKey: [
+      "categories",
+      "expense",
+    ],
+
+    queryFn: () =>
+      getCategories(
+        "expense",
+      ),
   });
 
-  const createMutation = useMutation({
-    mutationFn: (payload: BudgetPayload) =>
-      createBudget(payload),
+  /*
+  |--------------------------------------------------------------------------
+  | CREATE
+  |--------------------------------------------------------------------------
+  */
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["budgets"],
-      });
+  const createMutation =
+    useMutation({
+      mutationFn: (
+        payload: BudgetPayload,
+      ) =>
+        createBudget(payload),
 
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "budgets",
+            ],
+          },
+        );
 
-      closeModal();
-    },
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "dashboard",
+            ],
+          },
+        );
 
-    onError: (error: any) => {
-      const errors =
-        error?.response?.data?.errors;
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "financial-insights",
+            ],
+          },
+        );
 
-      const firstError = errors
-        ? Object.values(errors)
-            .flat()
-            .find(Boolean)
-        : null;
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "notifications",
+            ],
+          },
+        );
 
-      setFormError(
-        typeof firstError === "string"
-          ? firstError
-          : error?.response?.data?.message ??
+        closeModal();
+      },
+
+      onError: (
+        error: any,
+      ) => {
+        const errors =
+          error?.response?.data
+            ?.errors;
+
+        const firstError =
+          errors
+            ? Object.values(
+                errors,
+              )
+                .flat()
+                .find(Boolean)
+            : null;
+
+        setFormError(
+          typeof firstError ===
+            "string"
+            ? firstError
+            : error?.response
+                ?.data
+                ?.message ??
               error?.message ??
               "Unable to create budget.",
-      );
-    },
-  });
+        );
+      },
+    });
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteBudget,
+  /*
+  |--------------------------------------------------------------------------
+  | DELETE
+  |--------------------------------------------------------------------------
+  */
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["budgets"],
-      });
+  const deleteMutation =
+    useMutation({
+      mutationFn:
+        deleteBudget,
 
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
-    },
-  });
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "budgets",
+            ],
+          },
+        );
 
-  const activeBudgets = useMemo(
-    () =>
-      budgets.filter(
-        (budget) => budget.is_active,
-      ),
-    [budgets],
-  );
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "dashboard",
+            ],
+          },
+        );
 
-  const totalBudgeted = useMemo(
-    () =>
-      activeBudgets.reduce(
-        (sum, budget) =>
-          sum + Number(budget.budget),
-        0,
-      ),
-    [activeBudgets],
-  );
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "financial-insights",
+            ],
+          },
+        );
 
-  const totalSpent = useMemo(
-    () =>
-      activeBudgets.reduce(
-        (sum, budget) =>
-          sum + Number(budget.spent),
-        0,
-      ),
-    [activeBudgets],
-  );
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "notifications",
+            ],
+          },
+        );
+      },
+    });
 
-  const totalRemaining = useMemo(
-    () =>
-      activeBudgets.reduce(
-        (sum, budget) =>
-          sum + Number(budget.remaining),
-        0,
-      ),
-    [activeBudgets],
-  );
+  /*
+  |--------------------------------------------------------------------------
+  | ACTIVE / INACTIVE
+  |--------------------------------------------------------------------------
+  */
+
+  const activeBudgets =
+    useMemo(
+      () =>
+        budgets.filter(
+          (budget) =>
+            budget.is_active,
+        ),
+      [budgets],
+    );
+  /*
+  |--------------------------------------------------------------------------
+  | SUMMARY
+  |--------------------------------------------------------------------------
+  */
+
+  const totalBudgeted =
+    useMemo(
+      () =>
+        activeBudgets.reduce(
+          (sum, budget) =>
+            sum +
+            Number(
+              budget.budget,
+            ),
+          0,
+        ),
+      [activeBudgets],
+    );
+
+  const totalSpent =
+    useMemo(
+      () =>
+        activeBudgets.reduce(
+          (sum, budget) =>
+            sum +
+            Number(
+              budget.spent,
+            ),
+          0,
+        ),
+      [activeBudgets],
+    );
+
+  const totalRemaining =
+    useMemo(
+      () =>
+        activeBudgets.reduce(
+          (sum, budget) =>
+            sum +
+            Number(
+              budget.remaining,
+            ),
+          0,
+        ),
+      [activeBudgets],
+    );
+
+  const totalOverBudget =
+    useMemo(
+      () =>
+        activeBudgets.reduce(
+          (sum, budget) =>
+            sum +
+            Math.max(
+              0,
+              Number(
+                budget.spent,
+              ) -
+                Number(
+                  budget.budget,
+                ),
+            ),
+          0,
+        ),
+      [activeBudgets],
+    );
 
   const overallProgress =
     totalBudgeted > 0
-      ? Math.min(
-          100,
-          (totalSpent / totalBudgeted) * 100,
-        )
+      ? (totalSpent /
+          totalBudgeted) *
+        100
       : 0;
 
-  const filteredBudgets = useMemo(() => {
-    const term =
-      search.trim().toLowerCase();
+  const overallProgressSafe =
+    Math.min(
+      100,
+      Math.max(
+        0,
+        overallProgress,
+      ),
+    );
 
-    return budgets.filter((budget) => {
-      const matchesSearch =
-        !term ||
-        budget.category
-          .toLowerCase()
-          .includes(term);
+  /*
+  |--------------------------------------------------------------------------
+  | FILTERING
+  |--------------------------------------------------------------------------
+  */
 
-      const matchesStatus =
-        !statusFilter ||
-        budget.status === statusFilter;
+  const filteredBudgets =
+    useMemo(() => {
+      const term =
+        search
+          .trim()
+          .toLowerCase();
 
-      return (
-        matchesSearch &&
-        matchesStatus
+      return budgets.filter(
+        (budget) => {
+          const matchesSearch =
+            !term ||
+            budget.category
+              .toLowerCase()
+              .includes(term);
+
+          const matchesStatus =
+            !statusFilter ||
+            budget.status ===
+              statusFilter;
+
+          const matchesActivity =
+            activityFilter === "" ||
+            (activityFilter ===
+              "active" &&
+              budget.is_active) ||
+            (activityFilter ===
+              "inactive" &&
+              !budget.is_active);
+
+          return (
+            matchesSearch &&
+            matchesStatus &&
+            matchesActivity
+          );
+        },
       );
-    });
-  }, [
-    budgets,
-    search,
-    statusFilter,
-  ]);
+    }, [
+      budgets,
+      search,
+      statusFilter,
+      activityFilter,
+    ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | MODAL
+  |--------------------------------------------------------------------------
+  */
 
   const openModal = () => {
     setFormError("");
@@ -279,12 +524,25 @@ export default function Budgets() {
   };
 
   const closeModal = () => {
+    if (
+      createMutation.isPending
+    ) {
+      return;
+    }
+
     setShowModal(false);
+
     setFormError("");
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | SUBMIT
+  |--------------------------------------------------------------------------
+  */
+
   const handleSubmit = (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
 
@@ -294,6 +552,7 @@ export default function Budgets() {
       setFormError(
         "Please select a category.",
       );
+
       return;
     }
 
@@ -304,6 +563,7 @@ export default function Budgets() {
       setFormError(
         "Budget amount must be at least ₦1.",
       );
+
       return;
     }
 
@@ -314,50 +574,84 @@ export default function Budgets() {
       setFormError(
         "Please select both dates.",
       );
+
       return;
     }
 
-    if (
-      new Date(form.end_date) <
-      new Date(form.start_date)
-    ) {
+    const startDate =
+      new Date(
+        form.start_date,
+      );
+
+    const endDate =
+      new Date(
+        form.end_date,
+      );
+
+    if (endDate < startDate) {
       setFormError(
         "End date cannot be before start date.",
       );
+
       return;
     }
 
     createMutation.mutate({
       category_id:
-        Number(form.category_id),
-      amount: Number(form.amount),
-      start_date: form.start_date,
-      end_date: form.end_date,
+        Number(
+          form.category_id,
+        ),
+
+      amount:
+        Number(form.amount),
+
+      start_date:
+        form.start_date,
+
+      end_date:
+        form.end_date,
+
       is_active:
         form.is_active ?? true,
     });
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | DELETE
+  |--------------------------------------------------------------------------
+  */
+
   const handleDelete = (
     budgetId: number,
     category: string,
   ) => {
-    const confirmed = window.confirm(
-      `Delete the ${category} budget? This cannot be undone.`,
-    );
+    const confirmed =
+      window.confirm(
+        `Delete the ${category} budget? This cannot be undone.`,
+      );
 
     if (!confirmed) {
       return;
     }
 
-    deleteMutation.mutate(budgetId);
+    deleteMutation.mutate(
+      budgetId,
+    );
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOADING
+  |--------------------------------------------------------------------------
+  */
 
   if (budgetsLoading) {
     return (
       <main className="budgets-page">
         <div className="budgets-loading">
           <div className="budgets-spinner" />
+
           <p>
             Loading your budgets...
           </p>
@@ -365,6 +659,12 @@ export default function Budgets() {
       </main>
     );
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | ERROR
+  |--------------------------------------------------------------------------
+  */
 
   if (budgetsError) {
     return (
@@ -375,15 +675,19 @@ export default function Budgets() {
           </h2>
 
           <p>
-            Please check your connection and
-            try again.
+            Please check your connection and try
+            again.
           </p>
 
           <button
             onClick={() =>
-              queryClient.invalidateQueries({
-                queryKey: ["budgets"],
-              })
+              queryClient.invalidateQueries(
+                {
+                  queryKey: [
+                    "budgets",
+                  ],
+                },
+              )
             }
           >
             Try again
@@ -393,15 +697,27 @@ export default function Budgets() {
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | RENDER
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <main className="budgets-page">
+      {/* ================================================================
+          HEADER
+      ================================================================= */}
+
       <header className="budgets-header">
         <div>
           <p className="budgets-eyebrow">
             FINANCIAL PLANNING
           </p>
 
-          <h1>Budgets</h1>
+          <h1>
+            Budgets
+          </h1>
 
           <p className="budgets-subtitle">
             Set spending limits and stay in control
@@ -411,17 +727,26 @@ export default function Budgets() {
 
         <button
           className="add-budget-button"
-          onClick={openModal}
+          onClick={
+            openModal
+          }
         >
           <span>+</span>
+
           Create budget
         </button>
       </header>
 
+      {/* ================================================================
+          SUMMARY
+      ================================================================= */}
+
       <section className="budget-summary">
         <article className="budget-summary-card featured">
           <div>
-            <span>Total budgeted</span>
+            <span>
+              Total budgeted
+            </span>
 
             <strong>
               {formatMoney(
@@ -430,9 +755,11 @@ export default function Budgets() {
             </strong>
 
             <small>
-              Across {activeBudgets.length} active
-              budget
-              {activeBudgets.length === 1
+              Across{" "}
+              {activeBudgets.length}{" "}
+              active budget
+              {activeBudgets.length ===
+              1
                 ? ""
                 : "s"}
             </small>
@@ -444,30 +771,60 @@ export default function Budgets() {
         </article>
 
         <article className="budget-summary-card">
-          <span>Total spent</span>
+          <span>
+            Total spent
+          </span>
 
           <strong>
-            {formatMoney(totalSpent)}
+            {formatMoney(
+              totalSpent,
+            )}
           </strong>
 
           <small>
-            {overallProgress.toFixed(1)}% of
-            active budgets
+            {overallProgressSafe.toFixed(
+              1,
+            )}
+            % of active budgets
           </small>
         </article>
 
         <article className="budget-summary-card">
-          <span>Remaining</span>
+          <span>
+            Remaining
+          </span>
 
           <strong>
-            {formatMoney(totalRemaining)}
+            {formatMoney(
+              totalRemaining,
+            )}
           </strong>
 
           <small>
             Available across active budgets
           </small>
         </article>
+
+        <article className="budget-summary-card warning-summary">
+          <span>
+            Over budget
+          </span>
+
+          <strong>
+            {formatMoney(
+              totalOverBudget,
+            )}
+          </strong>
+
+          <small>
+            Combined excess across active budgets
+          </small>
+        </article>
       </section>
+
+      {/* ================================================================
+          OVERALL PROGRESS
+      ================================================================= */}
 
       <section className="budget-overall-card">
         <div className="overall-heading">
@@ -482,18 +839,25 @@ export default function Budgets() {
           </div>
 
           <strong>
-            {overallProgress.toFixed(1)}%
+            {overallProgressSafe.toFixed(
+              1,
+            )}
+            %
           </strong>
         </div>
 
         <div className="overall-progress">
           <div
-            className="overall-progress-fill"
+            className={`overall-progress-fill ${
+              overallProgress >= 100
+                ? "danger"
+                : overallProgress >=
+                    80
+                  ? "warning"
+                  : ""
+            }`}
             style={{
-              width: `${Math.min(
-                overallProgress,
-                100,
-              )}%`,
+              width: `${overallProgressSafe}%`,
             }}
           />
         </div>
@@ -501,24 +865,40 @@ export default function Budgets() {
         <div className="overall-labels">
           <span>
             Spent{" "}
-            {formatMoney(totalSpent)}
+            {formatMoney(
+              totalSpent,
+            )}
           </span>
 
           <span>
             Budget{" "}
-            {formatMoney(totalBudgeted)}
+            {formatMoney(
+              totalBudgeted,
+            )}
           </span>
         </div>
       </section>
 
+      {/* ================================================================
+          WORKSPACE
+      ================================================================= */}
+
       <section className="budgets-workspace">
         <div className="budgets-toolbar">
           <div>
-            <h2>Your budgets</h2>
+            <h2>
+              Your budgets
+            </h2>
 
             <p>
-              Track spending against each category
-              limit.
+              {filteredBudgets.length}{" "}
+              of{" "}
+              {budgets.length} budget
+              {budgets.length ===
+              1
+                ? ""
+                : "s"}{" "}
+              displayed
             </p>
           </div>
 
@@ -533,6 +913,7 @@ export default function Budgets() {
                   cy="11"
                   r="7"
                 />
+
                 <path d="m16 16 5 5" />
               </svg>
 
@@ -540,19 +921,56 @@ export default function Budgets() {
                 type="search"
                 placeholder="Search budgets..."
                 value={search}
-                onChange={(event) =>
+                onChange={(
+                  event,
+                ) =>
                   setSearch(
-                    event.target.value,
+                    event.target
+                      .value,
                   )
                 }
               />
             </div>
 
             <select
-              value={statusFilter}
-              onChange={(event) =>
+              value={
+                activityFilter
+              }
+              onChange={(
+                event,
+              ) =>
+                setActivityFilter(
+                  event.target
+                    .value as
+                    | ""
+                    | "active"
+                    | "inactive",
+                )
+              }
+            >
+              <option value="">
+                All activity
+              </option>
+
+              <option value="active">
+                Active
+              </option>
+
+              <option value="inactive">
+                Inactive
+              </option>
+            </select>
+
+            <select
+              value={
+                statusFilter
+              }
+              onChange={(
+                event,
+              ) =>
                 setStatusFilter(
-                  event.target.value,
+                  event.target
+                    .value,
                 )
               }
             >
@@ -575,27 +993,49 @@ export default function Budgets() {
           </div>
         </div>
 
-        {filteredBudgets.length === 0 ? (
+        {filteredBudgets.length ===
+        0 ? (
           <div className="budgets-empty">
             <div className="empty-budget-icon">
               ₦
             </div>
 
             <h3>
-              {budgets.length === 0
+              {budgets.length ===
+              0
                 ? "Create your first budget"
                 : "No budgets match your filters"}
             </h3>
 
             <p>
-              {budgets.length === 0
+              {budgets.length ===
+              0
                 ? "Set a category spending limit and start managing your money with intention."
-                : "Try another search term or status filter."}
+                : "Try another search term or change your activity/status filters."}
             </p>
 
-            {budgets.length === 0 && (
-              <button onClick={openModal}>
+            {budgets.length ===
+            0 ? (
+              <button
+                onClick={
+                  openModal
+                }
+              >
                 Create budget
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setSearch("");
+
+                  setStatusFilter("");
+
+                  setActivityFilter(
+                    "",
+                  );
+                }}
+              >
+                Clear filters
               </button>
             )}
           </div>
@@ -603,20 +1043,52 @@ export default function Budgets() {
           <div className="budgets-grid">
             {filteredBudgets.map(
               (budget) => {
-                const percentage = Math.min(
-                  100,
+                const budgetAmount =
+                  Number(
+                    budget.budget,
+                  );
+
+                const spentAmount =
+                  Number(
+                    budget.spent,
+                  );
+
+                const remainingAmount =
+                  Number(
+                    budget.remaining,
+                  );
+
+                const percentage =
                   Math.max(
                     0,
                     Number(
                       budget.progress,
                     ),
-                  ),
-                );
+                  );
+
+                const progressWidth =
+                  Math.min(
+                    100,
+                    percentage,
+                  );
+
+                const overBudget =
+                  Math.max(
+                    0,
+                    spentAmount -
+                      budgetAmount,
+                  );
 
                 return (
                   <article
-                    className="budget-card"
-                    key={budget.id}
+                    className={`budget-card ${
+                      budget.is_active
+                        ? ""
+                        : "inactive"
+                    }`}
+                    key={
+                      budget.id
+                    }
                   >
                     <div className="budget-card-header">
                       <div className="budget-category-icon">
@@ -625,7 +1097,9 @@ export default function Budgets() {
 
                       <div className="budget-card-title">
                         <h3>
-                          {budget.category}
+                          {
+                            budget.category
+                          }
                         </h3>
 
                         <span>
@@ -644,38 +1118,58 @@ export default function Budgets() {
                           budget.status,
                         )}
                       >
-                        {budget.status}
+                        {
+                          budget.status
+                        }
                       </span>
                     </div>
 
                     <div className="budget-card-amounts">
                       <div>
-                        <span>Spent</span>
+                        <span>
+                          Spent
+                        </span>
 
                         <strong>
                           {formatMoney(
-                            budget.spent,
+                            spentAmount,
                           )}
                         </strong>
                       </div>
 
                       <div>
-                        <span>Budget</span>
+                        <span>
+                          Budget
+                        </span>
 
                         <strong>
                           {formatMoney(
-                            budget.budget,
+                            budgetAmount,
                           )}
                         </strong>
                       </div>
 
                       <div>
-                        <span>Remaining</span>
+                        <span>
+                          Remaining
+                        </span>
 
-                        <strong>
-                          {formatMoney(
-                            budget.remaining,
-                          )}
+                        <strong
+                          className={
+                            remainingAmount <=
+                            0
+                              ? "danger-value"
+                              : ""
+                          }
+                        >
+                          {remainingAmount >
+                          0
+                            ? formatMoney(
+                                remainingAmount,
+                              )
+                            : formatMoney(
+                                0,
+                              )}
                         </strong>
                       </div>
                     </div>
@@ -686,7 +1180,7 @@ export default function Budgets() {
                           budget.status,
                         )}
                         style={{
-                          width: `${percentage}%`,
+                          width: `${progressWidth}%`,
                         }}
                       />
                     </div>
@@ -695,26 +1189,55 @@ export default function Budgets() {
                       <span>
                         {Number(
                           budget.progress,
-                        ).toFixed(1)}
+                        ).toFixed(
+                          1,
+                        )}
                         % used
                       </span>
 
-                      <span>
+                      <span
+                        className={
+                          budget.is_active
+                            ? "active-label"
+                            : "inactive-label"
+                        }
+                      >
                         {budget.is_active
                           ? "Active"
                           : "Inactive"}
                       </span>
                     </div>
 
-                    <div className="budget-card-footer">
-                      <span>
-                        {budget.status ===
+                    <div
+                      className={`budget-card-footer ${
+                        budget.status ===
                         "Exceeded"
-                          ? "You've exceeded this budget."
+                          ? "exceeded-footer"
                           : budget.status ===
                               "Near Limit"
-                            ? "You're getting close to the limit."
-                            : "You're on track with this budget."}
+                            ? "warning-footer"
+                            : ""
+                      }`}
+                    >
+                      <span>
+                        {getStatusMessage(
+                          budget.status,
+                          spentAmount,
+                          budgetAmount,
+                        )}
+
+                        {budget.status ===
+                          "Exceeded" &&
+                          overBudget >
+                            0 && (
+                            <>
+                              {" "}
+                              ({formatMoney(
+                                overBudget,
+                              )}{" "}
+                              excess)
+                            </>
+                          )}
                       </span>
 
                       <button
@@ -739,10 +1262,16 @@ export default function Budgets() {
         )}
       </section>
 
+      {/* ================================================================
+          CREATE MODAL
+      ================================================================= */}
+
       {showModal && (
         <div
           className="budget-modal-backdrop"
-          onMouseDown={(event) => {
+          onMouseDown={(
+            event,
+          ) => {
             if (
               event.target ===
               event.currentTarget
@@ -759,7 +1288,9 @@ export default function Budgets() {
           >
             <div className="budget-modal-header">
               <div>
-                <p>BUDGET PLANNER</p>
+                <p>
+                  BUDGET PLANNER
+                </p>
 
                 <h2 id="budget-modal-title">
                   Create budget
@@ -768,7 +1299,9 @@ export default function Budgets() {
 
               <button
                 className="budget-modal-close"
-                onClick={closeModal}
+                onClick={
+                  closeModal
+                }
                 aria-label="Close"
               >
                 ×
@@ -782,7 +1315,9 @@ export default function Budgets() {
             )}
 
             <form
-              onSubmit={handleSubmit}
+              onSubmit={
+                handleSubmit
+              }
             >
               <div className="budget-field">
                 <label htmlFor="budget-category">
@@ -792,14 +1327,19 @@ export default function Budgets() {
                 <select
                   id="budget-category"
                   value={
-                    form.category_id || ""
+                    form.category_id ||
+                    ""
                   }
-                  onChange={(event) =>
+                  onChange={(
+                    event,
+                  ) =>
                     setForm({
                       ...form,
                       category_id:
                         Number(
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                         ),
                     })
                   }
@@ -815,12 +1355,20 @@ export default function Budgets() {
                   </option>
 
                   {categories.map(
-                    (category: Category) => (
+                    (
+                      category: Category,
+                    ) => (
                       <option
-                        key={category.id}
-                        value={category.id}
+                        key={
+                          category.id
+                        }
+                        value={
+                          category.id
+                        }
                       >
-                        {category.name}
+                        {
+                          category.name
+                        }
                       </option>
                     ),
                   )}
@@ -838,14 +1386,19 @@ export default function Budgets() {
                   min="1"
                   step="0.01"
                   value={
-                    form.amount || ""
+                    form.amount ||
+                    ""
                   }
-                  onChange={(event) =>
+                  onChange={(
+                    event,
+                  ) =>
                     setForm({
                       ...form,
                       amount:
                         Number(
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                         ),
                     })
                   }
@@ -866,11 +1419,15 @@ export default function Budgets() {
                     value={
                       form.start_date
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setForm({
                         ...form,
                         start_date:
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                       })
                     }
                     required
@@ -888,11 +1445,15 @@ export default function Budgets() {
                     value={
                       form.end_date
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setForm({
                         ...form,
                         end_date:
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                       })
                     }
                     required
@@ -904,13 +1465,17 @@ export default function Budgets() {
                 <input
                   type="checkbox"
                   checked={
-                    form.is_active ?? true
+                    form.is_active ??
+                    true
                   }
-                  onChange={(event) =>
+                  onChange={(
+                    event,
+                  ) =>
                     setForm({
                       ...form,
                       is_active:
-                        event.target
+                        event
+                          .target
                           .checked,
                     })
                   }
@@ -925,7 +1490,12 @@ export default function Budgets() {
                 <button
                   type="button"
                   className="budget-cancel"
-                  onClick={closeModal}
+                  onClick={
+                    closeModal
+                  }
+                  disabled={
+                    createMutation.isPending
+                  }
                 >
                   Cancel
                 </button>

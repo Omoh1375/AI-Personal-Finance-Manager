@@ -265,32 +265,45 @@ class DashboardService
     }
 
     private function accountAnalytics(int $userId)
-    {
-        return Account::where('user_id', $userId)
-            ->get()
-            ->map(function ($account) {
-                $income = Income::where(
+{
+    return Account::where('user_id', $userId)
+        ->get()
+        ->map(function ($account) {
+
+            $income = Income::where(
                     'account_id',
                     $account->id
-                )->sum('amount');
+                )
+                ->sum('amount');
 
-                $expenses = Expense::where(
+            $expenses = Expense::where(
                     'account_id',
                     $account->id
-                )->sum('amount');
+                )
+                ->sum('amount');
 
-                return [
-                    'id' => $account->id,
-                    'name' => $account->name,
-                    'type' => $account->type,
-                    'balance' => (float) $account->balance,
-                    'income' => (float) $income,
-                    'expenses' => (float) $expenses,
-                    'transactions' =>
-                        $account->incomes()->count()
-                        + $account->expenses()->count(),
-                ];
-            })
-            ->values();
-    }
+            return [
+
+                'id' => $account->id,
+
+                'name' => $account->name,
+
+                'type' => $account->type,
+
+                'balance' => (float) $account->balance,
+
+                'currency' => $account->currency,
+
+                'income' => (float) $income,
+
+                'expenses' => (float) $expenses,
+
+                'transactions' =>
+                    $account->incomes()->count()
+                    +
+                    $account->expenses()->count(),
+
+            ];
+        });
+}
 }

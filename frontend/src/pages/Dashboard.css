@@ -25,7 +25,7 @@
   text-decoration: none;
 }
 
-/* Reset button typography */
+/* Reset form typography */
 .dashboard-page button,
 .dashboard-page input,
 .dashboard-page select,
@@ -33,7 +33,9 @@
   font: inherit;
 }
 
-/* Shared page width */
+/* ==========================================================================
+   SHARED PAGE WIDTH
+   ========================================================================== */
 
 .dashboard-header,
 .dashboard-summary,
@@ -211,26 +213,70 @@
     );
 }
 
+/* ==========================================================================
+   TOTAL BALANCE / CURRENCY SELECTOR
+   ========================================================================== */
+
 .balance-card-top {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
 
   color: rgba(255, 255, 255, 0.74);
 
   font-size: 10px;
 }
 
-.balance-badge {
-  padding: 4px 7px;
+.balance-currency-select {
+  min-width: 78px;
+  height: 31px;
 
-  border-radius: 20px;
+  padding: 0 8px;
 
-  color: #a2f0dc;
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.18);
 
-  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
 
-  font-size: 8px;
+  outline: none;
+
+  color: #ffffff;
+
+  background:
+    rgba(255, 255, 255, 0.09);
+
+  cursor: pointer;
+
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.balance-currency-select:hover {
+  background:
+    rgba(255, 255, 255, 0.13);
+}
+
+.balance-currency-select:focus {
+  border-color: #76e2c8;
+
+  box-shadow:
+    0 0 0 3px
+      rgba(118, 226, 200, 0.12);
+}
+
+.balance-currency-select option {
+  color: #26332f;
+  background: #ffffff;
+}
+
+.balance-meta {
+  margin-top: 5px;
+
+  color: rgba(255, 255, 255, 0.55);
+
+  font-size: 9px;
 }
 
 .balance-card > strong {
@@ -255,7 +301,8 @@
   gap: 10px;
 
   border-top:
-    1px solid rgba(255, 255, 255, 0.09);
+    1px solid
+    rgba(255, 255, 255, 0.09);
 
   font-size: 10px;
 }
@@ -267,6 +314,10 @@
 .balance-footer .negative {
   color: #ffb9a8;
 }
+
+/* ==========================================================================
+   METRIC CARDS
+   ========================================================================== */
 
 .metric-card {
   display: flex;
@@ -495,12 +546,15 @@
 }
 
 .command-card:focus-visible {
-  outline: 3px solid rgba(13, 146, 120, 0.14);
+  outline: 3px solid
+    rgba(13, 146, 120, 0.14);
+
   outline-offset: 2px;
 }
 
 .command-card:disabled {
   opacity: 0.45;
+
   cursor: not-allowed;
 
   transform: none;
@@ -642,7 +696,8 @@
   background: #fff;
 
   box-shadow:
-    0 7px 18px rgba(13, 146, 120, 0.08);
+    0 7px 18px
+      rgba(13, 146, 120, 0.08);
 }
 
 .score-circle strong {
@@ -746,7 +801,8 @@
   border-color: #dce9e6;
 
   box-shadow:
-    0 10px 22px rgba(22, 54, 50, 0.055);
+    0 10px 22px
+      rgba(22, 54, 50, 0.055);
 }
 
 .account-top {
@@ -876,7 +932,8 @@
 
   gap: 10px;
 
-  border-bottom: 1px solid #edf1ef;
+  border-bottom:
+    1px solid #edf1ef;
 }
 
 .activity-row:last-child {
@@ -986,7 +1043,8 @@
   background: #fff;
 
   box-shadow:
-    0 7px 23px rgba(22, 54, 50, 0.035);
+    0 7px 23px
+      rgba(22, 54, 50, 0.035);
 }
 
 .section-heading.compact {
@@ -1118,7 +1176,8 @@
   transform: translateY(-1px);
 
   box-shadow:
-    0 8px 19px rgba(22, 54, 50, 0.045);
+    0 8px 19px
+      rgba(22, 54, 50, 0.045);
 }
 
 .insight-box > span {
@@ -1204,7 +1263,8 @@
   text-decoration: none;
 
   box-shadow:
-    0 5px 16px rgba(22, 54, 50, 0.025);
+    0 5px 16px
+      rgba(22, 54, 50, 0.025);
 
   transition:
     transform 0.16s ease,
@@ -1222,7 +1282,8 @@
   text-decoration: none;
 
   box-shadow:
-    0 8px 19px rgba(22, 54, 50, 0.05);
+    0 8px 19px
+      rgba(22, 54, 50, 0.05);
 }
 
 .dashboard-footer-tools a span {
@@ -1357,12 +1418,14 @@
 
   border-radius: 50%;
 
-  border: 3px solid #d7e8e4;
+  border:
+    3px solid #d7e8e4;
 
   border-top-color: #0b9278;
 
   animation:
-    dashboard-spin 0.7s linear infinite;
+    dashboard-spin
+    0.7s linear infinite;
 }
 
 .dashboard-loading p {
@@ -1433,7 +1496,8 @@
 .dashboard-modal {
   width: min(100%, 570px);
 
-  max-height: calc(100vh - 40px);
+  max-height:
+    calc(100vh - 40px);
 
   overflow-y: auto;
 
@@ -1444,7 +1508,8 @@
   background: #fff;
 
   box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.19);
+    0 30px 80px
+      rgba(0, 0, 0, 0.19);
 }
 
 .dashboard-modal-header {
@@ -1516,7 +1581,8 @@
 
   border-radius: 9px;
 
-  border: 1px solid #fecaca;
+  border:
+    1px solid #fecaca;
 
   color: #991b1b;
 
@@ -1546,7 +1612,8 @@
 .dashboard-field textarea {
   width: 100%;
 
-  border: 1px solid #dce4e1;
+  border:
+    1px solid #dce4e1;
 
   border-radius: 9px;
 
@@ -1582,7 +1649,8 @@
   border-color: #0d9278;
 
   box-shadow:
-    0 0 0 3px rgba(13, 146, 120, 0.09);
+    0 0 0 3px
+      rgba(13, 146, 120, 0.09);
 }
 
 .deposit-preview,
@@ -1611,6 +1679,29 @@
 .deposit-preview strong,
 .deposit-account-balance strong {
   color: #0c8b73;
+}
+
+.dashboard-currency-note {
+  margin-bottom: 14px;
+
+  padding: 9px 11px;
+
+  border:
+    1px solid #dcebe6;
+
+  border-radius: 8px;
+
+  color: #65736e;
+
+  background: #f1f8f5;
+
+  font-size: 9px;
+
+  line-height: 1.45;
+}
+
+.dashboard-currency-note strong {
+  color: #0d9278;
 }
 
 .dashboard-modal-actions {
@@ -1667,7 +1758,8 @@
   font-weight: 750;
 
   box-shadow:
-    0 6px 14px rgba(13, 146, 120, 0.14);
+    0 6px 14px
+      rgba(13, 146, 120, 0.14);
 }
 
 .dashboard-submit:hover {
@@ -1847,5 +1939,394 @@
 
   .profile-button {
     flex: 0 0 40px;
+  }
+
+  .balance-card > strong {
+    font-size: 25px;
+  }
+
+  .balance-currency-select {
+    min-width: 72px;
+  }
+
+  .dashboard-modal {
+    padding: 22px;
+
+    max-height:
+      calc(100vh - 24px);
+  }
+
+  .dashboard-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .dashboard-cancel,
+  .dashboard-submit {
+    width: 100%;
+  }
+}
+/* ==========================================================================
+   QUICK ACTIONS GRID
+   ========================================================================== */
+
+.quick-actions {
+  margin-top: 14px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
+}
+
+.quick-actions > a {
+  min-height: 82px;
+
+  padding: 12px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  border:
+    1px solid #e8eeec;
+
+  border-radius: 11px;
+
+  color: #293631;
+
+  background: #fbfcfc;
+
+  text-decoration: none;
+
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.quick-actions > a:hover {
+  transform: translateY(-2px);
+
+  border-color: #d8e7e3;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 8px 18px
+      rgba(22, 54, 50, 0.055);
+
+  text-decoration: none;
+}
+
+.quick-actions > a > span:last-child {
+  min-width: 0;
+
+  flex: 1;
+}
+
+.quick-actions strong,
+.quick-actions small {
+  display: block;
+}
+
+.quick-actions strong {
+  color: #26332f;
+
+  font-size: 10px;
+
+  font-weight: 750;
+}
+
+.quick-actions small {
+  margin-top: 4px;
+
+  color: #98a29f;
+
+  font-size: 8px;
+
+  line-height: 1.4;
+}
+
+.quick-action-icon {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 10px;
+
+  font-size: 16px;
+
+  font-weight: 800;
+}
+
+.quick-action-icon.income-icon {
+  color: #078c74;
+
+  background: #e5f7f1;
+}
+
+.quick-action-icon.expense-icon {
+  color: #bd614b;
+
+  background: #fff0eb;
+}
+
+.quick-action-icon.transfer-icon {
+  color: #6272bb;
+
+  background: #eef1ff;
+}
+
+.quick-action-icon.budget-icon {
+  color: #6572b4;
+
+  background: #edf0ff;
+}
+
+.quick-actions > a::after {
+  content: "→";
+
+  color: #a5aeaa;
+
+  font-size: 14px;
+
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
+}
+
+.quick-actions > a:hover::after {
+  color: #0d9278;
+
+  transform: translateX(2px);
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 560px) {
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+}
+/* ==========================================================================
+   FINANCIAL INSIGHT CARD
+   ========================================================================== */
+
+.insight-card {
+  margin-top: 14px;
+
+  padding: 20px;
+
+  border:
+    1px solid #dcebe6;
+
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #113d36,
+      #0d8069
+    );
+
+  box-shadow:
+    0 9px 25px
+      rgba(22, 54, 50, 0.07);
+}
+
+.insight-kicker {
+  display: block;
+
+  color: #8ce7d2;
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.13em;
+}
+
+.insight-card h3 {
+  margin: 10px 0 0;
+
+  color: #ffffff;
+
+  font-size: 16px;
+
+  line-height: 1.3;
+}
+
+.insight-card p {
+  margin: 8px 0 0;
+
+  color:
+    rgba(255, 255, 255, 0.7);
+
+  font-size: 9px;
+
+  line-height: 1.6;
+}
+
+.insight-card a {
+  display: inline-flex;
+
+  align-items: center;
+
+  margin-top: 14px;
+
+  color: #9df1df;
+
+  font-size: 9px;
+
+  font-weight: 750;
+
+  text-decoration: none;
+}
+
+.insight-card a:hover {
+  color: #ffffff;
+
+  text-decoration: none;
+}
+
+/* ==========================================================================
+   CURRENCY SELECTOR
+   ========================================================================== */
+
+.balance-currency-select {
+  width: 84px;
+  height: 32px;
+
+  padding:
+    0 28px 0 10px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.24);
+
+  border-radius: 9px;
+
+  outline: none;
+
+  color: #ffffff;
+
+  background-color:
+    rgba(255, 255, 255, 0.1);
+
+  cursor: pointer;
+
+  font-size: 10px;
+
+  font-weight: 750;
+
+  -webkit-appearance: none;
+
+  appearance: none;
+
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent 50%,
+      #ffffff 50%
+    ),
+    linear-gradient(
+      135deg,
+      #ffffff 50%,
+      transparent 50%
+    );
+
+  background-position:
+    calc(100% - 13px) 13px,
+    calc(100% - 8px) 13px;
+
+  background-size:
+    5px 5px,
+    5px 5px;
+
+  background-repeat:
+    no-repeat;
+
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.balance-currency-select:hover {
+  border-color:
+    rgba(255, 255, 255, 0.4);
+
+  background-color:
+    rgba(255, 255, 255, 0.15);
+}
+
+.balance-currency-select:focus {
+  border-color: #8ce7d2;
+
+  box-shadow:
+    0 0 0 3px
+      rgba(140, 231, 210, 0.14);
+}
+
+.balance-currency-select option {
+  color: #26332f;
+
+  background: #ffffff;
+
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   QUICK ACTIONS / INSIGHT RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 1150px) {
+  .dashboard-side {
+    display: grid;
+
+    grid-template-columns:
+      1fr 1fr;
+
+    gap: 14px;
+  }
+
+  .insight-card {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 800px) {
+  .dashboard-side {
+    grid-template-columns: 1fr;
+  }
+
+  .insight-card {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .quick-card,
+  .insight-card {
+    padding: 17px;
+  }
+
+  .quick-actions > a {
+    min-height: 57px;
+  }
+
+  .balance-currency-select {
+    width: 78px;
   }
 }

@@ -64,6 +64,7 @@ type TransactionView =
 interface UnifiedTransaction {
   id: string;
   numericId: number;
+
   kind:
     | "income"
     | "expense"
@@ -74,6 +75,7 @@ interface UnifiedTransaction {
   account: string;
   date: string;
   amount: number;
+
   reference?: string | null;
 
   original:
@@ -97,11 +99,16 @@ function formatMoney(
   value: number | string,
   currency = "NGN",
 ) {
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(Number(value) || 0);
+  return new Intl.NumberFormat(
+    "en-NG",
+    {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    },
+  ).format(
+    Number(value) || 0,
+  );
 }
 
 function formatDate(
@@ -286,10 +293,12 @@ export default function Transactions() {
       "categories",
       categoryType,
     ],
+
     queryFn: () =>
       getCategories(
         categoryType,
       ),
+
     enabled:
       view === "income" ||
       view === "expense",
@@ -297,7 +306,7 @@ export default function Transactions() {
 
   /*
   |--------------------------------------------------------------------------
-  | ROUTE-AWARE VIEW
+  | ROUTE / TAB
   |--------------------------------------------------------------------------
   */
 
@@ -349,8 +358,10 @@ export default function Transactions() {
         ) {
           result.push({
             id: `income-${transaction.id}`,
+
             numericId:
               transaction.id,
+
             kind: "income",
 
             title:
@@ -373,7 +384,8 @@ export default function Transactions() {
               "Account",
 
             date:
-              transaction.received_at ?? new Date().toISOString(),
+              transaction.received_at ??
+              "",
 
             amount: Number(
               transaction.amount,
@@ -392,8 +404,10 @@ export default function Transactions() {
         ) {
           result.push({
             id: `expense-${transaction.id}`,
+
             numericId:
               transaction.id,
+
             kind: "expense",
 
             title:
@@ -415,7 +429,8 @@ export default function Transactions() {
               "Account",
 
             date:
-              transaction.spent_at ?? new Date().toISOString(),
+              transaction.spent_at ??
+              "",
 
             amount: Number(
               transaction.amount,
@@ -446,8 +461,10 @@ export default function Transactions() {
 
           result.push({
             id: `transfer-${transfer.id}`,
+
             numericId:
               transfer.id,
+
             kind: "transfer",
 
             title: "Transfer",
@@ -460,7 +477,7 @@ export default function Transactions() {
               `${fromAccount} → ${toAccount}`,
 
             date:
-              transfer.transferred_at ?? new Date().toISOString(),
+              transfer.transferred_at,
 
             amount: Number(
               transfer.amount,
@@ -601,63 +618,127 @@ export default function Transactions() {
   |--------------------------------------------------------------------------
   */
 
-  const summary = useMemo(() => {
-    const incomeTotal =
-      filteredTransactions
-        .filter(
-          (item) =>
-            item.kind ===
-            "income",
-        )
-        .reduce(
-          (sum, item) =>
-            sum + item.amount,
-          0,
-        );
+  const summary =
+    useMemo(() => {
+      const incomeTotal =
+        filteredTransactions
+          .filter(
+            (item) =>
+              item.kind ===
+              "income",
+          )
+          .reduce(
+            (sum, item) =>
+              sum + item.amount,
+            0,
+          );
 
-    const expenseTotal =
-      filteredTransactions
-        .filter(
-          (item) =>
-            item.kind ===
-            "expense",
-        )
-        .reduce(
-          (sum, item) =>
-            sum + item.amount,
-          0,
-        );
+      const expenseTotal =
+        filteredTransactions
+          .filter(
+            (item) =>
+              item.kind ===
+              "expense",
+          )
+          .reduce(
+            (sum, item) =>
+              sum + item.amount,
+            0,
+          );
 
-    const transferTotal =
-      filteredTransactions
-        .filter(
-          (item) =>
-            item.kind ===
-            "transfer",
-        )
-        .reduce(
-          (sum, item) =>
-            sum + item.amount,
-          0,
-        );
+      const transferTotal =
+        filteredTransactions
+          .filter(
+            (item) =>
+              item.kind ===
+              "transfer",
+          )
+          .reduce(
+            (sum, item) =>
+              sum + item.amount,
+            0,
+          );
 
-    return {
-      count:
-        filteredTransactions.length,
+      return {
+        count:
+          filteredTransactions.length,
 
-      incomeTotal,
+        incomeTotal,
 
-      expenseTotal,
+        expenseTotal,
 
-      transferTotal,
-    };
-  }, [
-    filteredTransactions,
-  ]);
+        transferTotal,
+      };
+    }, [
+      filteredTransactions,
+    ]);
 
   /*
   |--------------------------------------------------------------------------
-  | CREATE MUTATION
+  | REFRESH FINANCIAL DATA
+  |--------------------------------------------------------------------------
+  */
+
+  const invalidateFinancialData =
+    () => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "incomes",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "expenses",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "transfers",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "accounts",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "dashboard",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "budgets",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "financial-insights",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "statements",
+        ],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "notifications",
+        ],
+      });
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | CREATE
   |--------------------------------------------------------------------------
   */
 
@@ -712,6 +793,46 @@ export default function Transactions() {
             );
           }
 
+          const fromAccount =
+            accounts.find(
+              (account) =>
+                account.id ===
+                Number(
+                  transactionForm.from_account_id,
+                ),
+            );
+
+          const toAccount =
+            accounts.find(
+              (account) =>
+                account.id ===
+                Number(
+                  transactionForm.to_account_id,
+                ),
+            );
+
+          if (
+            fromAccount &&
+            Number(
+              fromAccount.balance,
+            ) < amount
+          ) {
+            throw new Error(
+              "Insufficient balance in the source account.",
+            );
+          }
+
+          if (
+            fromAccount &&
+            toAccount &&
+            fromAccount.currency !==
+              toAccount.currency
+          ) {
+            throw new Error(
+              `Cross-currency transfers are not supported. Both accounts must use the same currency (${fromAccount.currency}).`,
+            );
+          }
+
           const payload: TransferPayload =
             {
               from_account_id:
@@ -727,13 +848,11 @@ export default function Transactions() {
               amount,
 
               reference:
-                transactionForm.reference
-                  .trim() ||
+                transactionForm.reference.trim() ||
                 undefined,
 
               description:
-                transactionForm.description
-                  .trim() ||
+                transactionForm.description.trim() ||
                 undefined,
 
               transferred_at:
@@ -785,13 +904,11 @@ export default function Transactions() {
               amount,
 
               reference:
-                transactionForm.reference
-                  .trim() ||
+                transactionForm.reference.trim() ||
                 undefined,
 
               description:
-                transactionForm.description
-                  .trim() ||
+                transactionForm.description.trim() ||
                 undefined,
 
               received_at:
@@ -818,18 +935,15 @@ export default function Transactions() {
             amount,
 
             reference:
-              transactionForm.reference
-                .trim() ||
+              transactionForm.reference.trim() ||
               undefined,
 
             merchant:
-              transactionForm.merchant
-                .trim() ||
+              transactionForm.merchant.trim() ||
               undefined,
 
             description:
-              transactionForm.description
-                .trim() ||
+              transactionForm.description.trim() ||
               undefined,
 
             spent_at:
@@ -842,31 +956,7 @@ export default function Transactions() {
       },
 
       onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: ["incomes"],
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ["expenses"],
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ["transfers"],
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ["accounts"],
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ["dashboard"],
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: [
-            "statements",
-          ],
-        });
+        invalidateFinancialData();
 
         closeModal();
       },
@@ -901,7 +991,7 @@ export default function Transactions() {
 
   /*
   |--------------------------------------------------------------------------
-  | DELETE MUTATION
+  | DELETE
   |--------------------------------------------------------------------------
   */
 
@@ -912,6 +1002,7 @@ export default function Transactions() {
         kind,
       }: {
         id: number;
+
         kind:
           | "income"
           | "expense"
@@ -939,41 +1030,34 @@ export default function Transactions() {
       },
 
       onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: ["incomes"],
-        });
+        invalidateFinancialData();
+      },
 
-        queryClient.invalidateQueries({
-          queryKey: ["expenses"],
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ["transfers"],
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ["accounts"],
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ["dashboard"],
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: [
-            "statements",
-          ],
-        });
+      onError: (
+        error: any,
+      ) => {
+        window.alert(
+          error?.response
+            ?.data
+            ?.message ??
+            "Unable to delete this transaction.",
+        );
       },
     });
 
   /*
   |--------------------------------------------------------------------------
-  | MODAL HELPERS
+  | MODAL
   |--------------------------------------------------------------------------
   */
 
   const closeModal = () => {
+    if (
+      createMutation.isPending
+    ) {
+      return;
+    }
+
     setShowModal(false);
 
     setFormError("");
@@ -1009,6 +1093,12 @@ export default function Transactions() {
     setShowModal(true);
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | SUBMIT
+  |--------------------------------------------------------------------------
+  */
+
   const handleSubmit = (
     event: FormEvent<HTMLFormElement>,
   ) => {
@@ -1019,15 +1109,18 @@ export default function Transactions() {
     createMutation.mutate();
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | DELETE
+  |--------------------------------------------------------------------------
+  */
+
   const handleDelete = (
     transaction: UnifiedTransaction,
   ) => {
-    const label =
-      transaction.title;
-
     const confirmed =
       window.confirm(
-        `Delete this ${transaction.kind} transaction "${label}"?`,
+        `Delete this ${transaction.kind} transaction "${transaction.title}"?`,
       );
 
     if (!confirmed) {
@@ -1045,7 +1138,7 @@ export default function Transactions() {
 
   /*
   |--------------------------------------------------------------------------
-  | UI STATE
+  | STATE
   |--------------------------------------------------------------------------
   */
 
@@ -1739,29 +1832,39 @@ export default function Transactions() {
                         Select destination account
                       </option>
 
-                      {accounts.map(
-                        (
-                          account,
-                        ) => (
-                          <option
-                            key={
-                              account.id
-                            }
-                            value={
-                              account.id
-                            }
-                          >
-                            {
-                              account.name
-                            }{" "}
-                            —{" "}
-                            {formatMoney(
-                              account.balance,
-                              account.currency,
-                            )}
-                          </option>
-                        ),
-                      )}
+                      {accounts
+                        .filter(
+                          (
+                            account,
+                          ) =>
+                            String(
+                              account.id,
+                            ) !==
+                            transactionForm.from_account_id,
+                        )
+                        .map(
+                          (
+                            account,
+                          ) => (
+                            <option
+                              key={
+                                account.id
+                              }
+                              value={
+                                account.id
+                              }
+                            >
+                              {
+                                account.name
+                              }{" "}
+                              —{" "}
+                              {formatMoney(
+                                account.balance,
+                                account.currency,
+                              )}
+                            </option>
+                          ),
+                        )}
                     </select>
                   </div>
                 </>
@@ -2026,6 +2129,9 @@ export default function Transactions() {
                   className="transaction-cancel"
                   onClick={
                     closeModal
+                  }
+                  disabled={
+                    createMutation.isPending
                   }
                 >
                   Cancel

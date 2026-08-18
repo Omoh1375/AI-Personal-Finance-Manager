@@ -14,6 +14,7 @@ use App\Models\Transfer;
 use App\Models\Budget;
 use App\Models\SavingsGoal;
 use App\Models\Ledger;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -103,5 +104,9 @@ class User extends Authenticatable
         return $this->hasMany(
             UserNotification::class
         );
+    }
+    public function profile(): HasOne
+    {
+        return $this->hasOne(UserProfile::class);
     }
 }

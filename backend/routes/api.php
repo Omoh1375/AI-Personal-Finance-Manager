@@ -16,6 +16,7 @@ use App\Http\Controllers\TransferController;
 use App\Http\Controllers\UserNotificationController;
 use App\Http\Controllers\SavingsGoalController;
 use App\Http\Controllers\SavingsDepositController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -153,6 +154,30 @@ Route::middleware('auth:sanctum')->group(function () {
         'notifications/{notification}/read',
         [UserNotificationController::class, 'markAsRead']
     );
+
+    Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get(
+        '/profile',
+        [ProfileController::class, 'show']
+    );
+
+    Route::put(
+        '/profile',
+        [ProfileController::class, 'update']
+    );
+
+    Route::post(
+        '/profile/photo',
+        [ProfileController::class, 'uploadPhoto']
+    );
+
+    Route::delete(
+        '/profile/photo',
+        [ProfileController::class, 'deletePhoto']
+    );
+
+});
 
 
 

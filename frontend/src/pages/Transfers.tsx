@@ -3,7 +3,12 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+
+import {
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 
 import {
   createTransfer,
@@ -13,7 +18,10 @@ import {
 
 import { getAccounts } from "../api/accounts";
 
-import type { TransferPayload } from "../types/transfer";
+import type {
+  TransferPayload,
+} from "../types/transfer";
+
 import "./Transfers.css";
 
 function formatMoney(
@@ -27,7 +35,9 @@ function formatMoney(
   }).format(Number(value) || 0);
 }
 
-function formatDate(value?: string | null) {
+function formatDate(
+  value?: string | null,
+) {
   if (!value) {
     return "—";
   }
@@ -39,13 +49,32 @@ function formatDate(value?: string | null) {
   }).format(new Date(value));
 }
 
+function formatDateTime(
+  value?: string | null,
+) {
+  if (!value) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat("en-NG", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 function dateInputValue() {
   const date = new Date();
 
-  const year = date.getFullYear();
+  const year =
+    date.getFullYear();
+
   const month = String(
     date.getMonth() + 1,
   ).padStart(2, "0");
+
   const day = String(
     date.getDate(),
   ).padStart(2, "0");
@@ -53,25 +82,50 @@ function dateInputValue() {
   return `${year}-${month}-${day}`;
 }
 
+interface TransferForm {
+  from_account_id: string;
+  to_account_id: string;
+  amount: string;
+  reference: string;
+  description: string;
+  transferred_at: string;
+}
+
+const emptyForm: TransferForm = {
+  from_account_id: "",
+  to_account_id: "",
+  amount: "",
+  reference: "",
+  description: "",
+  transferred_at: dateInputValue(),
+};
+
 export default function Transfers() {
-  const queryClient = useQueryClient();
+  const queryClient =
+    useQueryClient();
 
   const [showModal, setShowModal] =
     useState(false);
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] =
+    useState("");
 
-  const [form, setForm] = useState({
-    from_account_id: "",
-    to_account_id: "",
-    amount: "",
-    reference: "",
-    description: "",
-    transferred_at: dateInputValue(),
-  });
+  const [selectedAccount, setSelectedAccount] =
+    useState("");
+
+  const [form, setForm] =
+    useState<TransferForm>({
+      ...emptyForm,
+    });
 
   const [formError, setFormError] =
     useState("");
+
+  /*
+  |--------------------------------------------------------------------------
+  | TRANSFERS
+  |--------------------------------------------------------------------------
+  */
 
   const {
     data: transfers = [],
@@ -82,6 +136,12 @@ export default function Transfers() {
     queryFn: getTransfers,
   });
 
+  /*
+  |--------------------------------------------------------------------------
+  | ACCOUNTS
+  |--------------------------------------------------------------------------
+  */
+
   const {
     data: accounts = [],
     isLoading: accountsLoading,
@@ -90,130 +150,375 @@ export default function Transfers() {
     queryFn: getAccounts,
   });
 
-  const createMutation = useMutation({
-    mutationFn: (payload: TransferPayload) =>
-      createTransfer(payload),
+  /*
+  |--------------------------------------------------------------------------
+  | SELECTED ACCOUNTS
+  |--------------------------------------------------------------------------
+  */
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["transfers"],
-      });
+  const sourceAccount = useMemo(
+    () =>
+      accounts.find(
+        (account) =>
+          account.id ===
+          Number(
+            form.from_account_id,
+          ),
+      ),
+    [
+      accounts,
+      form.from_account_id,
+    ],
+  );
 
-      queryClient.invalidateQueries({
-        queryKey: ["accounts"],
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
-
-      closeModal();
-    },
-
-    onError: (error: any) => {
-      const backendErrors =
-        error?.response?.data?.errors;
-
-      const firstError = backendErrors
-        ? Object.values(backendErrors)
-            .flat()
-            .find(Boolean)
-        : null;
-
-      setFormError(
-        typeof firstError === "string"
-          ? firstError
-          : error?.response?.data?.message ??
-              "Unable to complete this transfer.",
-      );
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteTransfer,
-
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["transfers"],
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["accounts"],
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
-    },
-  });
-
-  const filteredTransfers = useMemo(() => {
-    const term =
-      search.trim().toLowerCase();
-
-    if (!term) {
-      return transfers;
-    }
-
-    return transfers.filter((transfer) => {
-      const from =
-        transfer.from_account?.name ??
-        "";
-
-      const to =
-        transfer.to_account?.name ??
-        "";
-
-      const description =
-        transfer.description ?? "";
-
-      const reference =
-        transfer.reference ?? "";
-
-      return (
-        from.toLowerCase().includes(term) ||
-        to.toLowerCase().includes(term) ||
-        description
-          .toLowerCase()
-          .includes(term) ||
-        reference
-          .toLowerCase()
-          .includes(term)
-      );
-    });
-  }, [transfers, search]);
-
-  const totalTransferred = useMemo(() => {
-    return transfers.reduce(
-      (sum, transfer) =>
-        sum +
-        Number(transfer.amount || 0),
-      0,
+  const destinationAccount =
+    useMemo(
+      () =>
+        accounts.find(
+          (account) =>
+            account.id ===
+            Number(
+              form.to_account_id,
+            ),
+        ),
+      [
+        accounts,
+        form.to_account_id,
+      ],
     );
-  }, [transfers]);
 
-  const closeModal = () => {
-    setShowModal(false);
+  /*
+  |--------------------------------------------------------------------------
+  | FILTERING
+  |--------------------------------------------------------------------------
+  */
 
-    setForm({
-      from_account_id: "",
-      to_account_id: "",
-      amount: "",
-      reference: "",
-      description: "",
-      transferred_at: dateInputValue(),
+  const filteredTransfers =
+    useMemo(() => {
+      const term =
+        search
+          .trim()
+          .toLowerCase();
+
+      return transfers.filter(
+        (transfer) => {
+          const from =
+            transfer
+              .from_account
+              ?.name ?? "";
+
+          const to =
+            transfer
+              .to_account
+              ?.name ?? "";
+
+          const description =
+            transfer.description ??
+            "";
+
+          const reference =
+            transfer.reference ??
+            "";
+
+          const matchesSearch =
+            !term ||
+            from
+              .toLowerCase()
+              .includes(term) ||
+            to
+              .toLowerCase()
+              .includes(term) ||
+            description
+              .toLowerCase()
+              .includes(term) ||
+            reference
+              .toLowerCase()
+              .includes(term);
+
+          const matchesAccount =
+            !selectedAccount ||
+            String(
+              transfer.from_account_id,
+            ) === selectedAccount ||
+            String(
+              transfer.to_account_id,
+            ) === selectedAccount;
+
+          return (
+            matchesSearch &&
+            matchesAccount
+          );
+        },
+      );
+    }, [
+      transfers,
+      search,
+      selectedAccount,
+    ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | TRANSFER ANALYTICS
+  |--------------------------------------------------------------------------
+  */
+
+  const totalTransferred =
+    useMemo(
+      () =>
+        transfers.reduce(
+          (sum, transfer) =>
+            sum +
+            Number(
+              transfer.amount || 0,
+            ),
+          0,
+        ),
+      [transfers],
+    );
+
+  const filteredTotal =
+    useMemo(
+      () =>
+        filteredTransfers.reduce(
+          (sum, transfer) =>
+            sum +
+            Number(
+              transfer.amount || 0,
+            ),
+          0,
+        ),
+      [filteredTransfers],
+    );
+
+  const averageTransfer =
+    transfers.length > 0
+      ? totalTransferred /
+        transfers.length
+      : 0;
+
+  /*
+  |--------------------------------------------------------------------------
+  | CREATE
+  |--------------------------------------------------------------------------
+  */
+
+  const createMutation =
+    useMutation({
+      mutationFn: (
+        payload: TransferPayload,
+      ) =>
+        createTransfer(
+          payload,
+        ),
+
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "transfers",
+            ],
+          },
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "accounts",
+            ],
+          },
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "dashboard",
+            ],
+          },
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "incomes",
+            ],
+          },
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "expenses",
+            ],
+          },
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "transactions",
+            ],
+          },
+        );
+
+        setShowModal(false);
+
+        setForm({
+          ...emptyForm,
+          transferred_at:
+            dateInputValue(),
+        });
+
+        setFormError("");
+      },
+
+      onError: (error: any) => {
+        const backendErrors =
+          error?.response?.data
+            ?.errors;
+
+        const firstError =
+          backendErrors
+            ? Object.values(
+                backendErrors,
+              )
+                .flat()
+                .find(Boolean)
+            : null;
+
+        setFormError(
+          typeof firstError ===
+            "string"
+            ? firstError
+            : error?.response
+                ?.data
+                ?.message ??
+              error?.message ??
+              "Unable to complete this transfer.",
+        );
+      },
     });
 
-    setFormError("");
-  };
+  /*
+  |--------------------------------------------------------------------------
+  | DELETE
+  |--------------------------------------------------------------------------
+  */
+
+  const deleteMutation =
+    useMutation({
+      mutationFn:
+        deleteTransfer,
+
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "transfers",
+            ],
+          },
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "accounts",
+            ],
+          },
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "dashboard",
+            ],
+          },
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "transactions",
+            ],
+          },
+        );
+      },
+
+      onError: (error: any) => {
+        window.alert(
+          error?.response
+            ?.data
+            ?.message ??
+            "Unable to delete this transfer.",
+        );
+      },
+    });
+
+  /*
+  |--------------------------------------------------------------------------
+  | MODAL
+  |--------------------------------------------------------------------------
+  */
 
   const openModal = () => {
     setFormError("");
+
+    const firstAccount =
+      accounts[0];
+
+    const secondAccount =
+      accounts.find(
+        (account) =>
+          account.id !==
+          firstAccount?.id,
+      );
+
+    setForm({
+      ...emptyForm,
+
+      from_account_id:
+        firstAccount
+          ? String(
+              firstAccount.id,
+            )
+          : "",
+
+      to_account_id:
+        secondAccount
+          ? String(
+              secondAccount.id,
+            )
+          : "",
+    });
+
     setShowModal(true);
   };
 
+  const closeModal = () => {
+    if (
+      createMutation.isPending
+    ) {
+      return;
+    }
+
+    setShowModal(false);
+
+    setFormError("");
+
+    setForm({
+      ...emptyForm,
+      transferred_at:
+        dateInputValue(),
+    });
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | VALIDATION + SUBMIT
+  |--------------------------------------------------------------------------
+  */
+
   const handleSubmit = (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
 
@@ -227,12 +532,15 @@ export default function Transfers() {
       form.to_account_id,
     );
 
-    const amount = Number(form.amount);
+    const amount = Number(
+      form.amount,
+    );
 
     if (!fromId || !toId) {
       setFormError(
         "Please select both accounts.",
       );
+
       return;
     }
 
@@ -240,95 +548,183 @@ export default function Transfers() {
       setFormError(
         "Source and destination accounts must be different.",
       );
+
       return;
     }
 
-    if (!amount || amount <= 0) {
+    if (
+      !amount ||
+      amount <= 0
+    ) {
       setFormError(
         "Please enter a valid transfer amount.",
       );
+
       return;
     }
 
-    const sourceAccount = accounts.find(
-      (account) => account.id === fromId,
-    );
-
     if (
       sourceAccount &&
-      Number(sourceAccount.balance) < amount
+      Number(
+        sourceAccount.balance,
+      ) < amount
     ) {
       setFormError(
         "Insufficient balance in the source account.",
       );
+
       return;
     }
 
-    createMutation.mutate({
-      from_account_id: fromId,
-      to_account_id: toId,
-      amount,
-      reference:
-        form.reference || undefined,
-      description:
-        form.description || undefined,
-      transferred_at:
-        form.transferred_at,
-    });
+    /*
+    |--------------------------------------------------------------------------
+    | Currency safeguard
+    |--------------------------------------------------------------------------
+    |
+    | The current backend transfer flow moves an amount directly between
+    | accounts. We should therefore prevent cross-currency transfers in
+    | the UI until currency conversion is explicitly supported.
+    |
+    */
+
+    if (
+      sourceAccount &&
+      destinationAccount &&
+      sourceAccount.currency !==
+        destinationAccount.currency
+    ) {
+      setFormError(
+        `Cross-currency transfers are not supported yet. Both accounts must use the same currency (${sourceAccount.currency}).`,
+      );
+
+      return;
+    }
+
+    const payload: TransferPayload =
+      {
+        from_account_id:
+          fromId,
+
+        to_account_id:
+          toId,
+
+        amount,
+
+        reference:
+          form.reference.trim() ||
+          undefined,
+
+        description:
+          form.description.trim() ||
+          undefined,
+
+        transferred_at:
+          form.transferred_at,
+      };
+
+    createMutation.mutate(
+      payload,
+    );
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | DELETE
+  |--------------------------------------------------------------------------
+  */
 
   const handleDelete = (
     transferId: number,
   ) => {
-    const confirmed = window.confirm(
-      "Delete this transfer? The transfer will be reversed by the backend.",
-    );
+    const confirmed =
+      window.confirm(
+        "Delete this transfer? The backend will reverse the transfer and restore the account balances.",
+      );
 
     if (!confirmed) {
       return;
     }
 
-    deleteMutation.mutate(transferId);
+    deleteMutation.mutate(
+      transferId,
+    );
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | STATE
+  |--------------------------------------------------------------------------
+  */
+
   const isLoading =
-    transfersLoading || accountsLoading;
+    transfersLoading ||
+    accountsLoading;
+
+  /*
+  |--------------------------------------------------------------------------
+  | RENDER
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <main className="transfers-page">
+      {/* ================================================================
+          HEADER
+      ================================================================= */}
+
       <header className="transfers-header">
         <div>
           <p className="transfers-eyebrow">
             MONEY MOVEMENT
           </p>
 
-          <h1>Transfers</h1>
+          <h1>
+            Transfers
+          </h1>
 
           <p className="transfers-subtitle">
-            Move money safely between your accounts.
+            Move money safely between your accounts
+            and keep a clear audit trail.
           </p>
         </div>
 
         <button
           className="new-transfer-button"
-          onClick={openModal}
-          disabled={accounts.length < 2}
+          onClick={
+            openModal
+          }
+          disabled={
+            accounts.length < 2
+          }
         >
-          <span>↔</span>
+          <span>
+            ↔
+          </span>
+
           New transfer
         </button>
       </header>
 
+      {/* ================================================================
+          SUMMARY
+      ================================================================= */}
+
       <section className="transfer-summary">
         <article className="transfer-summary-card featured">
           <div>
-            <span>Total transferred</span>
+            <span>
+              Total transferred
+            </span>
 
             <strong>
               {formatMoney(
                 totalTransferred,
               )}
             </strong>
+
+            <small>
+              All recorded transfers
+            </small>
           </div>
 
           <div className="transfer-summary-icon">
@@ -337,7 +733,9 @@ export default function Transfers() {
         </article>
 
         <article className="transfer-summary-card">
-          <span>Transfers</span>
+          <span>
+            Transfers
+          </span>
 
           <strong>
             {transfers.length}
@@ -349,67 +747,166 @@ export default function Transfers() {
         </article>
 
         <article className="transfer-summary-card">
-          <span>Connected accounts</span>
+          <span>
+            Connected accounts
+          </span>
 
           <strong>
             {accounts.length}
           </strong>
 
           <small>
-            Accounts available for transfers
+            Accounts available
+          </small>
+        </article>
+
+        <article className="transfer-summary-card transfer-average-card">
+          <span>
+            Average transfer
+          </span>
+
+          <strong>
+            {formatMoney(
+              averageTransfer,
+            )}
+          </strong>
+
+          <small>
+            Per completed transfer
           </small>
         </article>
       </section>
 
+      {/* ================================================================
+          WORKSPACE
+      ================================================================= */}
+
       <section className="transfer-workspace">
         <div className="transfer-toolbar">
           <div>
-            <h2>Transfer history</h2>
+            <h2>
+              Transfer history
+            </h2>
+
             <p>
-              Review money moved between accounts.
+              {filteredTransfers.length}{" "}
+              transfer
+              {filteredTransfers.length ===
+              1
+                ? ""
+                : "s"}{" "}
+              displayed
+              {selectedAccount
+                ? ` · ${formatMoney(
+                    filteredTotal,
+                  )} total`
+                : ""}
             </p>
           </div>
 
-          <div className="transfer-search">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="7"
-              />
-              <path d="m16 16 5 5" />
-            </svg>
-
-            <input
-              type="search"
-              placeholder="Search transfers..."
-              value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value,
+          <div className="transfer-toolbar-actions">
+            <select
+              className="transfer-account-filter"
+              value={
+                selectedAccount
+              }
+              onChange={(
+                event,
+              ) =>
+                setSelectedAccount(
+                  event.target
+                    .value,
                 )
               }
-            />
+            >
+              <option value="">
+                All accounts
+              </option>
+
+              {accounts.map(
+                (account) => (
+                  <option
+                    key={
+                      account.id
+                    }
+                    value={
+                      account.id
+                    }
+                  >
+                    {
+                      account.name
+                    }
+                  </option>
+                ),
+              )}
+            </select>
+
+            <div className="transfer-search">
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="7"
+                />
+
+                <path d="m16 16 5 5" />
+              </svg>
+
+              <input
+                type="search"
+                placeholder="Search transfers..."
+                value={search}
+                onChange={(
+                  event,
+                ) =>
+                  setSearch(
+                    event.target
+                      .value,
+                  )
+                }
+              />
+            </div>
           </div>
         </div>
 
         {isLoading ? (
           <div className="transfers-loading">
             <div className="transfer-spinner" />
-            <p>Loading transfers...</p>
+
+            <p>
+              Loading transfers...
+            </p>
           </div>
         ) : transfersError ? (
           <div className="transfers-empty">
+            <div className="empty-transfer-icon">
+              !
+            </div>
+
             <h3>
               Unable to load transfers
             </h3>
 
             <p>
-              Please refresh and try again.
+              Please refresh the page and try again.
             </p>
+
+            <button
+              onClick={() =>
+                queryClient.invalidateQueries(
+                  {
+                    queryKey: [
+                      "transfers",
+                    ],
+                  },
+                )
+              }
+            >
+              Try again
+            </button>
           </div>
         ) : filteredTransfers.length ===
           0 ? (
@@ -419,108 +916,161 @@ export default function Transfers() {
             </div>
 
             <h3>
-              No transfers yet
+              {search ||
+              selectedAccount
+                ? "No matching transfers"
+                : "No transfers yet"}
             </h3>
 
             <p>
-              Move money between your accounts
-              to see your transfer history here.
+              {search ||
+              selectedAccount
+                ? "Try changing your search or account filter."
+                : "Move money between your accounts to see your transfer history here."}
             </p>
 
-            {accounts.length >= 2 && (
+            {accounts.length >=
+              2 && (
               <button
-                onClick={openModal}
+                onClick={
+                  openModal
+                }
               >
-                Make your first transfer
+                Make a transfer
               </button>
             )}
           </div>
         ) : (
           <div className="transfer-list">
             {filteredTransfers.map(
-              (transfer) => (
-                <article
-                  className="transfer-row"
-                  key={transfer.id}
-                >
-                  <div className="transfer-flow-icon">
-                    ↔
-                  </div>
+              (transfer) => {
+                const fromName =
+                  transfer
+                    .from_account
+                    ?.name ??
+                  "Source account";
 
-                  <div className="transfer-route">
-                    <div>
-                      <strong>
-                        {transfer.from_account
-                          ?.name ??
-                          "Source account"}
-                      </strong>
+                const toName =
+                  transfer
+                    .to_account
+                    ?.name ??
+                  "Destination account";
 
-                      <span>→</span>
+                const currency =
+                  transfer
+                    .from_account
+                    ?.currency ??
+                  "NGN";
 
-                      <strong>
-                        {transfer.to_account
-                          ?.name ??
-                          "Destination account"}
-                      </strong>
+                return (
+                  <article
+                    className="transfer-row"
+                    key={
+                      transfer.id
+                    }
+                  >
+                    <div className="transfer-flow-icon">
+                      ↔
                     </div>
 
-                    <small>
-                      {transfer.description ??
-                        transfer.reference ??
-                        "Account transfer"}
-                    </small>
-                  </div>
+                    <div className="transfer-route">
+                      <div>
+                        <strong>
+                          {
+                            fromName
+                          }
+                        </strong>
 
-                  <div className="transfer-date">
-                    {formatDate(
-                      transfer.transferred_at,
-                    )}
-                  </div>
+                        <span>
+                          →
+                        </span>
 
-                  <div className="transfer-amount">
-                    {formatMoney(
-                      transfer.amount,
-                    )}
-                  </div>
+                        <strong>
+                          {
+                            toName
+                          }
+                        </strong>
+                      </div>
 
-                  <button
-                    className="transfer-delete"
-                    onClick={() =>
-                      handleDelete(
-                        transfer.id,
-                      )
-                    }
-                    disabled={
-                      deleteMutation.isPending
-                    }
-                    title="Delete transfer"
-                  >
-                    ×
-                  </button>
-                </article>
-              ),
+                      <small>
+                        {transfer.description ??
+                          transfer.reference ??
+                          "Account transfer"}
+                      </small>
+                    </div>
+
+                    <div className="transfer-date">
+                      <strong>
+                        {formatDate(
+                          transfer.transferred_at,
+                        )}
+                      </strong>
+
+                      <small>
+                        {formatDateTime(
+                          transfer.transferred_at,
+                        )}
+                      </small>
+                    </div>
+
+                    <div className="transfer-amount">
+                      {formatMoney(
+                        transfer.amount,
+                        currency,
+                      )}
+                    </div>
+
+                    <button
+                      className="transfer-delete"
+                      onClick={() =>
+                        handleDelete(
+                          transfer.id,
+                        )
+                      }
+                      disabled={
+                        deleteMutation.isPending
+                      }
+                      title="Delete transfer"
+                      aria-label={`Delete transfer from ${fromName} to ${toName}`}
+                    >
+                      ×
+                    </button>
+                  </article>
+                );
+              },
             )}
           </div>
         )}
       </section>
 
-      {accounts.length < 2 && (
+      {/* ================================================================
+          NOTICE
+      ================================================================= */}
+
+      {accounts.length <
+        2 && (
         <div className="transfer-notice">
           <strong>
             Add at least two accounts
           </strong>
 
           <span>
-            You need two accounts before you can
-            make a transfer.
+            You need two accounts before you can make
+            a transfer.
           </span>
         </div>
       )}
 
+      {/* ================================================================
+          MODAL
+      ================================================================= */}
+
       {showModal && (
         <div
           className="transfer-modal-backdrop"
-          onMouseDown={(event) => {
+          onMouseDown={(
+            event,
+          ) => {
             if (
               event.target ===
               event.currentTarget
@@ -537,7 +1087,9 @@ export default function Transfers() {
           >
             <div className="transfer-modal-heading">
               <div>
-                <p>MONEY TRANSFER</p>
+                <p>
+                  MONEY TRANSFER
+                </p>
 
                 <h2 id="transfer-modal-title">
                   Move money
@@ -546,7 +1098,9 @@ export default function Transfers() {
 
               <button
                 className="transfer-modal-close"
-                onClick={closeModal}
+                onClick={
+                  closeModal
+                }
                 aria-label="Close"
               >
                 ×
@@ -559,7 +1113,11 @@ export default function Transfers() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form
+              onSubmit={
+                handleSubmit
+              }
+            >
               <div className="transfer-account-flow">
                 <div className="transfer-field">
                   <label htmlFor="from-account">
@@ -571,11 +1129,15 @@ export default function Transfers() {
                     value={
                       form.from_account_id
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setForm({
                         ...form,
                         from_account_id:
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                       })
                     }
                     required
@@ -585,12 +1147,21 @@ export default function Transfers() {
                     </option>
 
                     {accounts.map(
-                      (account) => (
+                      (
+                        account,
+                      ) => (
                         <option
-                          key={account.id}
-                          value={account.id}
+                          key={
+                            account.id
+                          }
+                          value={
+                            account.id
+                          }
                         >
-                          {account.name} —{" "}
+                          {
+                            account.name
+                          }{" "}
+                          —{" "}
                           {formatMoney(
                             account.balance,
                             account.currency,
@@ -599,6 +1170,18 @@ export default function Transfers() {
                       ),
                     )}
                   </select>
+
+                  {sourceAccount && (
+                    <div className="account-transfer-balance">
+                      Available:{" "}
+                      <strong>
+                        {formatMoney(
+                          sourceAccount.balance,
+                          sourceAccount.currency,
+                        )}
+                      </strong>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flow-arrow">
@@ -615,11 +1198,15 @@ export default function Transfers() {
                     value={
                       form.to_account_id
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setForm({
                         ...form,
                         to_account_id:
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                       })
                     }
                     required
@@ -630,23 +1217,113 @@ export default function Transfers() {
 
                     {accounts
                       .filter(
-                        (account) =>
+                        (
+                          account,
+                        ) =>
                           String(
                             account.id,
                           ) !==
                           form.from_account_id,
                       )
-                      .map((account) => (
-                        <option
-                          key={account.id}
-                          value={account.id}
-                        >
-                          {account.name}
-                        </option>
-                      ))}
+                      .map(
+                        (
+                          account,
+                        ) => (
+                          <option
+                            key={
+                              account.id
+                            }
+                            value={
+                              account.id
+                            }
+                          >
+                            {
+                              account.name
+                            }
+                          </option>
+                        ),
+                      )}
                   </select>
+
+                  {destinationAccount && (
+                    <div className="account-transfer-balance">
+                      Current balance:{" "}
+                      <strong>
+                        {formatMoney(
+                          destinationAccount.balance,
+                          destinationAccount.currency,
+                        )}
+                      </strong>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {sourceAccount &&
+                destinationAccount && (
+                  <div className="transfer-preview">
+                    <div>
+                      <span>
+                        Moving
+                      </span>
+
+                      <strong>
+                        {form.amount
+                          ? formatMoney(
+                              Number(
+                                form.amount,
+                              ),
+                              sourceAccount.currency,
+                            )
+                          : formatMoney(
+                              0,
+                              sourceAccount.currency,
+                            )}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Source after transfer
+                      </span>
+
+                      <strong>
+                        {formatMoney(
+                          Math.max(
+                            0,
+                            Number(
+                              sourceAccount.balance,
+                            ) -
+                              Number(
+                                form.amount ||
+                                  0,
+                              ),
+                          ),
+                          sourceAccount.currency,
+                        )}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Destination after transfer
+                      </span>
+
+                      <strong>
+                        {formatMoney(
+                          Number(
+                            destinationAccount.balance,
+                          ) +
+                            Number(
+                              form.amount ||
+                                0,
+                            ),
+                          destinationAccount.currency,
+                        )}
+                      </strong>
+                    </div>
+                  </div>
+                )}
 
               <div className="transfer-field">
                 <label htmlFor="transfer-amount">
@@ -658,12 +1335,18 @@ export default function Transfers() {
                   type="number"
                   min="0.01"
                   step="0.01"
-                  value={form.amount}
-                  onChange={(event) =>
+                  value={
+                    form.amount
+                  }
+                  onChange={(
+                    event,
+                  ) =>
                     setForm({
                       ...form,
                       amount:
-                        event.target.value,
+                        event
+                          .target
+                          .value,
                     })
                   }
                   placeholder="0.00"
@@ -683,11 +1366,14 @@ export default function Transfers() {
                     value={
                       form.transferred_at
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setForm({
                         ...form,
                         transferred_at:
-                          event.target
+                          event
+                            .target
                             .value,
                       })
                     }
@@ -706,11 +1392,14 @@ export default function Transfers() {
                     value={
                       form.reference
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setForm({
                         ...form,
                         reference:
-                          event.target
+                          event
+                            .target
                             .value,
                       })
                     }
@@ -730,11 +1419,15 @@ export default function Transfers() {
                   value={
                     form.description
                   }
-                  onChange={(event) =>
+                  onChange={(
+                    event,
+                  ) =>
                     setForm({
                       ...form,
                       description:
-                        event.target.value,
+                        event
+                          .target
+                          .value,
                     })
                   }
                   placeholder="Add a note..."
@@ -745,7 +1438,12 @@ export default function Transfers() {
                 <button
                   type="button"
                   className="transfer-cancel"
-                  onClick={closeModal}
+                  onClick={
+                    closeModal
+                  }
+                  disabled={
+                    createMutation.isPending
+                  }
                 >
                   Cancel
                 </button>
@@ -755,7 +1453,8 @@ export default function Transfers() {
                   className="transfer-submit"
                   disabled={
                     createMutation.isPending ||
-                    accounts.length < 2
+                    accounts.length <
+                      2
                   }
                 >
                   {createMutation.isPending

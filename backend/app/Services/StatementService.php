@@ -96,7 +96,7 @@ class StatementService
         return Account::where('id', $accountId)
             ->where(
                 'user_id',
-                auth()->user()->id
+                auth()->id()
             )
             ->firstOrFail();
     }

@@ -3,96 +3,191 @@
 namespace App\Services;
 
 use App\Models\SavingsGoal;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class SavingsGoalService
 {
     public function index()
     {
-        Gate::authorize('view-any', SavingsGoal::class);
-        return SavingsGoal::with(['account', 'deposits'])
+        Gate::authorize(
+            'view-any',
+            SavingsGoal::class
+        );
+
+        return SavingsGoal::with([
+                'account',
+                'deposits.account',
+            ])
             ->where('user_id', Auth::id())
             ->latest()
             ->get()
-            ->map(fn ($goal) => $this->format($goal));
+            ->map(
+                fn ($goal) =>
+                    $this->format($goal)
+            );
     }
 
-    public function show(SavingsGoal $goal)
-    {
-        Gate::authorize('view', $goal);
+    public function show(
+        SavingsGoal $goal
+    ) {
+        Gate::authorize(
+            'view',
+            $goal
+        );
 
         return $this->format(
-            $goal->load(['account', 'deposits'])
+            $goal->load([
+                'account',
+                'deposits.account',
+            ])
         );
     }
 
-    public function store(array $data)
-    {
-        $data['user_id'] = Auth::id();
-
-        $goal = SavingsGoal::create($data);
-
-        return $this->format($goal);
-    }
-
-    public function delete(SavingsGoal $goal): void
-    {
-        // abort_if($goal->user_id !== Auth::id(), 403);
-        Gate::authorize('delete', $goal);
-        
-    
-
-        $goal->delete();
-    }
-
-    private function format(SavingsGoal $goal): array
-    {
-        $saved = $goal->deposits->sum('amount');
-
-        $remaining = max(
-            0,
-            $goal->target_amount - $saved
+    public function store(
+        array $data
+    ) {
+        Gate::authorize(
+            'create',
+            SavingsGoal::class
         );
 
-        $progress = $goal->target_amount > 0
-            ? round(
-                ($saved / $goal->target_amount) * 100,
-                2
-            )
-            : 0;
+        $data['user_id'] =
+            Auth::id();
+
+        $goal =
+            SavingsGoal::create(
+                $data
+            );
+
+        return $this->format(
+            $goal->load([
+                'account',
+                'deposits.account',
+            ])
+        );
+    }
+
+    public function delete(
+        SavingsGoal $goal
+    ): void {
+        Gate::authorize(
+            'delete',
+            $goal
+        );
+
+        DB::transaction(
+            function () use ($goal) {
+
+                $goal->load(
+                    'deposits'
+                );
+
+                foreach (
+                    $goal->deposits as $deposit
+                ) {
+                    $account =
+                        $deposit
+                            ->account()
+                            ->lockForUpdate()
+                            ->first();
+
+                    if ($account) {
+                        $account->increment(
+                            'balance',
+                            $deposit->amount
+                        );
+                    }
+
+                    $deposit->delete();
+                }
+
+                $goal->delete();
+            }
+        );
+    }
+
+    private function format(
+        SavingsGoal $goal
+    ): array {
+        $saved =
+            (float) $goal
+                ->deposits
+                ->sum('amount');
+
+        $target =
+            (float) $goal->target_amount;
+
+        $remaining =
+            max(
+                0,
+                $target - $saved
+            );
+
+        $progress =
+            $target > 0
+                ? round(
+                    ($saved / $target) *
+                        100,
+                    2
+                )
+                : 0;
 
         return [
 
             'id' => $goal->id,
 
-            'name' => $goal->name,
+            'account_id' =>
+                $goal->account_id,
 
-            'target_amount' => (float) $goal->target_amount,
+            'account' =>
+                $goal->account?->name,
 
-            'saved' => (float) $saved,
+            'account_currency' =>
+                $goal->account?->currency,
 
-            'remaining' => (float) $remaining,
+            'name' =>
+                $goal->name,
 
-            'progress' => $progress,
+            'target_amount' =>
+                $target,
 
-            'status' => $this->status($progress),
+            'saved' =>
+                $saved,
 
-            'target_date' => $goal->target_date,
+            'remaining' =>
+                (float) $remaining,
 
-            'description' => $goal->description,
+            'progress' =>
+                $progress,
 
-            'account' => $goal->account?->name,
+            'status' =>
+                $this->status(
+                    $progress
+                ),
 
+            'target_date' =>
+                $goal->target_date,
+
+            'description' =>
+                $goal->description,
         ];
     }
 
-    private function status(float $progress): string
-    {
+    private function status(
+        float $progress
+    ): string {
         return match (true) {
-            $progress >= 100 => 'Completed',
-            $progress >= 80 => 'Almost There',
-            default => 'In Progress',
+
+            $progress >= 100 =>
+                'Completed',
+
+            $progress >= 80 =>
+                'Almost There',
+
+            default =>
+                'In Progress',
         };
     }
 }

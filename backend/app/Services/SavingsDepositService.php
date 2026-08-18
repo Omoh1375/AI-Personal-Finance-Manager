@@ -11,9 +11,14 @@ use Illuminate\Support\Facades\Gate;
 
 class SavingsDepositService
 {
+    protected AccountBalanceService $accountBalanceService;
+
     public function __construct(
-        private FinancialTransactionService $financialTransactionService
-    ) {}
+        AccountBalanceService $accountBalanceService
+    ) {
+        $this->accountBalanceService =
+            $accountBalanceService;
+    }
 
     public function index()
     {
@@ -26,13 +31,17 @@ class SavingsDepositService
                 'account',
                 'savingsGoal',
             ])
-            ->where('user_id', Auth::id())
+            ->where(
+                'user_id',
+                Auth::id()
+            )
             ->latest('deposited_at')
             ->get();
     }
 
-    public function store(array $data): SavingsDeposit
-    {
+    public function store(
+        array $data
+    ): SavingsDeposit {
         Gate::authorize(
             'create',
             SavingsDeposit::class
@@ -41,61 +50,62 @@ class SavingsDepositService
         return DB::transaction(
             function () use ($data) {
 
-                $userId = Auth::id();
-
-                $goal = SavingsGoal::where(
+                $goal =
+                    SavingsGoal::where(
                         'id',
                         $data['savings_goal_id']
                     )
                     ->where(
                         'user_id',
-                        $userId
+                        Auth::id()
                     )
+                    ->with('account')
                     ->firstOrFail();
 
-                if ($goal->is_completed) {
-                    abort(
-                        422,
-                        'This savings goal has already been completed.'
-                    );
-                }
-
-                $account = Account::where(
+                $account =
+                    Account::where(
                         'id',
                         $data['account_id']
                     )
                     ->where(
                         'user_id',
-                        $userId
+                        Auth::id()
                     )
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                $amount = (float) $data['amount'];
-
-                if ($amount <= 0) {
+                if (
+                    $goal->account &&
+                    $goal->account->currency !==
+                        $account->currency
+                ) {
                     abort(
                         422,
-                        'Deposit amount must be greater than zero.'
+                        'The source account currency must match the savings goal currency.'
                     );
                 }
 
-                $this->financialTransactionService
-                    ->ensureSufficientTransferBalance(
-                        $account,
-                        $amount
+                if (
+                    $account->balance <
+                    $data['amount']
+                ) {
+                    abort(
+                        422,
+                        'Insufficient balance.'
                     );
+                }
 
-                $deposit = SavingsDeposit::create([
-                    ...$data,
-                    'user_id' => $userId,
-                ]);
+                $this->accountBalanceService->withdraw(
+                    $account,
+                    $data['amount']
+                );
 
-                $this->financialTransactionService
-                    ->savingsDeposit(
-                        $account,
-                        $deposit
-                    );
+                $deposit =
+                    SavingsDeposit::create([
+                        ...$data,
+                        'user_id' =>
+                            Auth::id(),
+                    ]);
 
                 return $deposit->load([
                     'account',
@@ -127,17 +137,24 @@ class SavingsDepositService
             $deposit
         );
 
-        DB::transaction(function () use ($deposit) {
-            $account = $deposit->account()
-                ->lockForUpdate()
-                ->firstOrFail();
+        DB::transaction(
+            function () use ($deposit) {
 
-            $account->increment(
-                'balance',
-                $deposit->amount
-            );
+                $account =
+                    $deposit
+                        ->account()
+                        ->lockForUpdate()
+                        ->first();
 
-            $deposit->delete();
-        });
+                if ($account) {
+                    $account->increment(
+                        'balance',
+                        $deposit->amount
+                    );
+                }
+
+                $deposit->delete();
+            }
+        );
     }
 }

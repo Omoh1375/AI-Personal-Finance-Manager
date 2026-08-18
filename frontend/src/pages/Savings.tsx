@@ -3,14 +3,20 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+
+import {
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 
 import { getAccounts } from "../api/accounts";
+
 import {
   createSavingsDeposit,
   createSavingsGoal,
-  deleteSavingsGoal,
   deleteSavingsDeposit,
+  deleteSavingsGoal,
   getSavingsDeposits,
   getSavingsGoals,
 } from "../api/savings";
@@ -26,56 +32,72 @@ function formatMoney(
   value: number | string,
   currency = "NGN",
 ) {
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(Number(value) || 0);
+  return new Intl.NumberFormat(
+    "en-NG",
+    {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    },
+  ).format(
+    Number(value) || 0
+  );
 }
 
-function formatDate(value?: string | null) {
+function formatDate(
+  value?: string | null,
+) {
   if (!value) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat("en-NG", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat(
+    "en-NG",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  ).format(
+    new Date(value)
+  );
 }
 
 function dateInputValue() {
   const date = new Date();
 
-  const year = date.getFullYear();
-  const month = String(
-    date.getMonth() + 1,
-  ).padStart(2, "0");
-  const day = String(
-    date.getDate(),
-  ).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return [
+    date.getFullYear(),
+    String(
+      date.getMonth() + 1
+    ).padStart(2, "0"),
+    String(
+      date.getDate()
+    ).padStart(2, "0"),
+  ].join("-");
 }
 
 function futureDate() {
   const date = new Date();
 
-  date.setMonth(date.getMonth() + 3);
+  date.setMonth(
+    date.getMonth() + 3
+  );
 
-  const year = date.getFullYear();
-  const month = String(
-    date.getMonth() + 1,
-  ).padStart(2, "0");
-  const day = String(
-    date.getDate(),
-  ).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return [
+    date.getFullYear(),
+    String(
+      date.getMonth() + 1
+    ).padStart(2, "0"),
+    String(
+      date.getDate()
+    ).padStart(2, "0"),
+  ].join("-");
 }
 
-function statusClass(status: string) {
+function statusClass(
+  status: string
+) {
   switch (status) {
     case "Completed":
       return "savings-status completed";
@@ -89,19 +111,33 @@ function statusClass(status: string) {
 }
 
 export default function Savings() {
-  const queryClient = useQueryClient();
+  const queryClient =
+    useQueryClient();
 
-  const [activeTab, setActiveTab] =
-    useState<"goals" | "history">("goals");
+  const [
+    activeTab,
+    setActiveTab,
+  ] =
+    useState<
+      "goals" | "history"
+    >("goals");
 
-  const [showGoalModal, setShowGoalModal] =
-    useState(false);
+  const [
+    showGoalModal,
+    setShowGoalModal,
+  ] = useState(false);
 
-  const [showDepositModal, setShowDepositModal] =
-    useState(false);
+  const [
+    showDepositModal,
+    setShowDepositModal,
+  ] = useState(false);
 
-  const [selectedGoalId, setSelectedGoalId] =
-    useState<number | null>(null);
+  const [
+    selectedGoalId,
+    setSelectedGoalId,
+  ] = useState<number | null>(
+    null
+  );
 
   const [search, setSearch] =
     useState("");
@@ -109,10 +145,15 @@ export default function Savings() {
   const [goalError, setGoalError] =
     useState("");
 
-  const [depositError, setDepositError] =
-    useState("");
+  const [
+    depositError,
+    setDepositError,
+  ] = useState("");
 
-  const [goalForm, setGoalForm] =
+  const [
+    goalForm,
+    setGoalForm,
+  ] =
     useState<SavingsGoalPayload>({
       account_id: 0,
       name: "",
@@ -122,15 +163,25 @@ export default function Savings() {
       is_completed: false,
     });
 
-  const [depositForm, setDepositForm] =
+  const [
+    depositForm,
+    setDepositForm,
+  ] =
     useState<SavingsDepositPayload>({
       savings_goal_id: 0,
       account_id: 0,
       amount: 0,
       reference: "",
       description: "",
-      deposited_at: dateInputValue(),
+      deposited_at:
+        dateInputValue(),
     });
+
+  /*
+  |--------------------------------------------------------------------------
+  | QUERIES
+  |--------------------------------------------------------------------------
+  */
 
   const {
     data: goals = [],
@@ -153,189 +204,399 @@ export default function Savings() {
   const {
     data: accounts = [],
     isLoading: accountsLoading,
+    isError: accountsError,
   } = useQuery({
     queryKey: ["accounts"],
     queryFn: getAccounts,
   });
 
-  const createGoalMutation = useMutation({
-    mutationFn: createSavingsGoal,
+  /*
+  |--------------------------------------------------------------------------
+  | CREATE GOAL
+  |--------------------------------------------------------------------------
+  */
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["savings-goals"],
-      });
+  const createGoalMutation =
+    useMutation({
+      mutationFn:
+        createSavingsGoal,
 
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "savings-goals",
+            ],
+          }
+        );
 
-      closeGoalModal();
-    },
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "dashboard",
+            ],
+          }
+        );
 
-    onError: (error: any) => {
-      const errors =
-        error?.response?.data?.errors;
+        closeGoalModal();
+      },
 
-      const firstError = errors
-        ? Object.values(errors)
-            .flat()
-            .find(Boolean)
-        : null;
+      onError: (
+        error: any
+      ) => {
+        const errors =
+          error?.response?.data
+            ?.errors;
 
-      setGoalError(
-        typeof firstError === "string"
-          ? firstError
-          : error?.response?.data?.message ??
+        const firstError = errors
+          ? Object.values(errors)
+              .flat()
+              .find(Boolean)
+          : null;
+
+        setGoalError(
+          typeof firstError ===
+            "string"
+            ? firstError
+            : error?.response?.data
+                ?.message ??
               error?.message ??
-              "Unable to create savings goal.",
-      );
-    },
-  });
+              "Unable to create savings goal."
+        );
+      },
+    });
 
-  const createDepositMutation = useMutation({
-    mutationFn: createSavingsDeposit,
+  /*
+  |--------------------------------------------------------------------------
+  | CREATE DEPOSIT
+  |--------------------------------------------------------------------------
+  */
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["savings-goals"],
-      });
+  const createDepositMutation =
+    useMutation({
+      mutationFn:
+        createSavingsDeposit,
 
-      queryClient.invalidateQueries({
-        queryKey: ["savings-deposits"],
-      });
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "savings-goals",
+            ],
+          }
+        );
 
-      queryClient.invalidateQueries({
-        queryKey: ["accounts"],
-      });
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "savings-deposits",
+            ],
+          }
+        );
 
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "accounts",
+            ],
+          }
+        );
 
-      closeDepositModal();
-    },
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "dashboard",
+            ],
+          }
+        );
 
-    onError: (error: any) => {
-      const errors =
-        error?.response?.data?.errors;
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "transactions",
+            ],
+          }
+        );
 
-      const firstError = errors
-        ? Object.values(errors)
-            .flat()
-            .find(Boolean)
-        : null;
+        closeDepositModal();
+      },
 
-      setDepositError(
-        typeof firstError === "string"
-          ? firstError
-          : error?.response?.data?.message ??
+      onError: (
+        error: any
+      ) => {
+        const errors =
+          error?.response?.data
+            ?.errors;
+
+        const firstError = errors
+          ? Object.values(errors)
+              .flat()
+              .find(Boolean)
+          : null;
+
+        setDepositError(
+          typeof firstError ===
+            "string"
+            ? firstError
+            : error?.response?.data
+                ?.message ??
               error?.message ??
-              "Unable to make savings deposit.",
-      );
-    },
-  });
+              "Unable to make savings deposit."
+        );
+      },
+    });
 
-  const deleteGoalMutation = useMutation({
-    mutationFn: deleteSavingsGoal,
+  /*
+  |--------------------------------------------------------------------------
+  | DELETE GOAL
+  |--------------------------------------------------------------------------
+  */
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["savings-goals"],
-      });
-    },
-  });
+  const deleteGoalMutation =
+    useMutation({
+      mutationFn:
+        deleteSavingsGoal,
 
-  const deleteDepositMutation = useMutation({
-    mutationFn: deleteSavingsDeposit,
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "savings-goals",
+            ],
+          }
+        );
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["savings-goals"],
-      });
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "savings-deposits",
+            ],
+          }
+        );
 
-      queryClient.invalidateQueries({
-        queryKey: ["savings-deposits"],
-      });
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "accounts",
+            ],
+          }
+        );
 
-      queryClient.invalidateQueries({
-        queryKey: ["accounts"],
-      });
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "dashboard",
+            ],
+          }
+        );
 
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
-    },
-  });
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "transactions",
+            ],
+          }
+        );
+      },
+    });
 
-  const totalTarget = useMemo(
-    () =>
-      goals.reduce(
-        (sum, goal) =>
-          sum + Number(goal.target_amount),
-        0,
-      ),
-    [goals],
-  );
+  /*
+  |--------------------------------------------------------------------------
+  | DELETE DEPOSIT
+  |--------------------------------------------------------------------------
+  */
 
-  const totalSaved = useMemo(
-    () =>
-      goals.reduce(
-        (sum, goal) =>
-          sum + Number(goal.saved),
-        0,
-      ),
-    [goals],
-  );
+  const deleteDepositMutation =
+    useMutation({
+      mutationFn:
+        deleteSavingsDeposit,
 
-  const totalRemaining = useMemo(
-    () =>
-      goals.reduce(
-        (sum, goal) =>
-          sum + Number(goal.remaining),
-        0,
-      ),
-    [goals],
-  );
+      onSuccess: () => {
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "savings-goals",
+            ],
+          }
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "savings-deposits",
+            ],
+          }
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "accounts",
+            ],
+          }
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "dashboard",
+            ],
+          }
+        );
+
+        queryClient.invalidateQueries(
+          {
+            queryKey: [
+              "transactions",
+            ],
+          }
+        );
+      },
+    });
+
+  /*
+  |--------------------------------------------------------------------------
+  | ANALYTICS
+  |--------------------------------------------------------------------------
+  */
+
+  const totalTarget =
+    useMemo(
+      () =>
+        goals.reduce(
+          (
+            sum,
+            goal
+          ) =>
+            sum +
+            Number(
+              goal.target_amount
+            ),
+          0
+        ),
+      [goals]
+    );
+
+  const totalSaved =
+    useMemo(
+      () =>
+        goals.reduce(
+          (
+            sum,
+            goal
+          ) =>
+            sum +
+            Number(
+              goal.saved
+            ),
+          0
+        ),
+      [goals]
+    );
+
+  const totalRemaining =
+    useMemo(
+      () =>
+        goals.reduce(
+          (
+            sum,
+            goal
+          ) =>
+            sum +
+            Number(
+              goal.remaining
+            ),
+          0
+        ),
+      [goals]
+    );
 
   const overallProgress =
     totalTarget > 0
       ? Math.min(
           100,
-          (totalSaved / totalTarget) * 100,
+          (totalSaved /
+            totalTarget) *
+            100
         )
       : 0;
 
-  const filteredGoals = useMemo(() => {
-    const term =
-      search.trim().toLowerCase();
+  const filteredGoals =
+    useMemo(() => {
+      const term =
+        search
+          .trim()
+          .toLowerCase();
 
-    if (!term) {
-      return goals;
-    }
+      if (!term) {
+        return goals;
+      }
 
-    return goals.filter((goal) =>
-      goal.name
-        .toLowerCase()
-        .includes(term),
+      return goals.filter(
+        (goal) =>
+          goal.name
+            .toLowerCase()
+            .includes(term)
+      );
+    }, [
+      goals,
+      search,
+    ]);
+
+  const selectedGoal =
+    goals.find(
+      (goal) =>
+        goal.id ===
+        selectedGoalId
     );
-  }, [goals, search]);
 
-  const selectedGoal = goals.find(
-    (goal) =>
-      goal.id === selectedGoalId,
-  );
+  const selectedAccount =
+    accounts.find(
+      (account) =>
+        account.id ===
+        Number(
+          depositForm.account_id
+        )
+    );
 
-  const selectedAccount = accounts.find(
-    (account) =>
-      account.id ===
-      Number(depositForm.account_id),
-  );
+  const compatibleDepositAccounts =
+    useMemo(() => {
+      if (!selectedGoal) {
+        return accounts;
+      }
+
+      const goalCurrency =
+        selectedGoal.account_currency;
+
+      if (!goalCurrency) {
+        return accounts;
+      }
+
+      return accounts.filter(
+        (account) =>
+          account.currency ===
+          goalCurrency
+      );
+    }, [
+      accounts,
+      selectedGoal,
+    ]);
+
+  const goalCurrency =
+    selectedGoal?.account_currency ??
+    selectedAccount?.currency ??
+    "NGN";
 
   const isLoading =
     goalsLoading ||
     depositsLoading ||
     accountsLoading;
+
+  /*
+  |--------------------------------------------------------------------------
+  | MODALS
+  |--------------------------------------------------------------------------
+  */
 
   const openGoalModal = () => {
     setGoalError("");
@@ -354,103 +615,174 @@ export default function Savings() {
   };
 
   const closeGoalModal = () => {
+    if (
+      createGoalMutation.isPending
+    ) {
+      return;
+    }
+
     setShowGoalModal(false);
     setGoalError("");
   };
 
   const openDepositModal = (
-    goalId: number,
+    goalId: number
   ) => {
-    setSelectedGoalId(goalId);
+    const goal =
+      goals.find(
+        (item) =>
+          item.id ===
+          goalId
+      );
+
+    if (!goal) {
+      return;
+    }
+
+    const compatibleAccount =
+      accounts.find(
+        (account) =>
+          !goal.account_currency ||
+          account.currency ===
+            goal.account_currency
+      );
+
+    setSelectedGoalId(
+      goalId
+    );
 
     setDepositError("");
 
     setDepositForm({
-      savings_goal_id: goalId,
+      savings_goal_id:
+        goalId,
       account_id:
-        accounts[0]?.id ?? 0,
+        compatibleAccount?.id ??
+        0,
       amount: 0,
       reference: "",
       description: "",
-      deposited_at: dateInputValue(),
+      deposited_at:
+        dateInputValue(),
     });
 
     setShowDepositModal(true);
   };
 
-  const closeDepositModal = () => {
-    setShowDepositModal(false);
-    setSelectedGoalId(null);
-    setDepositError("");
-  };
+  const closeDepositModal =
+    () => {
+      if (
+        createDepositMutation.isPending
+      ) {
+        return;
+      }
+
+      setShowDepositModal(
+        false
+      );
+
+      setSelectedGoalId(
+        null
+      );
+
+      setDepositError("");
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | CREATE GOAL
+  |--------------------------------------------------------------------------
+  */
 
   const handleCreateGoal = (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     setGoalError("");
 
-    if (!goalForm.account_id) {
+    if (
+      !goalForm.account_id
+    ) {
       setGoalError(
-        "Please select the account associated with this savings goal.",
+        "Please select the account associated with this savings goal."
       );
       return;
     }
 
-    if (!goalForm.name.trim()) {
+    if (
+      !goalForm.name.trim()
+    ) {
       setGoalError(
-        "Please enter a goal name.",
+        "Please enter a goal name."
       );
       return;
     }
 
     if (
       !goalForm.target_amount ||
-      goalForm.target_amount <= 0
+      goalForm.target_amount <=
+        0
     ) {
       setGoalError(
-        "Target amount must be greater than zero.",
+        "Target amount must be greater than zero."
       );
       return;
     }
 
-    if (!goalForm.target_date) {
+    if (
+      !goalForm.target_date
+    ) {
       setGoalError(
-        "Please select a target date.",
+        "Please select a target date."
       );
       return;
     }
 
-    createGoalMutation.mutate({
-      ...goalForm,
-      name: goalForm.name.trim(),
-      target_amount: Number(
-        goalForm.target_amount,
-      ),
-      description:
-        goalForm.description?.trim() ||
-        undefined,
-    });
+    createGoalMutation.mutate(
+      {
+        ...goalForm,
+        name:
+          goalForm.name.trim(),
+        target_amount:
+          Number(
+            goalForm.target_amount
+          ),
+        description:
+          goalForm.description
+            ?.trim() ||
+          undefined,
+      }
+    );
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | DEPOSIT
+  |--------------------------------------------------------------------------
+  */
+
   const handleDeposit = (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     setDepositError("");
 
-    if (!depositForm.account_id) {
+    if (
+      !depositForm.account_id
+    ) {
       setDepositError(
-        "Please select an account.",
+        "Please select a compatible account."
       );
       return;
     }
 
-    if (!depositForm.savings_goal_id) {
+    if (
+      !depositForm.savings_goal_id
+    ) {
       setDepositError(
-        "Please select a savings goal.",
+        "Please select a savings goal."
       );
       return;
     }
@@ -460,74 +792,112 @@ export default function Savings() {
       depositForm.amount <= 0
     ) {
       setDepositError(
-        "Deposit amount must be greater than zero.",
+        "Deposit amount must be greater than zero."
+      );
+      return;
+    }
+
+    if (
+      selectedGoal?.account_currency &&
+      selectedAccount &&
+      selectedAccount.currency !==
+        selectedGoal.account_currency
+    ) {
+      setDepositError(
+        `The source account must use ${selectedGoal.account_currency}.`
       );
       return;
     }
 
     if (
       selectedAccount &&
-      Number(selectedAccount.balance) <
-        Number(depositForm.amount)
+      Number(
+        selectedAccount.balance
+      ) <
+        Number(
+          depositForm.amount
+        )
     ) {
       setDepositError(
-        "The selected account does not have enough balance.",
+        "The selected account does not have enough balance."
       );
       return;
     }
 
-    createDepositMutation.mutate({
-      ...depositForm,
-      amount: Number(
-        depositForm.amount,
-      ),
-      reference:
-        depositForm.reference?.trim() ||
-        undefined,
-      description:
-        depositForm.description?.trim() ||
-        undefined,
-    });
-  };
-
-  const handleDeleteGoal = (
-    goalId: number,
-    goalName: string,
-  ) => {
-    const confirmed =
-      window.confirm(
-        `Delete "${goalName}"? This will remove the savings goal and its associated deposits.`,
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    deleteGoalMutation.mutate(goalId);
-  };
-
-  const handleDeleteDeposit = (
-    depositId: number,
-  ) => {
-    const confirmed =
-      window.confirm(
-        "Delete this savings deposit? The amount will be returned to the account.",
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    deleteDepositMutation.mutate(
-      depositId,
+    createDepositMutation.mutate(
+      {
+        ...depositForm,
+        amount:
+          Number(
+            depositForm.amount
+          ),
+        reference:
+          depositForm.reference
+            ?.trim() ||
+          undefined,
+        description:
+          depositForm.description
+            ?.trim() ||
+          undefined,
+      }
     );
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | DELETE
+  |--------------------------------------------------------------------------
+  */
+
+  const handleDeleteGoal =
+    (
+      goalId: number,
+      goalName: string
+    ) => {
+      const confirmed =
+        window.confirm(
+          `Delete "${goalName}"? All deposits in this goal will be reversed and returned to their source accounts.`
+        );
+
+      if (!confirmed) {
+        return;
+      }
+
+      deleteGoalMutation.mutate(
+        goalId
+      );
+    };
+
+  const handleDeleteDeposit =
+    (
+      depositId: number
+    ) => {
+      const confirmed =
+        window.confirm(
+          "Delete this savings deposit? The amount will be returned to the source account."
+        );
+
+      if (!confirmed) {
+        return;
+      }
+
+      deleteDepositMutation.mutate(
+        depositId
+      );
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | ERROR / LOADING
+  |--------------------------------------------------------------------------
+  */
 
   if (isLoading) {
     return (
       <main className="savings-page">
         <div className="savings-loading">
           <div className="savings-spinner" />
+
           <p>
             Loading your savings...
           </p>
@@ -536,7 +906,11 @@ export default function Savings() {
     );
   }
 
-  if (goalsError || depositsError) {
+  if (
+    goalsError ||
+    depositsError ||
+    accountsError
+  ) {
     return (
       <main className="savings-page">
         <div className="savings-error">
@@ -545,19 +919,34 @@ export default function Savings() {
           </h2>
 
           <p>
-            Please check your connection and
-            try again.
+            Please check your connection and try again.
           </p>
 
           <button
             onClick={() => {
-              queryClient.invalidateQueries({
-                queryKey: ["savings-goals"],
-              });
+              queryClient.invalidateQueries(
+                {
+                  queryKey: [
+                    "savings-goals",
+                  ],
+                }
+              );
 
-              queryClient.invalidateQueries({
-                queryKey: ["savings-deposits"],
-              });
+              queryClient.invalidateQueries(
+                {
+                  queryKey: [
+                    "savings-deposits",
+                  ],
+                }
+              );
+
+              queryClient.invalidateQueries(
+                {
+                  queryKey: [
+                    "accounts",
+                  ],
+                }
+              );
             }}
           >
             Try again
@@ -575,7 +964,9 @@ export default function Savings() {
             SAVINGS PLANNER
           </p>
 
-          <h1>Savings Goals</h1>
+          <h1>
+            Savings Goals
+          </h1>
 
           <p className="savings-subtitle">
             Turn your plans into real financial
@@ -585,10 +976,16 @@ export default function Savings() {
 
         <button
           className="create-goal-button"
-          onClick={openGoalModal}
-          disabled={accounts.length === 0}
+          onClick={
+            openGoalModal
+          }
+          disabled={
+            accounts.length ===
+            0
+          }
         >
           <span>+</span>
+
           Create goal
         </button>
       </header>
@@ -596,15 +993,21 @@ export default function Savings() {
       <section className="savings-summary">
         <article className="savings-summary-card featured">
           <div>
-            <span>Total target</span>
+            <span>
+              Total target
+            </span>
 
             <strong>
-              {formatMoney(totalTarget)}
+              {formatMoney(
+                totalTarget
+              )}
             </strong>
 
             <small>
-              Across {goals.length} goal
-              {goals.length === 1
+              Across{" "}
+              {goals.length} goal
+              {goals.length ===
+              1
                 ? ""
                 : "s"}
             </small>
@@ -616,23 +1019,33 @@ export default function Savings() {
         </article>
 
         <article className="savings-summary-card">
-          <span>Total saved</span>
+          <span>
+            Total saved
+          </span>
 
           <strong>
-            {formatMoney(totalSaved)}
+            {formatMoney(
+              totalSaved
+            )}
           </strong>
 
           <small>
-            {overallProgress.toFixed(1)}% of
-            total target
+            {overallProgress.toFixed(
+              1
+            )}
+            % of total target
           </small>
         </article>
 
         <article className="savings-summary-card">
-          <span>Remaining</span>
+          <span>
+            Remaining
+          </span>
 
           <strong>
-            {formatMoney(totalRemaining)}
+            {formatMoney(
+              totalRemaining
+            )}
           </strong>
 
           <small>
@@ -654,7 +1067,10 @@ export default function Savings() {
           </div>
 
           <strong>
-            {overallProgress.toFixed(1)}%
+            {overallProgress.toFixed(
+              1
+            )}
+            %
           </strong>
         </div>
 
@@ -669,11 +1085,17 @@ export default function Savings() {
 
         <div className="savings-progress-labels">
           <span>
-            Saved {formatMoney(totalSaved)}
+            Saved{" "}
+            {formatMoney(
+              totalSaved
+            )}
           </span>
 
           <span>
-            Target {formatMoney(totalTarget)}
+            Target{" "}
+            {formatMoney(
+              totalTarget
+            )}
           </span>
         </div>
       </section>
@@ -683,12 +1105,15 @@ export default function Savings() {
           <div className="savings-tabs">
             <button
               className={
-                activeTab === "goals"
+                activeTab ===
+                "goals"
                   ? "active"
                   : ""
               }
               onClick={() =>
-                setActiveTab("goals")
+                setActiveTab(
+                  "goals"
+                )
               }
             >
               Goals
@@ -696,19 +1121,23 @@ export default function Savings() {
 
             <button
               className={
-                activeTab === "history"
+                activeTab ===
+                "history"
                   ? "active"
                   : ""
               }
               onClick={() =>
-                setActiveTab("history")
+                setActiveTab(
+                  "history"
+                )
               }
             >
               Deposit history
             </button>
           </div>
 
-          {activeTab === "goals" ? (
+          {activeTab ===
+            "goals" && (
             <div className="savings-search">
               <svg
                 viewBox="0 0 24 24"
@@ -719,47 +1148,61 @@ export default function Savings() {
                   cy="11"
                   r="7"
                 />
+
                 <path d="m16 16 5 5" />
               </svg>
 
               <input
                 type="search"
                 placeholder="Search goals..."
-                value={search}
-                onChange={(event) =>
+                value={
+                  search
+                }
+                onChange={(
+                  event
+                ) =>
                   setSearch(
-                    event.target.value,
+                    event.target
+                      .value
                   )
                 }
               />
             </div>
-          ) : null}
+          )}
         </div>
 
-        {activeTab === "goals" ? (
-          filteredGoals.length === 0 ? (
+        {activeTab ===
+        "goals" ? (
+          filteredGoals.length ===
+          0 ? (
             <div className="savings-empty">
               <div className="empty-savings-icon">
                 ◎
               </div>
 
               <h3>
-                {goals.length === 0
+                {goals.length ===
+                0
                   ? "Create your first savings goal"
                   : "No matching goals"}
               </h3>
 
               <p>
-                {goals.length === 0
+                {goals.length ===
+                0
                   ? "Choose something important to you and start building towards it."
                   : "Try another search term."}
               </p>
 
-              {goals.length === 0 && (
+              {goals.length ===
+                0 && (
                 <button
-                  onClick={openGoalModal}
+                  onClick={
+                    openGoalModal
+                  }
                   disabled={
-                    accounts.length === 0
+                    accounts.length ===
+                    0
                   }
                 >
                   Create savings goal
@@ -776,15 +1219,17 @@ export default function Savings() {
                       Math.max(
                         0,
                         Number(
-                          goal.progress,
-                        ),
-                      ),
+                          goal.progress
+                        )
+                      )
                     );
 
                   return (
                     <article
                       className="savings-goal-card"
-                      key={goal.id}
+                      key={
+                        goal.id
+                      }
                     >
                       <div className="goal-card-header">
                         <div className="goal-icon">
@@ -793,53 +1238,69 @@ export default function Savings() {
 
                         <div className="goal-title">
                           <h3>
-                            {goal.name}
+                            {
+                              goal.name
+                            }
                           </h3>
 
                           <span>
                             Target date{" "}
                             {formatDate(
-                              goal.target_date,
+                              goal.target_date
                             )}
                           </span>
                         </div>
 
                         <span
                           className={statusClass(
-                            goal.status,
+                            goal.status
                           )}
                         >
-                          {goal.status}
+                          {
+                            goal.status
+                          }
                         </span>
                       </div>
 
                       <div className="goal-card-values">
                         <div>
-                          <span>Saved</span>
+                          <span>
+                            Saved
+                          </span>
 
                           <strong>
                             {formatMoney(
                               goal.saved,
+                              goal.account_currency ??
+                                "NGN"
                             )}
                           </strong>
                         </div>
 
                         <div>
-                          <span>Target</span>
+                          <span>
+                            Target
+                          </span>
 
                           <strong>
                             {formatMoney(
                               goal.target_amount,
+                              goal.account_currency ??
+                                "NGN"
                             )}
                           </strong>
                         </div>
 
                         <div>
-                          <span>Remaining</span>
+                          <span>
+                            Remaining
+                          </span>
 
                           <strong>
                             {formatMoney(
                               goal.remaining,
+                              goal.account_currency ??
+                                "NGN"
                             )}
                           </strong>
                         </div>
@@ -857,8 +1318,10 @@ export default function Savings() {
                       <div className="goal-progress-labels">
                         <span>
                           {Number(
-                            goal.progress,
-                          ).toFixed(1)}
+                            goal.progress
+                          ).toFixed(
+                            1
+                          )}
                           % complete
                         </span>
 
@@ -870,7 +1333,9 @@ export default function Savings() {
 
                       {goal.description && (
                         <p className="goal-description">
-                          {goal.description}
+                          {
+                            goal.description
+                          }
                         </p>
                       )}
 
@@ -881,7 +1346,7 @@ export default function Savings() {
                             className="deposit-button"
                             onClick={() =>
                               openDepositModal(
-                                goal.id,
+                                goal.id
                               )
                             }
                             disabled={
@@ -898,7 +1363,7 @@ export default function Savings() {
                           onClick={() =>
                             handleDeleteGoal(
                               goal.id,
-                              goal.name,
+                              goal.name
                             )
                           }
                           disabled={
@@ -910,11 +1375,12 @@ export default function Savings() {
                       </div>
                     </article>
                   );
-                },
+                }
               )}
             </div>
           )
-        ) : deposits.length === 0 ? (
+        ) : deposits.length ===
+          0 ? (
           <div className="savings-empty">
             <div className="empty-savings-icon">
               ₦
@@ -931,70 +1397,89 @@ export default function Savings() {
           </div>
         ) : (
           <div className="deposit-history">
-            {deposits.map((deposit) => (
-              <article
-                className="deposit-history-row"
-                key={deposit.id}
-              >
-                <div className="deposit-history-icon">
-                  ↑
-                </div>
-
-                <div className="deposit-history-main">
-                  <strong>
-                    {deposit.goal?.name ??
-                      "Savings goal"}
-                  </strong>
-
-                  <span>
-                    From{" "}
-                    {deposit.account?.name ??
-                      "Account"}
-                  </span>
-
-                  {deposit.description && (
-                    <small>
-                      {deposit.description}
-                    </small>
-                  )}
-                </div>
-
-                <div className="deposit-history-date">
-                  {formatDate(
-                    deposit.deposited_at,
-                  )}
-                </div>
-
-                <div className="deposit-history-amount">
-                  +
-                  {formatMoney(
-                    deposit.amount,
-                  )}
-                </div>
-
-                <button
-                  className="delete-deposit-button"
-                  onClick={() =>
-                    handleDeleteDeposit(
-                      deposit.id,
-                    )
-                  }
-                  disabled={
-                    deleteDepositMutation.isPending
+            {deposits.map(
+              (deposit) => (
+                <article
+                  className="deposit-history-row"
+                  key={
+                    deposit.id
                   }
                 >
-                  ×
-                </button>
-              </article>
-            ))}
+                  <div className="deposit-history-icon">
+                    ↑
+                  </div>
+
+                  <div className="deposit-history-main">
+                    <strong>
+                      {
+                        deposit
+                          .goal
+                          ?.name
+                      }
+                    </strong>
+
+                    <span>
+                      From{" "}
+                      {deposit
+                        .account
+                        ?.name ??
+                        "Account"}
+                    </span>
+
+                    {deposit.description && (
+                      <small>
+                        {
+                          deposit.description
+                        }
+                      </small>
+                    )}
+                  </div>
+
+                  <div className="deposit-history-date">
+                    {formatDate(
+                      deposit.deposited_at
+                    )}
+                  </div>
+
+                  <div className="deposit-history-amount">
+                    +
+                    {formatMoney(
+                      deposit.amount,
+                      deposit.account?.currency ??
+                        "NGN"
+                    )}
+                  </div>
+
+                  <button
+                    className="delete-deposit-button"
+                    onClick={() =>
+                      handleDeleteDeposit(
+                        deposit.id
+                      )
+                    }
+                    disabled={
+                      deleteDepositMutation.isPending
+                    }
+                  >
+                    ×
+                  </button>
+                </article>
+              )
+            )}
           </div>
         )}
       </section>
 
+      {/* ================================================================
+          CREATE GOAL MODAL
+      ================================================================= */}
+
       {showGoalModal && (
         <div
           className="savings-modal-backdrop"
-          onMouseDown={(event) => {
+          onMouseDown={(
+            event
+          ) => {
             if (
               event.target ===
               event.currentTarget
@@ -1011,7 +1496,9 @@ export default function Savings() {
           >
             <div className="savings-modal-heading">
               <div>
-                <p>SAVINGS GOAL</p>
+                <p>
+                  SAVINGS GOAL
+                </p>
 
                 <h2 id="goal-modal-title">
                   Create goal
@@ -1020,7 +1507,9 @@ export default function Savings() {
 
               <button
                 className="savings-modal-close"
-                onClick={closeGoalModal}
+                onClick={
+                  closeGoalModal
+                }
                 aria-label="Close"
               >
                 ×
@@ -1029,12 +1518,16 @@ export default function Savings() {
 
             {goalError && (
               <div className="savings-form-error">
-                {goalError}
+                {
+                  goalError
+                }
               </div>
             )}
 
             <form
-              onSubmit={handleCreateGoal}
+              onSubmit={
+                handleCreateGoal
+              }
             >
               <div className="savings-field">
                 <label htmlFor="goal-account">
@@ -1044,16 +1537,23 @@ export default function Savings() {
                 <select
                   id="goal-account"
                   value={
-                    goalForm.account_id || ""
+                    goalForm.account_id ||
+                    ""
                   }
-                  onChange={(event) =>
-                    setGoalForm({
-                      ...goalForm,
-                      account_id:
-                        Number(
-                          event.target.value,
-                        ),
-                    })
+                  onChange={(
+                    event
+                  ) =>
+                    setGoalForm(
+                      {
+                        ...goalForm,
+                        account_id:
+                          Number(
+                            event
+                              .target
+                              .value
+                          ),
+                      }
+                    )
                   }
                   required
                 >
@@ -1062,18 +1562,27 @@ export default function Savings() {
                   </option>
 
                   {accounts.map(
-                    (account) => (
+                    (
+                      account
+                    ) => (
                       <option
-                        key={account.id}
-                        value={account.id}
+                        key={
+                          account.id
+                        }
+                        value={
+                          account.id
+                        }
                       >
-                        {account.name} —{" "}
+                        {
+                          account.name
+                        }{" "}
+                        —{" "}
                         {formatMoney(
                           account.balance,
-                          account.currency,
+                          account.currency
                         )}
                       </option>
-                    ),
+                    )
                   )}
                 </select>
               </div>
@@ -1086,13 +1595,20 @@ export default function Savings() {
                 <input
                   id="goal-name"
                   type="text"
-                  value={goalForm.name}
-                  onChange={(event) =>
-                    setGoalForm({
-                      ...goalForm,
-                      name: event.target
-                        .value,
-                    })
+                  value={
+                    goalForm.name
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setGoalForm(
+                      {
+                        ...goalForm,
+                        name: event
+                          .target
+                          .value,
+                      }
+                    )
                   }
                   placeholder="e.g. New laptop"
                   required
@@ -1113,14 +1629,20 @@ export default function Savings() {
                     goalForm.target_amount ||
                     ""
                   }
-                  onChange={(event) =>
-                    setGoalForm({
-                      ...goalForm,
-                      target_amount:
-                        Number(
-                          event.target.value,
-                        ),
-                    })
+                  onChange={(
+                    event
+                  ) =>
+                    setGoalForm(
+                      {
+                        ...goalForm,
+                        target_amount:
+                          Number(
+                            event
+                              .target
+                              .value
+                          ),
+                      }
+                    )
                   }
                   placeholder="0.00"
                   required
@@ -1138,13 +1660,18 @@ export default function Savings() {
                   value={
                     goalForm.target_date
                   }
-                  onChange={(event) =>
-                    setGoalForm({
-                      ...goalForm,
-                      target_date:
-                        event.target
-                          .value,
-                    })
+                  onChange={(
+                    event
+                  ) =>
+                    setGoalForm(
+                      {
+                        ...goalForm,
+                        target_date:
+                          event
+                            .target
+                            .value,
+                      }
+                    )
                   }
                   required
                 />
@@ -1162,12 +1689,18 @@ export default function Savings() {
                     goalForm.description ??
                     ""
                   }
-                  onChange={(event) =>
-                    setGoalForm({
-                      ...goalForm,
-                      description:
-                        event.target.value,
-                    })
+                  onChange={(
+                    event
+                  ) =>
+                    setGoalForm(
+                      {
+                        ...goalForm,
+                        description:
+                          event
+                            .target
+                            .value,
+                      }
+                    )
                   }
                   placeholder="What are you saving for?"
                 />
@@ -1177,7 +1710,9 @@ export default function Savings() {
                 <button
                   type="button"
                   className="savings-cancel"
-                  onClick={closeGoalModal}
+                  onClick={
+                    closeGoalModal
+                  }
                 >
                   Cancel
                 </button>
@@ -1187,7 +1722,8 @@ export default function Savings() {
                   className="savings-submit"
                   disabled={
                     createGoalMutation.isPending ||
-                    accounts.length === 0
+                    accounts.length ===
+                      0
                   }
                 >
                   {createGoalMutation.isPending
@@ -1200,11 +1736,17 @@ export default function Savings() {
         </div>
       )}
 
+      {/* ================================================================
+          DEPOSIT MODAL
+      ================================================================= */}
+
       {showDepositModal &&
         selectedGoal && (
           <div
             className="savings-modal-backdrop"
-            onMouseDown={(event) => {
+            onMouseDown={(
+              event
+            ) => {
               if (
                 event.target ===
                 event.currentTarget
@@ -1227,7 +1769,9 @@ export default function Savings() {
 
                   <h2 id="deposit-modal-title">
                     Deposit into{" "}
-                    {selectedGoal.name}
+                    {
+                      selectedGoal.name
+                    }
                   </h2>
                 </div>
 
@@ -1244,7 +1788,9 @@ export default function Savings() {
 
               {depositError && (
                 <div className="savings-form-error">
-                  {depositError}
+                  {
+                    depositError
+                  }
                 </div>
               )}
 
@@ -1256,16 +1802,32 @@ export default function Savings() {
                 <strong>
                   {formatMoney(
                     selectedGoal.saved,
+                    goalCurrency
                   )}{" "}
                   /{" "}
                   {formatMoney(
                     selectedGoal.target_amount,
+                    goalCurrency
                   )}
                 </strong>
               </div>
 
+              {selectedGoal.account_currency && (
+                <div className="savings-currency-note">
+                  This goal accepts{" "}
+                  <strong>
+                    {
+                      selectedGoal.account_currency
+                    }
+                  </strong>{" "}
+                  deposits only.
+                </div>
+              )}
+
               <form
-                onSubmit={handleDeposit}
+                onSubmit={
+                  handleDeposit
+                }
               >
                 <div className="savings-field">
                   <label htmlFor="deposit-account">
@@ -1278,37 +1840,59 @@ export default function Savings() {
                       depositForm.account_id ||
                       ""
                     }
-                    onChange={(event) =>
-                      setDepositForm({
-                        ...depositForm,
-                        account_id:
-                          Number(
-                            event.target
-                              .value,
-                          ),
-                      })
+                    onChange={(
+                      event
+                    ) =>
+                      setDepositForm(
+                        {
+                          ...depositForm,
+                          account_id:
+                            Number(
+                              event
+                                .target
+                                .value
+                            ),
+                        }
+                      )
                     }
                     required
                   >
                     <option value="">
-                      Select account
+                      Select compatible account
                     </option>
 
-                    {accounts.map(
-                      (account) => (
+                    {compatibleDepositAccounts.map(
+                      (
+                        account
+                      ) => (
                         <option
-                          key={account.id}
-                          value={account.id}
+                          key={
+                            account.id
+                          }
+                          value={
+                            account.id
+                          }
                         >
-                          {account.name} —{" "}
+                          {
+                            account.name
+                          }{" "}
+                          —{" "}
                           {formatMoney(
                             account.balance,
-                            account.currency,
+                            account.currency
                           )}
                         </option>
-                      ),
+                      )
                     )}
                   </select>
+
+                  {compatibleDepositAccounts.length ===
+                    0 && (
+                    <small className="savings-field-warning">
+                      No account with the matching currency is
+                      available for this goal.
+                    </small>
+                  )}
                 </div>
 
                 {selectedAccount && (
@@ -1317,7 +1901,7 @@ export default function Savings() {
                     <strong>
                       {formatMoney(
                         selectedAccount.balance,
-                        selectedAccount.currency,
+                        selectedAccount.currency
                       )}
                     </strong>
                   </div>
@@ -1337,15 +1921,20 @@ export default function Savings() {
                       depositForm.amount ||
                       ""
                     }
-                    onChange={(event) =>
-                      setDepositForm({
-                        ...depositForm,
-                        amount:
-                          Number(
-                            event.target
-                              .value,
-                          ),
-                      })
+                    onChange={(
+                      event
+                    ) =>
+                      setDepositForm(
+                        {
+                          ...depositForm,
+                          amount:
+                            Number(
+                              event
+                                .target
+                                .value
+                            ),
+                        }
+                      )
                     }
                     placeholder="0.00"
                     required
@@ -1363,13 +1952,18 @@ export default function Savings() {
                     value={
                       depositForm.deposited_at
                     }
-                    onChange={(event) =>
-                      setDepositForm({
-                        ...depositForm,
-                        deposited_at:
-                          event.target
-                            .value,
-                      })
+                    onChange={(
+                      event
+                    ) =>
+                      setDepositForm(
+                        {
+                          ...depositForm,
+                          deposited_at:
+                            event
+                              .target
+                              .value,
+                        }
+                      )
                     }
                     required
                   />
@@ -1387,13 +1981,18 @@ export default function Savings() {
                       depositForm.reference ??
                       ""
                     }
-                    onChange={(event) =>
-                      setDepositForm({
-                        ...depositForm,
-                        reference:
-                          event.target
-                            .value,
-                      })
+                    onChange={(
+                      event
+                    ) =>
+                      setDepositForm(
+                        {
+                          ...depositForm,
+                          reference:
+                            event
+                              .target
+                              .value,
+                        }
+                      )
                     }
                     placeholder="Optional"
                   />
@@ -1411,12 +2010,18 @@ export default function Savings() {
                       depositForm.description ??
                       ""
                     }
-                    onChange={(event) =>
-                      setDepositForm({
-                        ...depositForm,
-                        description:
-                          event.target.value,
-                      })
+                    onChange={(
+                      event
+                    ) =>
+                      setDepositForm(
+                        {
+                          ...depositForm,
+                          description:
+                            event
+                              .target
+                              .value,
+                        }
+                      )
                     }
                     placeholder="Add a note..."
                   />
@@ -1438,7 +2043,10 @@ export default function Savings() {
                     className="savings-submit"
                     disabled={
                       createDepositMutation.isPending ||
-                      accounts.length === 0
+                      accounts.length ===
+                        0 ||
+                      compatibleDepositAccounts.length ===
+                        0
                     }
                   >
                     {createDepositMutation.isPending

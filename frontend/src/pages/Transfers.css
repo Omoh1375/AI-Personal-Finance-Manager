@@ -820,3 +820,177 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   TRANSFER TOOLBAR
+   ========================================================================== */
+
+.transfer-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transfer-account-filter {
+  height: 39px;
+  min-width: 145px;
+
+  padding: 0 10px;
+
+  border:
+    1px solid #dfe7e4;
+
+  border-radius: 8px;
+
+  outline: 0;
+
+  color: #53615c;
+
+  background: #fff;
+
+  cursor: pointer;
+
+  font-size: 10px;
+}
+
+.transfer-account-filter:focus {
+  border-color: #0d9278;
+
+  box-shadow:
+    0 0 0 3px
+      rgba(13, 146, 120, 0.08);
+}
+
+/* ==========================================================================
+   FOURTH SUMMARY CARD
+   ========================================================================== */
+
+.transfer-average-card {
+  display: flex;
+}
+
+/* ==========================================================================
+   TRANSFER DATE
+   ========================================================================== */
+
+.transfer-date strong,
+.transfer-date small {
+  display: block;
+}
+
+.transfer-date strong {
+  color: #707d78;
+
+  font-size: 10px;
+}
+
+.transfer-date small {
+  margin-top: 4px;
+
+  color: #a0aaa7;
+
+  font-size: 8px;
+}
+
+/* ==========================================================================
+   ACCOUNT BALANCES IN MODAL
+   ========================================================================== */
+
+.account-transfer-balance {
+  margin-top: 7px;
+
+  padding: 7px 9px;
+
+  border-radius: 7px;
+
+  color: #7f8a86;
+
+  background: #f3f7f5;
+
+  font-size: 8px;
+}
+
+.account-transfer-balance strong {
+  color: #0d9278;
+}
+
+/* ==========================================================================
+   TRANSFER PREVIEW
+   ========================================================================== */
+
+.transfer-preview {
+  margin-bottom: 15px;
+
+  padding: 12px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 8px;
+
+  border:
+    1px solid #dcebe6;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #f5fbf9,
+      #edf8f5
+    );
+}
+
+.transfer-preview div {
+  min-width: 0;
+}
+
+.transfer-preview span,
+.transfer-preview strong {
+  display: block;
+}
+
+.transfer-preview span {
+  color: #8a9792;
+
+  font-size: 8px;
+}
+
+.transfer-preview strong {
+  margin-top: 5px;
+
+  color: #27352f;
+
+  font-size: 11px;
+}
+
+@media (max-width: 980px) {
+  .transfer-toolbar-actions {
+    flex-wrap: wrap;
+  }
+
+  .transfer-account-filter {
+    flex: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .transfer-toolbar-actions {
+    width: 100%;
+
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .transfer-account-filter,
+  .transfer-search {
+    width: 100%;
+  }
+
+  .transfer-preview {
+    grid-template-columns: 1fr;
+  }
+}

@@ -3,10 +3,18 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+
 import {
   useMemo,
   useState,
+  type FormEvent,
 } from "react";
+
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
 import {
   createExpense,
   createIncome,
@@ -15,7 +23,20 @@ import {
   getExpenses,
   getIncomes,
 } from "../api/transactions";
-import { getCategories } from "../api/categories";
+
+import {
+  createTransfer,
+  deleteTransfer,
+  getTransfers,
+} from "../api/transfers";
+
+import {
+  getCategories,
+} from "../api/categories";
+
+import {
+  getAccounts,
+} from "../api/accounts";
 
 import type {
   CategoryType,
@@ -25,10 +46,52 @@ import type {
   IncomePayload,
   ExpensePayload,
   Transaction,
-  TransactionKind,
 } from "../types/transaction";
 
+import type {
+  Transfer,
+  TransferPayload,
+} from "../types/transfer";
+
 import "./Transactions.css";
+
+type TransactionView =
+  | "all"
+  | "income"
+  | "expense"
+  | "transfer";
+
+interface UnifiedTransaction {
+  id: string;
+  numericId: number;
+  kind:
+    | "income"
+    | "expense"
+    | "transfer";
+
+  title: string;
+  subtitle: string;
+  account: string;
+  date: string;
+  amount: number;
+  reference?: string | null;
+
+  original:
+    | Transaction
+    | Transfer;
+}
+
+interface TransactionForm {
+  account_id: string;
+  category_id: string;
+  amount: string;
+  reference: string;
+  merchant: string;
+  description: string;
+  date: string;
+  from_account_id: string;
+  to_account_id: string;
+}
 
 function formatMoney(
   value: number | string,
@@ -41,23 +104,33 @@ function formatMoney(
   }).format(Number(value) || 0);
 }
 
-function formatDate(value?: string | null) {
+function formatDate(
+  value?: string | null,
+) {
   if (!value) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat("en-NG", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat(
+    "en-NG",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  ).format(new Date(value));
 }
 
-function formatDateInput(date = new Date()) {
-  const year = date.getFullYear();
+function formatDateInput(
+  date = new Date(),
+) {
+  const year =
+    date.getFullYear();
+
   const month = String(
     date.getMonth() + 1,
   ).padStart(2, "0");
+
   const day = String(
     date.getDate(),
   ).padStart(2, "0");
@@ -65,41 +138,108 @@ function formatDateInput(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
-function getTransactionDate(
-  transaction: Transaction,
-  kind: TransactionKind,
+function getInitialView(
+  pathname: string,
+): TransactionView {
+  if (pathname === "/income") {
+    return "income";
+  }
+
+  if (
+    pathname === "/expenses"
+  ) {
+    return "expense";
+  }
+
+  if (
+    pathname === "/transfers"
+  ) {
+    return "transfer";
+  }
+
+  return "all";
+}
+
+function getViewLabel(
+  view: TransactionView,
 ) {
-  return kind === "income"
-    ? transaction.received_at
-    : transaction.spent_at;
+  switch (view) {
+    case "income":
+      return "Income";
+
+    case "expense":
+      return "Expenses";
+
+    case "transfer":
+      return "Transfers";
+
+    default:
+      return "All";
+  }
 }
 
 export default function Transactions() {
-  const queryClient = useQueryClient();
+  const queryClient =
+    useQueryClient();
 
-  const [kind, setKind] =
-    useState<TransactionKind>("income");
+  const location =
+    useLocation();
 
-  const [showModal, setShowModal] =
-    useState(false);
+  const navigate =
+    useNavigate();
 
-  const [search, setSearch] = useState("");
+  const [view, setView] =
+    useState<TransactionView>(
+      () =>
+        getInitialView(
+          location.pathname,
+        ),
+    );
 
-  const [selectedCategory, setSelectedCategory] =
+  const [
+    showModal,
+    setShowModal,
+  ] = useState(false);
+
+  const [search, setSearch] =
     useState("");
 
-  const [formError, setFormError] =
-    useState("");
+  const [
+    selectedCategory,
+    setSelectedCategory,
+  ] = useState("");
 
-  const [form, setForm] = useState({
-    account_id: "",
-    category_id: "",
-    amount: "",
-    reference: "",
-    merchant: "",
-    description: "",
-    date: formatDateInput(),
-  });
+  const [
+    selectedAccount,
+    setSelectedAccount,
+  ] = useState("");
+
+  const [
+    formError,
+    setFormError,
+  ] = useState("");
+
+  const [
+    transactionForm,
+    setTransactionForm,
+  ] =
+    useState<TransactionForm>({
+      account_id: "",
+      category_id: "",
+      amount: "",
+      reference: "",
+      merchant: "",
+      description: "",
+      date: formatDateInput(),
+      from_account_id: "",
+      to_account_id: "",
+    });
+
+  /*
+  |--------------------------------------------------------------------------
+  | DATA
+  |--------------------------------------------------------------------------
+  */
 
   const {
     data: incomes = [],
@@ -118,14 +258,11 @@ export default function Transactions() {
   });
 
   const {
-    data: categories = [],
-    isLoading: categoriesLoading,
+    data: transfers = [],
+    isLoading: transfersLoading,
   } = useQuery({
-    queryKey: ["categories", kind],
-    queryFn: () =>
-      getCategories(
-        kind as CategoryType,
-      ),
+    queryKey: ["transfers"],
+    queryFn: getTransfers,
   });
 
   const {
@@ -133,229 +270,715 @@ export default function Transactions() {
     isLoading: accountsLoading,
   } = useQuery({
     queryKey: ["accounts"],
-    queryFn: async () => {
-      const { getAccounts } =
-        await import("../api/accounts");
-
-      return getAccounts();
-    },
+    queryFn: getAccounts,
   });
 
-  const transactions =
-    kind === "income"
-      ? incomes
-      : expenses;
+  const categoryType: CategoryType =
+    view === "expense"
+      ? "expense"
+      : "income";
 
-  const isLoading =
-    incomesLoading ||
-    expensesLoading ||
-    categoriesLoading ||
-    accountsLoading;
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+  } = useQuery({
+    queryKey: [
+      "categories",
+      categoryType,
+    ],
+    queryFn: () =>
+      getCategories(
+        categoryType,
+      ),
+    enabled:
+      view === "income" ||
+      view === "expense",
+  });
+
+  /*
+  |--------------------------------------------------------------------------
+  | ROUTE-AWARE VIEW
+  |--------------------------------------------------------------------------
+  */
+
+  const changeView = (
+    nextView: TransactionView,
+  ) => {
+    setView(nextView);
+
+    setSelectedCategory("");
+
+    setSelectedAccount("");
+
+    if (nextView === "income") {
+      navigate("/income");
+      return;
+    }
+
+    if (nextView === "expense") {
+      navigate("/expenses");
+      return;
+    }
+
+    if (
+      nextView === "transfer"
+    ) {
+      navigate("/transfers");
+      return;
+    }
+
+    navigate("/transactions");
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | UNIFIED TRANSACTIONS
+  |--------------------------------------------------------------------------
+  */
+
+  const unifiedTransactions =
+    useMemo<
+      UnifiedTransaction[]
+    >(
+      () => {
+        const result: UnifiedTransaction[] =
+          [];
+
+        for (
+          const transaction of incomes
+        ) {
+          result.push({
+            id: `income-${transaction.id}`,
+            numericId:
+              transaction.id,
+            kind: "income",
+
+            title:
+              transaction
+                .category
+                ?.name ??
+              "Income",
+
+            subtitle:
+              transaction
+                .description ??
+              transaction
+                .reference ??
+              "Income received",
+
+            account:
+              transaction
+                .account
+                ?.name ??
+              "Account",
+
+            date:
+              transaction.received_at ?? new Date().toISOString(),
+
+            amount: Number(
+              transaction.amount,
+            ),
+
+            reference:
+              transaction.reference,
+
+            original:
+              transaction,
+          });
+        }
+
+        for (
+          const transaction of expenses
+        ) {
+          result.push({
+            id: `expense-${transaction.id}`,
+            numericId:
+              transaction.id,
+            kind: "expense",
+
+            title:
+              transaction
+                .category
+                ?.name ??
+              "Expense",
+
+            subtitle:
+              transaction.merchant ??
+              transaction.description ??
+              transaction.reference ??
+              "Expense",
+
+            account:
+              transaction
+                .account
+                ?.name ??
+              "Account",
+
+            date:
+              transaction.spent_at ?? new Date().toISOString(),
+
+            amount: Number(
+              transaction.amount,
+            ),
+
+            reference:
+              transaction.reference,
+
+            original:
+              transaction,
+          });
+        }
+
+        for (
+          const transfer of transfers
+        ) {
+          const fromAccount =
+            transfer
+              .from_account
+              ?.name ??
+            "Account";
+
+          const toAccount =
+            transfer
+              .to_account
+              ?.name ??
+            "Account";
+
+          result.push({
+            id: `transfer-${transfer.id}`,
+            numericId:
+              transfer.id,
+            kind: "transfer",
+
+            title: "Transfer",
+
+            subtitle:
+              transfer.description ??
+              `${fromAccount} → ${toAccount}`,
+
+            account:
+              `${fromAccount} → ${toAccount}`,
+
+            date:
+              transfer.transferred_at ?? new Date().toISOString(),
+
+            amount: Number(
+              transfer.amount,
+            ),
+
+            reference:
+              transfer.reference,
+
+            original:
+              transfer,
+          });
+        }
+
+        return result.sort(
+          (a, b) =>
+            new Date(
+              b.date,
+            ).getTime() -
+            new Date(
+              a.date,
+            ).getTime(),
+        );
+      },
+      [
+        incomes,
+        expenses,
+        transfers,
+      ],
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | FILTERING
+  |--------------------------------------------------------------------------
+  */
 
   const filteredTransactions =
     useMemo(() => {
       const term =
-        search.trim().toLowerCase();
+        search
+          .trim()
+          .toLowerCase();
 
-      return transactions.filter(
+      return unifiedTransactions.filter(
         (transaction) => {
-          const category =
-            transaction.category?.name ??
-            "";
-
-          const account =
-            transaction.account?.name ??
-            "";
+          const matchesView =
+            view === "all" ||
+            transaction.kind ===
+              view;
 
           const matchesSearch =
             !term ||
-            category
+            transaction.title
               .toLowerCase()
               .includes(term) ||
-            account
+            transaction.subtitle
+              .toLowerCase()
+              .includes(term) ||
+            transaction.account
               .toLowerCase()
               .includes(term) ||
             (
-              transaction.description ?? ""
-            )
-              .toLowerCase()
-              .includes(term) ||
-            (
-              transaction.merchant ?? ""
+              transaction.reference ??
+              ""
             )
               .toLowerCase()
               .includes(term);
 
-          const matchesCategory =
-            !selectedCategory ||
-            String(transaction.category_id) ===
+          let matchesCategory =
+            true;
+
+          if (
+            selectedCategory &&
+            transaction.kind !==
+              "transfer"
+          ) {
+            matchesCategory =
+              String(
+                (
+                  transaction.original as Transaction
+                )
+                  .category_id,
+              ) ===
               selectedCategory;
+          }
+
+          let matchesAccount =
+            true;
+
+          if (selectedAccount) {
+            if (
+              transaction.kind ===
+              "transfer"
+            ) {
+              const transfer =
+                transaction.original as Transfer;
+
+              matchesAccount =
+                String(
+                  transfer.from_account_id,
+                ) ===
+                  selectedAccount ||
+                String(
+                  transfer.to_account_id,
+                ) ===
+                  selectedAccount;
+            } else {
+              const item =
+                transaction.original as Transaction;
+
+              matchesAccount =
+                String(
+                  item.account_id,
+                ) ===
+                selectedAccount;
+            }
+          }
 
           return (
+            matchesView &&
             matchesSearch &&
-            matchesCategory
+            matchesCategory &&
+            matchesAccount
           );
         },
       );
     }, [
-      transactions,
+      unifiedTransactions,
+      view,
       search,
       selectedCategory,
+      selectedAccount,
     ]);
 
-  const total = useMemo(() => {
-    return transactions.reduce(
-      (sum, transaction) =>
-        sum +
-        Number(transaction.amount || 0),
-      0,
-    );
-  }, [transactions]);
+  /*
+  |--------------------------------------------------------------------------
+  | SUMMARY
+  |--------------------------------------------------------------------------
+  */
 
-  const average = transactions.length
-    ? total / transactions.length
-    : 0;
-
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const amount =
-        Number(form.amount);
-
-      if (!form.account_id) {
-        throw new Error(
-          "Please select an account.",
+  const summary = useMemo(() => {
+    const incomeTotal =
+      filteredTransactions
+        .filter(
+          (item) =>
+            item.kind ===
+            "income",
+        )
+        .reduce(
+          (sum, item) =>
+            sum + item.amount,
+          0,
         );
-      }
 
-      if (!form.category_id) {
-        throw new Error(
-          "Please select a category.",
+    const expenseTotal =
+      filteredTransactions
+        .filter(
+          (item) =>
+            item.kind ===
+            "expense",
+        )
+        .reduce(
+          (sum, item) =>
+            sum + item.amount,
+          0,
         );
-      }
 
-      if (!amount || amount <= 0) {
-        throw new Error(
-          "Please enter a valid amount.",
+    const transferTotal =
+      filteredTransactions
+        .filter(
+          (item) =>
+            item.kind ===
+            "transfer",
+        )
+        .reduce(
+          (sum, item) =>
+            sum + item.amount,
+          0,
         );
-      }
 
-      if (kind === "income") {
-        const payload: IncomePayload = {
-          account_id:
-            Number(form.account_id),
-          category_id:
-            Number(form.category_id),
-          amount,
-          reference:
-            form.reference || undefined,
-          description:
-            form.description || undefined,
-          received_at:
-            form.date,
-        };
+    return {
+      count:
+        filteredTransactions.length,
 
-        return createIncome(payload);
-      }
+      incomeTotal,
 
-      const payload: ExpensePayload = {
-        account_id:
-          Number(form.account_id),
-        category_id:
-          Number(form.category_id),
-        amount,
-        reference:
-          form.reference || undefined,
-        merchant:
-          form.merchant || undefined,
-        description:
-          form.description || undefined,
-        spent_at:
-          form.date,
-      };
+      expenseTotal,
 
-      return createExpense(payload);
-    },
+      transferTotal,
+    };
+  }, [
+    filteredTransactions,
+  ]);
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["incomes"],
-      });
+  /*
+  |--------------------------------------------------------------------------
+  | CREATE MUTATION
+  |--------------------------------------------------------------------------
+  */
 
-      queryClient.invalidateQueries({
-        queryKey: ["expenses"],
-      });
+  const createMutation =
+    useMutation({
+      mutationFn: async () => {
+        const amount =
+          Number(
+            transactionForm.amount,
+          );
 
-      queryClient.invalidateQueries({
-        queryKey: ["accounts"],
-      });
+        if (
+          !amount ||
+          amount <= 0
+        ) {
+          throw new Error(
+            "Please enter a valid amount.",
+          );
+        }
 
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSFER
+        |--------------------------------------------------------------------------
+        */
 
-      closeModal();
-    },
+        if (
+          view === "transfer"
+        ) {
+          if (
+            !transactionForm.from_account_id
+          ) {
+            throw new Error(
+              "Please select the source account.",
+            );
+          }
 
-    onError: (error: any) => {
-      const backendErrors =
-        error?.response?.data?.errors;
+          if (
+            !transactionForm.to_account_id
+          ) {
+            throw new Error(
+              "Please select the destination account.",
+            );
+          }
 
-      const firstError = backendErrors
-        ? Object.values(backendErrors)
-            .flat()
-            .find(Boolean)
-        : null;
+          if (
+            transactionForm.from_account_id ===
+            transactionForm.to_account_id
+          ) {
+            throw new Error(
+              "Source and destination accounts must be different.",
+            );
+          }
 
-      setFormError(
-        typeof firstError === "string"
-          ? firstError
-          : error?.message ??
-              error?.response?.data?.message ??
-              "Unable to save this transaction.",
-      );
-    },
-  });
+          const payload: TransferPayload =
+            {
+              from_account_id:
+                Number(
+                  transactionForm.from_account_id,
+                ),
 
-  const deleteMutation = useMutation({
-    mutationFn: async ({
-      id,
-      kind: transactionKind,
-    }: {
-      id: number;
-      kind: TransactionKind;
-    }) => {
-      if (
-        transactionKind === "income"
-      ) {
-        return deleteIncome(id);
-      }
+              to_account_id:
+                Number(
+                  transactionForm.to_account_id,
+                ),
 
-      return deleteExpense(id);
-    },
+              amount,
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["incomes"],
-      });
+              reference:
+                transactionForm.reference
+                  .trim() ||
+                undefined,
 
-      queryClient.invalidateQueries({
-        queryKey: ["expenses"],
-      });
+              description:
+                transactionForm.description
+                  .trim() ||
+                undefined,
 
-      queryClient.invalidateQueries({
-        queryKey: ["accounts"],
-      });
+              transferred_at:
+                transactionForm.date,
+            };
 
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
-    },
-  });
+          return createTransfer(
+            payload,
+          );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | INCOME / EXPENSE
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+          !transactionForm.account_id
+        ) {
+          throw new Error(
+            "Please select an account.",
+          );
+        }
+
+        if (
+          !transactionForm.category_id
+        ) {
+          throw new Error(
+            "Please select a category.",
+          );
+        }
+
+        if (
+          view === "income"
+        ) {
+          const payload: IncomePayload =
+            {
+              account_id:
+                Number(
+                  transactionForm.account_id,
+                ),
+
+              category_id:
+                Number(
+                  transactionForm.category_id,
+                ),
+
+              amount,
+
+              reference:
+                transactionForm.reference
+                  .trim() ||
+                undefined,
+
+              description:
+                transactionForm.description
+                  .trim() ||
+                undefined,
+
+              received_at:
+                transactionForm.date,
+            };
+
+          return createIncome(
+            payload,
+          );
+        }
+
+        const payload: ExpensePayload =
+          {
+            account_id:
+              Number(
+                transactionForm.account_id,
+              ),
+
+            category_id:
+              Number(
+                transactionForm.category_id,
+              ),
+
+            amount,
+
+            reference:
+              transactionForm.reference
+                .trim() ||
+              undefined,
+
+            merchant:
+              transactionForm.merchant
+                .trim() ||
+              undefined,
+
+            description:
+              transactionForm.description
+                .trim() ||
+              undefined,
+
+            spent_at:
+              transactionForm.date,
+          };
+
+        return createExpense(
+          payload,
+        );
+      },
+
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ["incomes"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["expenses"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["transfers"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["accounts"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["dashboard"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: [
+            "statements",
+          ],
+        });
+
+        closeModal();
+      },
+
+      onError: (
+        error: any,
+      ) => {
+        const backendErrors =
+          error?.response?.data
+            ?.errors;
+
+        const firstError =
+          backendErrors
+            ? Object.values(
+                backendErrors,
+              )
+                .flat()
+                .find(Boolean)
+            : null;
+
+        setFormError(
+          typeof firstError ===
+            "string"
+            ? firstError
+            : error?.response?.data
+                ?.message ??
+                error?.message ??
+                "Unable to save this transaction.",
+        );
+      },
+    });
+
+  /*
+  |--------------------------------------------------------------------------
+  | DELETE MUTATION
+  |--------------------------------------------------------------------------
+  */
+
+  const deleteMutation =
+    useMutation({
+      mutationFn: async ({
+        id,
+        kind,
+      }: {
+        id: number;
+        kind:
+          | "income"
+          | "expense"
+          | "transfer";
+      }) => {
+        if (
+          kind === "income"
+        ) {
+          return deleteIncome(
+            id,
+          );
+        }
+
+        if (
+          kind === "expense"
+        ) {
+          return deleteExpense(
+            id,
+          );
+        }
+
+        return deleteTransfer(
+          id,
+        );
+      },
+
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ["incomes"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["expenses"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["transfers"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["accounts"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["dashboard"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: [
+            "statements",
+          ],
+        });
+      },
+    });
+
+  /*
+  |--------------------------------------------------------------------------
+  | MODAL HELPERS
+  |--------------------------------------------------------------------------
+  */
 
   const closeModal = () => {
     setShowModal(false);
 
-    setForm({
+    setFormError("");
+
+    setTransactionForm({
       account_id: "",
       category_id: "",
       amount: "",
@@ -363,15 +986,15 @@ export default function Transactions() {
       merchant: "",
       description: "",
       date: formatDateInput(),
+      from_account_id: "",
+      to_account_id: "",
     });
-
-    setFormError("");
   };
 
   const openModal = () => {
     setFormError("");
 
-    setForm({
+    setTransactionForm({
       account_id: "",
       category_id: "",
       amount: "",
@@ -379,13 +1002,15 @@ export default function Transactions() {
       merchant: "",
       description: "",
       date: formatDateInput(),
+      from_account_id: "",
+      to_account_id: "",
     });
 
     setShowModal(true);
   };
 
   const handleSubmit = (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
 
@@ -395,138 +1020,266 @@ export default function Transactions() {
   };
 
   const handleDelete = (
-    transaction: Transaction,
+    transaction: UnifiedTransaction,
   ) => {
     const label =
-      transaction.category?.name ??
-      kind;
+      transaction.title;
 
-    const confirmed = window.confirm(
-      `Delete this ${kind} transaction (${label})?`,
-    );
+    const confirmed =
+      window.confirm(
+        `Delete this ${transaction.kind} transaction "${label}"?`,
+      );
 
     if (!confirmed) {
       return;
     }
 
     deleteMutation.mutate({
-      id: transaction.id,
-      kind,
+      id:
+        transaction.numericId,
+
+      kind:
+        transaction.kind,
     });
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | UI STATE
+  |--------------------------------------------------------------------------
+  */
+
+  const isLoading =
+    incomesLoading ||
+    expensesLoading ||
+    transfersLoading ||
+    accountsLoading ||
+    categoriesLoading;
+
+  const showCategories =
+    view === "income" ||
+    view === "expense";
+
+  const modalTitle =
+    view === "transfer"
+      ? "New transfer"
+      : view === "income"
+        ? "Add income"
+        : view ===
+            "expense"
+          ? "Add expense"
+          : "Add transaction";
+
+  const modalLabel =
+    view === "transfer"
+      ? "ACCOUNT TRANSFER"
+      : view === "income"
+        ? "MONEY IN"
+        : "MONEY OUT";
+
+  /*
+  |--------------------------------------------------------------------------
+  | RENDER
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <main className="transactions-page">
+      {/* ================================================================
+          HEADER
+      ================================================================= */}
+
       <header className="transactions-header">
         <div>
           <p className="transactions-eyebrow">
             MONEY MOVEMENT
           </p>
 
-          <h1>Transactions</h1>
+          <h1>
+            Transactions
+          </h1>
 
           <p className="transactions-subtitle">
-            Track every naira coming in and going out.
+            Track every naira coming in, going out,
+            and moving between your accounts.
           </p>
         </div>
 
         <button
           className="add-transaction-button"
-          onClick={openModal}
+          onClick={
+            openModal
+          }
         >
           <span>+</span>
-          Add{" "}
-          {kind === "income"
-            ? "income"
-            : "expense"}
+
+          {view ===
+          "transfer"
+            ? "New transfer"
+            : view ===
+                "expense"
+              ? "Add expense"
+              : view ===
+                  "income"
+                ? "Add income"
+                : "Add transaction"}
         </button>
       </header>
+
+      {/* ================================================================
+          SUMMARY
+      ================================================================= */}
 
       <section className="transaction-summary">
         <article className="transaction-summary-card">
           <span>
-            {kind === "income"
-              ? "Total income"
-              : "Total expenses"}
+            Visible transactions
           </span>
 
           <strong>
-            {formatMoney(total)}
+            {summary.count}
           </strong>
 
           <small>
-            {transactions.length} transaction
-            {transactions.length === 1
-              ? ""
-              : "s"}
+            Current filters
           </small>
         </article>
 
         <article className="transaction-summary-card">
-          <span>Average transaction</span>
+          <span>
+            Money in
+          </span>
 
-          <strong>
-            {formatMoney(average)}
+          <strong className="summary-positive">
+            +
+            {formatMoney(
+              summary.incomeTotal,
+            )}
           </strong>
 
           <small>
-            Based on current records
+            Income received
           </small>
         </article>
 
         <article className="transaction-summary-card">
-          <span>Categories used</span>
+          <span>
+            Money out
+          </span>
 
-          <strong>
-            {new Set(
-              transactions.map(
-                (transaction) =>
-                  transaction.category_id,
-              ),
-            ).size}
+          <strong className="summary-negative">
+            -
+            {formatMoney(
+              summary.expenseTotal,
+            )}
           </strong>
 
           <small>
-            Across your transactions
+            Expenses recorded
+          </small>
+        </article>
+
+        <article className="transaction-summary-card">
+          <span>
+            Transfers
+          </span>
+
+          <strong>
+            {formatMoney(
+              summary.transferTotal,
+            )}
+          </strong>
+
+          <small>
+            Account-to-account movement
           </small>
         </article>
       </section>
+
+      {/* ================================================================
+          WORKSPACE
+      ================================================================= */}
 
       <section className="transactions-workspace">
         <div className="transaction-toolbar">
           <div className="transaction-tabs">
             <button
               className={
-                kind === "income"
+                view === "all"
                   ? "active"
                   : ""
               }
-              onClick={() => {
-                setKind("income");
-                setSelectedCategory("");
-              }}
+              onClick={() =>
+                changeView(
+                  "all",
+                )
+              }
+            >
+              <span className="tab-icon">
+                ◉
+              </span>
+
+              All
+            </button>
+
+            <button
+              className={
+                view ===
+                "income"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                changeView(
+                  "income",
+                )
+              }
             >
               <span className="tab-icon income">
                 ↑
               </span>
+
               Income
             </button>
 
             <button
               className={
-                kind === "expense"
+                view ===
+                "expense"
                   ? "active"
                   : ""
               }
-              onClick={() => {
-                setKind("expense");
-                setSelectedCategory("");
-              }}
+              onClick={() =>
+                changeView(
+                  "expense",
+                )
+              }
             >
               <span className="tab-icon expense">
                 ↓
               </span>
+
               Expenses
+            </button>
+
+            <button
+              className={
+                view ===
+                "transfer"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                changeView(
+                  "transfer",
+                )
+              }
+            >
+              <span className="tab-icon transfer">
+                ↔
+              </span>
+
+              Transfers
             </button>
           </div>
 
@@ -541,6 +1294,7 @@ export default function Transactions() {
                   cy="11"
                   r="7"
                 />
+
                 <path d="m16 16 5 5" />
               </svg>
 
@@ -548,52 +1302,128 @@ export default function Transactions() {
                 type="search"
                 placeholder="Search transactions..."
                 value={search}
-                onChange={(event) =>
+                onChange={(
+                  event,
+                ) =>
                   setSearch(
-                    event.target.value,
+                    event.target
+                      .value,
                   )
                 }
               />
             </div>
 
             <select
-              value={selectedCategory}
-              onChange={(event) =>
-                setSelectedCategory(
-                  event.target.value,
+              value={
+                selectedAccount
+              }
+              onChange={(
+                event,
+              ) =>
+                setSelectedAccount(
+                  event.target
+                    .value,
                 )
               }
             >
               <option value="">
-                All categories
+                All accounts
               </option>
 
-              {categories.map(
-                (category) => (
+              {accounts.map(
+                (
+                  account,
+                ) => (
                   <option
-                    key={category.id}
-                    value={category.id}
+                    key={
+                      account.id
+                    }
+                    value={
+                      account.id
+                    }
                   >
-                    {category.name}
+                    {
+                      account.name
+                    }
                   </option>
                 ),
               )}
             </select>
+
+            {showCategories && (
+              <select
+                value={
+                  selectedCategory
+                }
+                onChange={(
+                  event,
+                ) =>
+                  setSelectedCategory(
+                    event.target
+                      .value,
+                  )
+                }
+              >
+                <option value="">
+                  All categories
+                </option>
+
+                {categories.map(
+                  (
+                    category,
+                  ) => (
+                    <option
+                      key={
+                        category.id
+                      }
+                      value={
+                        category.id
+                      }
+                    >
+                      {
+                        category.name
+                      }
+                    </option>
+                  ),
+                )}
+              </select>
+            )}
           </div>
         </div>
 
+        {/* ==============================================================
+            TABLE
+        ============================================================== */}
+
         <div className="transaction-table">
           <div className="transaction-table-header">
-            <span>Transaction</span>
-            <span>Account</span>
-            <span>Date</span>
-            <span>Amount</span>
+            <span>
+              Transaction
+            </span>
+
+            <span>
+              Account
+            </span>
+
+            <span>
+              Type
+            </span>
+
+            <span>
+              Date
+            </span>
+
+            <span>
+              Amount
+            </span>
+
             <span />
           </div>
 
           {isLoading ? (
             <div className="transactions-loading">
               <div className="transactions-spinner" />
+
               <p>
                 Loading transactions...
               </p>
@@ -602,111 +1432,140 @@ export default function Transactions() {
             0 ? (
             <div className="transactions-empty">
               <div className="empty-transaction-icon">
-                {kind === "income"
+                {view ===
+                "income"
                   ? "↑"
-                  : "↓"}
+                  : view ===
+                      "expense"
+                    ? "↓"
+                    : view ===
+                        "transfer"
+                      ? "↔"
+                      : "◉"}
               </div>
 
               <h3>
                 No{" "}
-                {kind === "income"
-                  ? "income"
-                  : "expenses"}{" "}
+                {getViewLabel(
+                  view,
+                ).toLowerCase()}{" "}
                 found
               </h3>
 
               <p>
-                Start by recording your first{" "}
-                {kind === "income"
-                  ? "income"
-                  : "expense"}{" "}
-                transaction.
+                Try changing your filters or
+                record a new transaction.
               </p>
 
               <button
-                onClick={openModal}
+                onClick={
+                  openModal
+                }
               >
-                Add{" "}
-                {kind === "income"
-                  ? "income"
-                  : "expense"}
+                {view ===
+                "transfer"
+                  ? "New transfer"
+                  : "Add transaction"}
               </button>
             </div>
           ) : (
             <div className="transaction-table-body">
               {filteredTransactions.map(
-                (transaction) => {
-                  const date =
-                    getTransactionDate(
-                      transaction,
-                      kind,
-                    );
+                (
+                  transaction,
+                ) => {
+                  const isIncome =
+                    transaction.kind ===
+                    "income";
+
+                  const isExpense =
+                    transaction.kind ===
+                    "expense";
 
                   return (
                     <div
                       className="transaction-row"
-                      key={transaction.id}
+                      key={
+                        transaction.id
+                      }
                     >
                       <div className="transaction-name">
                         <div
                           className={
-                            kind === "income"
+                            isIncome
                               ? "transaction-icon income"
-                              : "transaction-icon expense"
+                              : isExpense
+                                ? "transaction-icon expense"
+                                : "transaction-icon transfer"
                           }
                         >
-                          {kind ===
-                          "income"
+                          {isIncome
                             ? "↑"
-                            : "↓"}
+                            : isExpense
+                              ? "↓"
+                              : "↔"}
                         </div>
 
                         <div>
                           <strong>
-                            {transaction
-                              .category
-                              ?.name ??
-                              "Uncategorized"}
+                            {
+                              transaction.title
+                            }
                           </strong>
 
                           <small>
-                            {kind ===
-                            "expense"
-                              ? transaction
-                                  .merchant ??
-                                transaction
-                                  .description ??
-                                "Expense"
-                              : transaction
-                                  .description ??
-                                transaction
-                                  .reference ??
-                                "Income"}
+                            {
+                              transaction.subtitle
+                            }
                           </small>
                         </div>
                       </div>
 
                       <div className="transaction-account">
-                        {transaction
-                          .account
-                          ?.name ??
-                          "Account"}
+                        {
+                          transaction.account
+                        }
+                      </div>
+
+                      <div className="transaction-type-cell">
+                        <span
+                          className={
+                            isIncome
+                              ? "transaction-type income"
+                              : isExpense
+                                ? "transaction-type expense"
+                                : "transaction-type transfer"
+                          }
+                        >
+                          {isIncome
+                            ? "Income"
+                            : isExpense
+                              ? "Expense"
+                              : "Transfer"}
+                        </span>
                       </div>
 
                       <div className="transaction-date">
-                        {formatDate(date)}
+                        {formatDate(
+                          transaction.date,
+                        )}
                       </div>
 
                       <div
                         className={
-                          kind === "income"
+                          isIncome
                             ? "transaction-amount income"
-                            : "transaction-amount expense"
+                            : isExpense
+                              ? "transaction-amount expense"
+                              : "transaction-amount transfer"
                         }
                       >
-                        {kind === "income"
+                        {isIncome
                           ? "+"
-                          : "-"}
+                          : isExpense
+                            ? "-"
+                            : ""}
+
                         {formatMoney(
                           transaction.amount,
                         )}
@@ -736,10 +1595,16 @@ export default function Transactions() {
         </div>
       </section>
 
+      {/* ================================================================
+          CREATE MODAL
+      ================================================================= */}
+
       {showModal && (
         <div
           className="transaction-modal-backdrop"
-          onMouseDown={(event) => {
+          onMouseDown={(
+            event,
+          ) => {
             if (
               event.target ===
               event.currentTarget
@@ -757,22 +1622,19 @@ export default function Transactions() {
             <div className="modal-heading">
               <div>
                 <p>
-                  {kind === "income"
-                    ? "MONEY IN"
-                    : "MONEY OUT"}
+                  {modalLabel}
                 </p>
 
                 <h2 id="transaction-modal-title">
-                  Add{" "}
-                  {kind === "income"
-                    ? "income"
-                    : "expense"}
+                  {modalTitle}
                 </h2>
               </div>
 
               <button
                 className="transaction-modal-close"
-                onClick={closeModal}
+                onClick={
+                  closeModal
+                }
                 aria-label="Close"
               >
                 ×
@@ -785,206 +1647,386 @@ export default function Transactions() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-              <div className="transaction-form-grid">
-                <div className="transaction-field full">
-                  <label htmlFor="transaction-account">
-                    Account
-                  </label>
-
-                  <select
-                    id="transaction-account"
-                    value={
-                      form.account_id
-                    }
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        account_id:
-                          event.target
-                            .value,
-                      })
-                    }
-                    required
-                  >
-                    <option value="">
-                      Select account
-                    </option>
-
-                    {accounts.map(
-                      (account) => (
-                        <option
-                          key={account.id}
-                          value={account.id}
-                        >
-                          {account.name} —{" "}
-                          {formatMoney(
-                            account.balance,
-                            account.currency,
-                          )}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
-
-                <div className="transaction-field">
-                  <label htmlFor="transaction-category">
-                    Category
-                  </label>
-
-                  <select
-                    id="transaction-category"
-                    value={
-                      form.category_id
-                    }
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        category_id:
-                          event.target
-                            .value,
-                      })
-                    }
-                    required
-                  >
-                    <option value="">
-                      Select category
-                    </option>
-
-                    {categories.map(
-                      (category) => (
-                        <option
-                          key={category.id}
-                          value={category.id}
-                        >
-                          {category.name}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
-
-                <div className="transaction-field">
-                  <label htmlFor="transaction-amount">
-                    Amount
-                  </label>
-
-                  <input
-                    id="transaction-amount"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={form.amount}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        amount:
-                          event.target
-                            .value,
-                      })
-                    }
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-
-                {kind === "expense" && (
+            <form
+              onSubmit={
+                handleSubmit
+              }
+            >
+              {view ===
+              "transfer" ? (
+                <>
                   <div className="transaction-field full">
-                    <label htmlFor="transaction-merchant">
-                      Merchant
+                    <label htmlFor="from-account">
+                      From account
                     </label>
 
-                    <input
-                      id="transaction-merchant"
-                      type="text"
-                      value={form.merchant}
-                      onChange={(event) =>
-                        setForm({
-                          ...form,
-                          merchant:
-                            event.target
-                              .value,
-                        })
+                    <select
+                      id="from-account"
+                      value={
+                        transactionForm.from_account_id
                       }
-                      placeholder="e.g. Shoprite"
-                    />
+                      onChange={(
+                        event,
+                      ) =>
+                        setTransactionForm(
+                          {
+                            ...transactionForm,
+                            from_account_id:
+                              event
+                                .target
+                                .value,
+                          },
+                        )
+                      }
+                      required
+                    >
+                      <option value="">
+                        Select source account
+                      </option>
+
+                      {accounts.map(
+                        (
+                          account,
+                        ) => (
+                          <option
+                            key={
+                              account.id
+                            }
+                            value={
+                              account.id
+                            }
+                          >
+                            {
+                              account.name
+                            }{" "}
+                            —{" "}
+                            {formatMoney(
+                              account.balance,
+                              account.currency,
+                            )}
+                          </option>
+                        ),
+                      )}
+                    </select>
                   </div>
-                )}
 
-                <div className="transaction-field">
-                  <label htmlFor="transaction-date">
-                    Date
-                  </label>
+                  <div className="transaction-field full">
+                    <label htmlFor="to-account">
+                      To account
+                    </label>
 
-                  <input
-                    id="transaction-date"
-                    type="date"
-                    value={form.date}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        date:
-                          event.target
+                    <select
+                      id="to-account"
+                      value={
+                        transactionForm.to_account_id
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setTransactionForm(
+                          {
+                            ...transactionForm,
+                            to_account_id:
+                              event
+                                .target
+                                .value,
+                          },
+                        )
+                      }
+                      required
+                    >
+                      <option value="">
+                        Select destination account
+                      </option>
+
+                      {accounts.map(
+                        (
+                          account,
+                        ) => (
+                          <option
+                            key={
+                              account.id
+                            }
+                            value={
+                              account.id
+                            }
+                          >
+                            {
+                              account.name
+                            }{" "}
+                            —{" "}
+                            {formatMoney(
+                              account.balance,
+                              account.currency,
+                            )}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="transaction-field full">
+                    <label htmlFor="transaction-account">
+                      Account
+                    </label>
+
+                    <select
+                      id="transaction-account"
+                      value={
+                        transactionForm.account_id
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setTransactionForm(
+                          {
+                            ...transactionForm,
+                            account_id:
+                              event
+                                .target
+                                .value,
+                          },
+                        )
+                      }
+                      required
+                    >
+                      <option value="">
+                        Select account
+                      </option>
+
+                      {accounts.map(
+                        (
+                          account,
+                        ) => (
+                          <option
+                            key={
+                              account.id
+                            }
+                            value={
+                              account.id
+                            }
+                          >
+                            {
+                              account.name
+                            }{" "}
+                            —{" "}
+                            {formatMoney(
+                              account.balance,
+                              account.currency,
+                            )}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+
+                  <div className="transaction-field">
+                    <label htmlFor="transaction-category">
+                      Category
+                    </label>
+
+                    <select
+                      id="transaction-category"
+                      value={
+                        transactionForm.category_id
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setTransactionForm(
+                          {
+                            ...transactionForm,
+                            category_id:
+                              event
+                                .target
+                                .value,
+                          },
+                        )
+                      }
+                      required
+                    >
+                      <option value="">
+                        Select category
+                      </option>
+
+                      {categories.map(
+                        (
+                          category,
+                        ) => (
+                          <option
+                            key={
+                              category.id
+                            }
+                            value={
+                              category.id
+                            }
+                          >
+                            {
+                              category.name
+                            }
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              <div className="transaction-field">
+                <label htmlFor="transaction-amount">
+                  Amount
+                </label>
+
+                <input
+                  id="transaction-amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={
+                    transactionForm.amount
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setTransactionForm(
+                      {
+                        ...transactionForm,
+                        amount:
+                          event
+                            .target
                             .value,
-                      })
-                    }
-                    required
-                  />
-                </div>
+                      },
+                    )
+                  }
+                  placeholder="0.00"
+                  required
+                />
+              </div>
 
-                <div className="transaction-field">
-                  <label htmlFor="transaction-reference">
-                    Reference
+              {view ===
+                "expense" && (
+                <div className="transaction-field full">
+                  <label htmlFor="transaction-merchant">
+                    Merchant
                   </label>
 
                   <input
-                    id="transaction-reference"
+                    id="transaction-merchant"
                     type="text"
                     value={
-                      form.reference
+                      transactionForm.merchant
                     }
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
+                    onChange={(
+                      event,
+                    ) =>
+                      setTransactionForm(
+                        {
+                          ...transactionForm,
+                          merchant:
+                            event
+                              .target
+                              .value,
+                        },
+                      )
+                    }
+                    placeholder="e.g. Shoprite"
+                  />
+                </div>
+              )}
+
+              <div className="transaction-field">
+                <label htmlFor="transaction-date">
+                  Date
+                </label>
+
+                <input
+                  id="transaction-date"
+                  type="date"
+                  value={
+                    transactionForm.date
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setTransactionForm(
+                      {
+                        ...transactionForm,
+                        date:
+                          event
+                            .target
+                            .value,
+                      },
+                    )
+                  }
+                  required
+                />
+              </div>
+
+              <div className="transaction-field">
+                <label htmlFor="transaction-reference">
+                  Reference
+                </label>
+
+                <input
+                  id="transaction-reference"
+                  type="text"
+                  value={
+                    transactionForm.reference
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setTransactionForm(
+                      {
+                        ...transactionForm,
                         reference:
-                          event.target
+                          event
+                            .target
                             .value,
-                      })
-                    }
-                    placeholder="Optional"
-                  />
-                </div>
+                      },
+                    )
+                  }
+                  placeholder="Optional"
+                />
+              </div>
 
-                <div className="transaction-field full">
-                  <label htmlFor="transaction-description">
-                    Description
-                  </label>
+              <div className="transaction-field full">
+                <label htmlFor="transaction-description">
+                  Description
+                </label>
 
-                  <textarea
-                    id="transaction-description"
-                    value={
-                      form.description
-                    }
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
+                <textarea
+                  id="transaction-description"
+                  value={
+                    transactionForm.description
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setTransactionForm(
+                      {
+                        ...transactionForm,
                         description:
-                          event.target
+                          event
+                            .target
                             .value,
-                      })
-                    }
-                    placeholder="Add a note..."
-                    rows={3}
-                  />
-                </div>
+                      },
+                    )
+                  }
+                  placeholder="Add a note..."
+                  rows={3}
+                />
               </div>
 
               <div className="transaction-modal-actions">
                 <button
                   type="button"
                   className="transaction-cancel"
-                  onClick={closeModal}
+                  onClick={
+                    closeModal
+                  }
                 >
                   Cancel
                 </button>
@@ -992,9 +2034,13 @@ export default function Transactions() {
                 <button
                   type="submit"
                   className={
-                    kind === "income"
+                    view ===
+                    "income"
                       ? "transaction-save income"
-                      : "transaction-save expense"
+                      : view ===
+                          "expense"
+                        ? "transaction-save expense"
+                        : "transaction-save transfer"
                   }
                   disabled={
                     createMutation.isPending
@@ -1002,11 +2048,13 @@ export default function Transactions() {
                 >
                   {createMutation.isPending
                     ? "Saving..."
-                    : `Add ${
-                        kind === "income"
-                          ? "income"
-                          : "expense"
-                      }`}
+                    : view ===
+                        "transfer"
+                      ? "Complete transfer"
+                      : view ===
+                          "income"
+                        ? "Add income"
+                        : "Add expense"}
                 </button>
               </div>
             </form>

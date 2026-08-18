@@ -600,6 +600,56 @@
     0 30px 80px rgba(0, 0, 0, 0.19);
 }
 
+.transaction-type-cell {
+  display: flex;
+  align-items: center;
+}
+
+.transaction-type {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 22px;
+  padding: 0 7px;
+
+  border-radius: 20px;
+
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.transaction-type.income {
+  color: #087e69;
+  background: #e7f7f2;
+}
+
+.transaction-type.expense {
+  color: #b85a46;
+  background: #fff0eb;
+}
+
+.transaction-type.transfer {
+  color: #6273b5;
+  background: #eef1ff;
+}
+
+.tab-icon.transfer {
+  color: #6574b8;
+}
+
+.transaction-amount.transfer {
+  color: #6172b5;
+}
+
+.transaction-save.transfer {
+  color: #fff;
+  background: #6273b5;
+}
+
+.transaction-save.transfer:hover {
+  background: #5667a8;
+}
+
 .modal-heading {
   display: flex;
 

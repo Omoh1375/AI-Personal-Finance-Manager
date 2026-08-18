@@ -17,9 +17,9 @@ import Savings from "../pages/Savings";
 import Reports from "../pages/Reports";
 import FinancialInsights from "../pages/FinancialInsights";
 import Notifications from "../pages/Notifications";
-
 import ProtectedRoute from "./ProtectedRoute";
 import AppLayout from "../layouts/AppLayout";
+import Profile from "../pages/Profile";
 
 export default function AppRouter() {
   return (
@@ -159,7 +159,17 @@ export default function AppRouter() {
         {/* ============================================================
             FALLBACK
         ============================================================ */}
+          <Route element={<ProtectedRoute />}>
+          <Route
+            path="/dashboard"
+            element={<Dashboard />}
+          />
 
+          <Route
+            path="/profile"
+            element={<Profile />}
+          />
+        </Route>
         <Route
           path="*"
           element={

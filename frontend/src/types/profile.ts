@@ -14,7 +14,7 @@ export interface UserProfile {
   profile_picture_url?: string | null;
 }
 
-export interface User {
+export interface ProfileUser {
   id: number;
 
   name: string;
@@ -23,31 +23,31 @@ export interface User {
 
   created_at?: string;
 
-  profile?: UserProfile | null;
+  profile: UserProfile;
 }
 
-export interface LoginPayload {
-  email: string;
-
-  password: string;
-}
-
-export interface RegisterPayload {
-  name: string;
-
-  email: string;
-
-  password: string;
-
-  password_confirmation: string;
-}
-
-export interface AuthResponse {
+export interface ProfileResponse {
   success: boolean;
 
   message?: string;
 
-  token: string;
+  data?: ProfileUser;
 
-  user: User;
+  user?: ProfileUser;
+}
+
+export interface ProfilePayload {
+  name: string;
+
+  email: string;
+
+  phone?: string;
+
+  bio?: string;
+
+  country?: string;
+
+  address?: string;
+
+  date_of_birth?: string;
 }

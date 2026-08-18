@@ -17,6 +17,7 @@ use App\Http\Controllers\UserNotificationController;
 use App\Http\Controllers\SavingsGoalController;
 use App\Http\Controllers\SavingsDepositController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SecurityController;
 
 /*
 |--------------------------------------------------------------------------
@@ -176,6 +177,42 @@ Route::middleware('auth:sanctum')->group(function () {
         '/profile/photo',
         [ProfileController::class, 'deletePhoto']
     );
+
+    Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get(
+        '/security/status',
+        [SecurityController::class, 'status']
+    );
+
+    Route::put(
+        '/security/password',
+        [SecurityController::class, 'changePassword']
+    );
+
+    Route::post(
+        '/security/2fa/setup',
+        [SecurityController::class, 'setup']
+    );
+
+    Route::post(
+        '/security/2fa/enable',
+        [SecurityController::class, 'enable']
+    );
+
+    Route::post(
+        '/security/2fa/disable',
+        [SecurityController::class, 'disable']
+    );
+
+    Route::post(
+        '/security/2fa/recovery-codes',
+        [
+            SecurityController::class,
+            'regenerateRecoveryCodes',
+        ]
+    );
+});
 
 });
 

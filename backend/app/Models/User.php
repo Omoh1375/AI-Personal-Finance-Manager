@@ -51,9 +51,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_enabled' => 'boolean',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
         ];
     }
-        public function accounts(): HasMany
+
+    public function accounts(): HasMany
     {
         return $this->hasMany(Account::class);
     }

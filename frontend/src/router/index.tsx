@@ -17,9 +17,11 @@ import Savings from "../pages/Savings";
 import Reports from "../pages/Reports";
 import FinancialInsights from "../pages/FinancialInsights";
 import Notifications from "../pages/Notifications";
+import Profile from "../pages/Profile";
+import Security from "../pages/Security";
+
 import ProtectedRoute from "./ProtectedRoute";
 import AppLayout from "../layouts/AppLayout";
-import Profile from "../pages/Profile";
 
 export default function AppRouter() {
   return (
@@ -28,16 +30,6 @@ export default function AppRouter() {
         {/* ============================================================
             PUBLIC ROUTES
         ============================================================ */}
-
-        <Route
-          path="/"
-          element={
-            <Navigate
-              to="/dashboard"
-              replace
-            />
-          }
-        />
 
         <Route
           path="/login"
@@ -50,126 +42,101 @@ export default function AppRouter() {
         />
 
         {/* ============================================================
-            PROTECTED APPLICATION
+            PROTECTED ROUTES
         ============================================================ */}
 
-        <Route
-          element={
-            <ProtectedRoute />
-          }
-        >
-          <Route
-            element={
-              <AppLayout />
-            }
-          >
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
             <Route
               path="/dashboard"
-              element={
-                <Dashboard />
-              }
+              element={<Dashboard />}
             />
 
             <Route
               path="/accounts"
-              element={
-                <Accounts />
-              }
+              element={<Accounts />}
             />
 
             <Route
               path="/transactions"
-              element={
-                <Transactions />
-              }
+              element={<Transactions />}
             />
 
             <Route
               path="/income"
-              element={
-                <Transactions />
-              }
+              element={<Transactions />}
             />
 
             <Route
               path="/expenses"
-              element={
-                <Transactions />
-              }
+              element={<Transactions />}
             />
 
             <Route
               path="/transfers"
-              element={
-                <Transfers />
-              }
+              element={<Transfers />}
             />
 
             <Route
               path="/budgets"
-              element={
-                <Budgets />
-              }
+              element={<Budgets />}
             />
 
             <Route
               path="/savings"
-              element={
-                <Savings />
-              }
+              element={<Savings />}
             />
 
             <Route
               path="/savings-goals"
-              element={
-                <Savings />
-              }
+              element={<Savings />}
             />
 
             <Route
               path="/reports"
-              element={
-                <Reports />
-              }
-            />
-
-            <Route
-              path="/statements"
-              element={
-                <Reports />
-              }
+              element={<Reports />}
             />
 
             <Route
               path="/financial-insights"
-              element={
-                <FinancialInsights />
-              }
+              element={<FinancialInsights />}
             />
 
             <Route
               path="/notifications"
-              element={
-                <Notifications />
-              }
+              element={<Notifications />}
+            />
+
+            <Route
+              path="/profile"
+              element={<Profile />}
+            />
+
+            <Route
+              path="/security"
+              element={<Security />}
             />
           </Route>
         </Route>
 
         {/* ============================================================
+            ROOT
+        ============================================================ */}
+
+        <Route
+          path="/"
+          element={
+            <Navigate
+              to="/dashboard"
+              replace
+            />
+          }
+        />
+
+        {/* ============================================================
             FALLBACK
         ============================================================ */}
-          <Route element={<ProtectedRoute />}>
-          <Route
-            path="/dashboard"
-            element={<Dashboard />}
-          />
 
-          <Route
-            path="/profile"
-            element={<Profile />}
-          />
-        </Route>
         <Route
           path="*"
           element={

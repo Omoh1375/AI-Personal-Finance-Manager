@@ -175,9 +175,7 @@ function AccountIcon({
           cy="12"
           r="9"
         />
-
         <path d="M10 7v10M14 7v10" />
-
         <path d="M8 9h5a2 2 0 0 1 0 4H8m0 0h6a2 2 0 0 1 0 4H8" />
       </svg>
     );
@@ -252,6 +250,11 @@ export default function Dashboard() {
   */
 
   const [
+    showProfileMenu,
+    setShowProfileMenu,
+  ] = useState(false);
+
+  const [
     showDepositModal,
     setShowDepositModal,
   ] = useState(false);
@@ -317,11 +320,14 @@ export default function Dashboard() {
 
   const {
     data: savingsGoals = [],
-  } = useQuery({
-    queryKey: ["savings-goals"],
-    queryFn:
-      getSavingsGoals,
-  });
+  } =
+    useQuery({
+      queryKey: [
+        "savings-goals",
+      ],
+      queryFn:
+        getSavingsGoals,
+    });
 
   /*
   |--------------------------------------------------------------------------
@@ -331,19 +337,16 @@ export default function Dashboard() {
 
   const {
     data: budgets = [],
-  } = useQuery({
-    queryKey: ["budgets"],
-    queryFn: getBudgets,
-  });
+  } =
+    useQuery({
+      queryKey: ["budgets"],
+      queryFn: getBudgets,
+    });
 
   /*
   |--------------------------------------------------------------------------
   | DASHBOARD DATA
   |--------------------------------------------------------------------------
-  |
-  | Keep this BEFORE conditional returns so everything below can safely
-  | use memoized values without changing the Hooks order.
-  |
   */
 
   const dashboard =
@@ -358,35 +361,39 @@ export default function Dashboard() {
   */
 
   const availableCurrencies =
-  useMemo(() => {
-    const currencies = accounts
-      .map(
-        (account) =>
-          account.currency,
-      )
-      .filter(
-        (
-          currency,
-        ): currency is string =>
-          Boolean(currency),
+    useMemo(() => {
+      const currencies =
+        accounts
+          .map(
+            (account) =>
+              account.currency,
+          )
+          .filter(
+            (
+              currency,
+            ): currency is string =>
+              Boolean(currency),
+          );
+
+      return Array.from(
+        new Set(currencies),
       );
+    }, [accounts]);
 
-    return Array.from(
-      new Set(currencies),
-    );
-  }, [accounts]);
+  const defaultCurrency =
+    availableCurrencies.includes(
+      "NGN",
+    )
+      ? "NGN"
+      : availableCurrencies[0] ||
+        "NGN";
 
-const defaultCurrency =
-  availableCurrencies.includes("NGN")
-    ? "NGN"
-    : availableCurrencies[0] || "NGN";
-
-const activeCurrency =
-  availableCurrencies.includes(
-    selectedCurrency,
-  )
-    ? selectedCurrency
-    : defaultCurrency;
+  const activeCurrency =
+    availableCurrencies.includes(
+      selectedCurrency,
+    )
+      ? selectedCurrency
+      : defaultCurrency;
 
   /*
   |--------------------------------------------------------------------------
@@ -431,9 +438,7 @@ const activeCurrency =
           ),
         0,
       );
-    }, [
-      currencyAccounts,
-    ]);
+    }, [currencyAccounts]);
 
   /*
   |--------------------------------------------------------------------------
@@ -495,7 +500,9 @@ const activeCurrency =
           },
         );
 
-        setShowDepositModal(false);
+        setShowDepositModal(
+          false,
+        );
 
         setDepositError("");
       },
@@ -504,8 +511,8 @@ const activeCurrency =
         error: any,
       ) => {
         const errors =
-          error?.response?.data
-            ?.errors;
+          error?.response
+            ?.data?.errors;
 
         const firstError =
           errors
@@ -521,8 +528,7 @@ const activeCurrency =
             "string"
             ? firstError
             : error?.response
-                ?.data
-                ?.message ??
+                ?.data?.message ??
               error?.message ??
               "Unable to make this deposit.",
         );
@@ -575,8 +581,7 @@ const activeCurrency =
           0,
 
         account_id:
-          accounts[0]?.id ??
-          0,
+          accounts[0]?.id ?? 0,
 
         amount: 0,
 
@@ -606,6 +611,19 @@ const activeCurrency =
       );
 
       setDepositError("");
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | PROFILE MENU
+  |--------------------------------------------------------------------------
+  */
+
+  const closeProfileMenu =
+    () => {
+      setShowProfileMenu(
+        false,
+      );
     };
 
   /*
@@ -671,9 +689,11 @@ const activeCurrency =
     }
 
     if (
-      selectedSavingsGoal?.account_currency &&
+      selectedSavingsGoal
+        ?.account_currency &&
       selectedDepositAccount &&
-      selectedSavingsGoal.account_currency !==
+      selectedSavingsGoal
+        .account_currency !==
         selectedDepositAccount.currency
     ) {
       setDepositError(
@@ -715,7 +735,8 @@ const activeCurrency =
           <div className="loading-spinner" />
 
           <p>
-            Loading your financial dashboard...
+            Loading your financial
+            dashboard...
           </p>
         </div>
       </main>
@@ -736,14 +757,17 @@ const activeCurrency =
       <main className="dashboard-page">
         <div className="dashboard-error">
           <h2>
-            We couldn't load your dashboard
+            We couldn't load your
+            dashboard
           </h2>
 
           <p>
-            Please check your connection and try again.
+            Please check your
+            connection and try again.
           </p>
 
           <button
+            type="button"
             onClick={() =>
               refetch()
             }
@@ -759,10 +783,6 @@ const activeCurrency =
   |--------------------------------------------------------------------------
   | CURRENT CURRENCY
   |--------------------------------------------------------------------------
-  |
-  | Keep this alias because several existing Dashboard sections use
-  | firstCurrency.
-  |
   */
 
   const firstCurrency =
@@ -831,8 +851,7 @@ const activeCurrency =
     );
 
   const savingsProgress =
-    totalSavingsTarget >
-    0
+    totalSavingsTarget > 0
       ? Math.min(
           100,
           (totalSavings /
@@ -913,6 +932,51 @@ const activeCurrency =
 
   /*
   |--------------------------------------------------------------------------
+  | PROFILE
+  |--------------------------------------------------------------------------
+  */
+
+  const profileImage =
+    user?.profile
+      ?.profile_picture_url;
+
+  const profileInitial =
+    user?.name
+      ?.charAt(0)
+      .toUpperCase() ??
+    "U";
+
+  const profileName =
+    user?.name ?? "User";
+
+  const profileEmail =
+    user?.email ?? "";
+
+  /*
+  |--------------------------------------------------------------------------
+  | FINANCIAL SCORE
+  |--------------------------------------------------------------------------
+  */
+
+  const financialScore =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(
+          100 -
+            Math.max(
+              0,
+              budgetProgress -
+                savingsProgress /
+                  2,
+            ),
+        ),
+      ),
+    );
+
+  /*
+  |--------------------------------------------------------------------------
   | RENDER
   |--------------------------------------------------------------------------
   */
@@ -938,8 +1002,8 @@ const activeCurrency =
           </h1>
 
           <p className="dashboard-subtitle">
-            Your complete financial picture,
-            all in one place.
+            Your complete financial
+            picture, all in one place.
           </p>
         </div>
 
@@ -958,16 +1022,150 @@ const activeCurrency =
             + Expense
           </Link>
 
-          <button
-            className="profile-button"
-            onClick={logout}
-            title="Sign out"
-          >
-            {user?.name
-              ?.charAt(0)
-              .toUpperCase() ??
-              "U"}
-          </button>
+          <div className="dashboard-profile-menu">
+            <button
+              type="button"
+              className="profile-button"
+              onClick={() =>
+                setShowProfileMenu(
+                  (current) =>
+                    !current,
+                )
+              }
+              title="Open account menu"
+              aria-label="Open account menu"
+              aria-expanded={
+                showProfileMenu
+              }
+            >
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt={profileName}
+                  className="dashboard-profile-image"
+                />
+              ) : (
+                profileInitial
+              )}
+            </button>
+
+            {showProfileMenu && (
+              <div className="dashboard-profile-dropdown">
+                <div className="dashboard-profile-summary">
+                  <div className="dashboard-profile-avatar-large">
+                    {profileImage ? (
+                      <img
+                        src={profileImage}
+                        alt={
+                          profileName
+                        }
+                      />
+                    ) : (
+                      profileInitial
+                    )}
+                  </div>
+
+                  <div className="dashboard-profile-user-info">
+                    <strong>
+                      {profileName}
+                    </strong>
+
+                    <span>
+                      {profileEmail}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="dashboard-profile-divider" />
+
+                <Link
+                  to="/profile"
+                  className="dashboard-profile-link"
+                  onClick={
+                    closeProfileMenu
+                  }
+                >
+                  <span className="dashboard-profile-link-icon">
+                    👤
+                  </span>
+
+                  <div>
+                    <strong>
+                      My Profile
+                    </strong>
+
+                    <small>
+                      Edit your personal
+                      information
+                    </small>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/security"
+                  className="dashboard-profile-link"
+                  onClick={
+                    closeProfileMenu
+                  }
+                >
+                  <span className="dashboard-profile-link-icon security">
+                    🔒
+                  </span>
+
+                  <div>
+                    <strong>
+                      Security
+                    </strong>
+
+                    <small>
+                      Password and 2FA
+                      settings
+                    </small>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/profile"
+                  className="dashboard-profile-link"
+                  onClick={
+                    closeProfileMenu
+                  }
+                >
+                  <span className="dashboard-profile-link-icon settings">
+                    ⚙
+                  </span>
+
+                  <div>
+                    <strong>
+                      Account Settings
+                    </strong>
+
+                    <small>
+                      Manage your account
+                    </small>
+                  </div>
+                </Link>
+
+                <div className="dashboard-profile-divider" />
+
+                <button
+                  type="button"
+                  className="dashboard-profile-logout"
+                  onClick={() => {
+                    closeProfileMenu();
+
+                    logout();
+                  }}
+                >
+                  <span>
+                    ↪
+                  </span>
+
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -991,7 +1189,8 @@ const activeCurrency =
                 event,
               ) =>
                 setSelectedCurrency(
-                  event.target.value,
+                  event.target
+                    .value,
                 )
               }
               aria-label="Select balance currency"
@@ -1053,6 +1252,7 @@ const activeCurrency =
               0
                 ? "+"
                 : "-"}
+
               {formatMoney(
                 Math.abs(
                   monthlyNet,
@@ -1235,6 +1435,7 @@ const activeCurrency =
             </Link>
 
             <button
+              type="button"
               className="command-card"
               onClick={
                 openDepositModal
@@ -1310,6 +1511,75 @@ const activeCurrency =
                 →
               </span>
             </Link>
+
+            <Link
+              to="/profile"
+              className="command-card"
+            >
+              <span className="command-icon profile-command">
+                👤
+              </span>
+
+              <div>
+                <strong>
+                  Edit profile
+                </strong>
+
+                <small>
+                  Update your personal information
+                </small>
+              </div>
+
+              <span className="command-arrow">
+                →
+              </span>
+            </Link>
+
+            <Link
+              to="/security"
+              className="command-card"
+            >
+              <span className="command-icon security-command">
+                🔒
+              </span>
+
+              <div>
+                <strong>
+                  Security & settings
+                </strong>
+
+                <small>
+                  Manage password and 2FA
+                </small>
+              </div>
+
+              <span className="command-arrow">
+                →
+              </span>
+            </Link>
+
+            <Link
+              to="/accounts"
+              className="command-card"
+            >
+              <span className="command-icon account-command">
+                ◉
+              </span>
+
+              <div>
+                <strong>
+                  Manage accounts
+                </strong>
+
+                <small>
+                  Add or edit your accounts
+                </small>
+              </div>
+
+              <span className="command-arrow">
+                →
+              </span>
+            </Link>
           </div>
         </div>
 
@@ -1320,21 +1590,7 @@ const activeCurrency =
 
           <div className="score-circle">
             <strong>
-              {Math.max(
-                0,
-                Math.min(
-                  100,
-                  Math.round(
-                    100 -
-                      Math.max(
-                        0,
-                        budgetProgress -
-                          savingsProgress /
-                            2,
-                      ),
-                  ),
-                ),
-              )}
+              {financialScore}
             </strong>
 
             <span>
@@ -1383,7 +1639,9 @@ const activeCurrency =
           {dashboard.accounts.length ===
           0 ? (
             <div className="empty-state">
-              <div>◎</div>
+              <div>
+                ◎
+              </div>
 
               <h3>
                 No accounts yet
@@ -1405,30 +1663,52 @@ const activeCurrency =
                 .map(
                   (
                     account,
-                  ) => (
-                    <article
-                      className="account-card"
-                      key={
-                        account.id
+                  ) => {
+                    const accountColor = (
+                      account as {
+                        color?: string | null;
                       }
-                    >
-                      <div className="account-top">
-                        <div
-                          className="account-icon"
-                          style={{
-                            backgroundColor:
-                              "#eef7f5",
+                    ).color;
 
-                            color:
-                              "#07977c",
-                          }}
-                        >
-                          <AccountIcon
-                            type={
-                              account.type
-                            }
-                          />
-                        </div>
+                    const isDefault = (
+                      account as {
+                        is_default?: boolean;
+                      }
+                    ).is_default;
+
+                    return (
+                      <article
+                        className="account-card"
+                        key={
+                          account.id
+                        }
+                      >
+                        <div className="account-top">
+                          <div
+                            className="account-icon"
+                            style={{
+                              backgroundColor:
+                                accountColor
+                                  ? `${accountColor}18`
+                                  : "#eef7f5",
+
+                              color:
+                                accountColor ||
+                                "#07977c",
+                            }}
+                          >
+                            <AccountIcon
+                              type={
+                                account.type
+                              }
+                            />
+                          </div>
+
+                        {isDefault && (
+                          <span className="default-label">
+                            Default
+                          </span>
+                        )}
                       </div>
 
                       <p>
@@ -1471,9 +1751,10 @@ const activeCurrency =
                               firstCurrency,
                           )}
                         </span>
-                      </div>
-                    </article>
-                  ),
+                        </div>
+                      </article>
+                    );
+                  },
                 )}
             </div>
           )}
@@ -1557,6 +1838,38 @@ const activeCurrency =
                   </small>
                 </span>
               </Link>
+
+              <Link to="/profile">
+                <span className="quick-action-icon profile-icon">
+                  👤
+                </span>
+
+                <span>
+                  <strong>
+                    Edit profile
+                  </strong>
+
+                  <small>
+                    Update your profile
+                  </small>
+                </span>
+              </Link>
+
+              <Link to="/security">
+                <span className="quick-action-icon security-icon">
+                  🔒
+                </span>
+
+                <span>
+                  <strong>
+                    Security settings
+                  </strong>
+
+                  <small>
+                    Password and 2FA
+                  </small>
+                </span>
+              </Link>
             </div>
           </div>
 
@@ -1570,8 +1883,9 @@ const activeCurrency =
             </h3>
 
             <p>
-              Use your dashboard, budgets and savings
-              goals to stay intentional with your money.
+              Use your dashboard, budgets and
+              savings goals to stay intentional
+              with your money.
             </p>
 
             <Link to="/financial-insights">
@@ -1926,22 +2240,30 @@ const activeCurrency =
 
       <section className="dashboard-footer-tools">
         <Link to="/reports">
-          <span>▦</span>
+          <span>
+            ▦
+          </span>
           Reports
         </Link>
 
         <Link to="/statements">
-          <span>▤</span>
+          <span>
+            ▤
+          </span>
           Statements
         </Link>
 
         <Link to="/financial-insights">
-          <span>✦</span>
+          <span>
+            ✦
+          </span>
           Financial insights
         </Link>
 
         <Link to="/notifications">
-          <span>◉</span>
+          <span>
+            ◉
+          </span>
           Notifications
         </Link>
       </section>
@@ -1982,6 +2304,7 @@ const activeCurrency =
               </div>
 
               <button
+                type="button"
                 className="dashboard-modal-close"
                 onClick={
                   closeDepositModal

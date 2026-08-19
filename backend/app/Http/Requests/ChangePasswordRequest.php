@@ -9,7 +9,7 @@ class ChangePasswordRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        return auth()->user() !== null;
     }
 
     public function rules(): array

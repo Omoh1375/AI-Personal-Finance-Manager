@@ -8,7 +8,7 @@ class TwoFactorCodeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        return (bool) auth()->user();
     }
 
     public function rules(): array

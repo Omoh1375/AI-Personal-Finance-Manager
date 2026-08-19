@@ -9,7 +9,7 @@ class ProfileRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        return auth()->user() !== null;
     }
 
     public function rules(): array
@@ -29,7 +29,7 @@ class ProfileRequest extends FormRequest
 
                 Rule::unique('users', 'email')
                     ->ignore(
-                        auth()->user()->id
+                        $this->user()->id
                     ),
             ],
 

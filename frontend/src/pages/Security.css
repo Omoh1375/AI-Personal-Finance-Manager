@@ -1,0 +1,908 @@
+.security-page {
+  min-height: 100vh;
+
+  padding: 32px 42px 55px;
+
+  background:
+    radial-gradient(
+      circle at 88% 0,
+      rgba(13, 146, 120, 0.07),
+      transparent 28%
+    ),
+    #f5f8f7;
+
+  color: #26332f;
+}
+
+.security-page button,
+.security-page input {
+  font: inherit;
+}
+
+.security-header,
+.security-grid,
+.security-card,
+.security-alert {
+  width: min(1180px, 100%);
+
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
+
+.security-header {
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+.security-eyebrow {
+  margin: 0 0 7px;
+
+  color: #0c9279;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.14em;
+}
+
+.security-header h1 {
+  margin: 0;
+
+  color: #15231f;
+
+  font-size: clamp(30px, 3vw, 42px);
+
+  line-height: 1.08;
+
+  letter-spacing: -0.045em;
+}
+
+.security-subtitle {
+  max-width: 650px;
+
+  margin: 8px 0 0;
+
+  color: #7c8985;
+
+  font-size: 13px;
+
+  line-height: 1.55;
+}
+
+.security-status-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 8px 11px;
+
+  border-radius: 20px;
+
+  font-size: 8px;
+
+  font-weight: 750;
+}
+
+.security-status-badge span {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+}
+
+.security-status-badge.enabled {
+  color: #087e69;
+
+  background: #e8f7f3;
+}
+
+.security-status-badge.enabled span {
+  background: #0d9278;
+}
+
+.security-status-badge.disabled {
+  color: #8a6a22;
+
+  background: #fff7df;
+}
+
+.security-status-badge.disabled span {
+  background: #d1a03c;
+}
+
+/* ==========================================================================
+   ALERT
+   ========================================================================== */
+
+.security-alert {
+  margin-top: 15px;
+
+  padding: 10px 12px;
+
+  border:
+    1px solid #fecaca;
+
+  border-radius: 9px;
+
+  color: #991b1b;
+
+  background: #fff3f2;
+
+  font-size: 10px;
+}
+
+/* ==========================================================================
+   GRID
+   ========================================================================== */
+
+.security-grid {
+  margin-top: 22px;
+
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 14px;
+}
+
+.security-card {
+  padding: 21px;
+
+  border:
+    1px solid #e1e9e6;
+
+  border-radius: 16px;
+
+  background: #fff;
+
+  box-shadow:
+    0 8px 25px
+      rgba(22, 54, 50, 0.035);
+}
+
+.security-card-icon {
+  width: 39px;
+  height: 39px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 10px;
+
+  font-size: 16px;
+}
+
+.security-card-icon.password {
+  color: #6573b4;
+
+  background: #eef1ff;
+}
+
+.security-card-icon.two-factor {
+  color: #078c74;
+
+  background: #e6f7f2;
+}
+
+.security-card-heading {
+  margin-top: 14px;
+
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 15px;
+}
+
+.security-card-heading p {
+  margin: 0 0 5px;
+
+  color: #0d9278;
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+}
+
+.security-card-heading h2 {
+  margin: 0;
+
+  color: #26332f;
+
+  font-size: 17px;
+
+  letter-spacing: -0.02em;
+}
+
+.security-card-description {
+  margin: 8px 0 0;
+
+  color: #899490;
+
+  font-size: 10px;
+
+  line-height: 1.6;
+}
+
+.security-card-action {
+  min-height: 34px;
+
+  padding: 0 10px;
+
+  border-radius: 8px;
+
+  color: #087e69;
+
+  background: #e8f7f3;
+
+  cursor: pointer;
+
+  font-size: 9px;
+
+  font-weight: 750;
+}
+
+.security-card-action:hover {
+  background: #dcf3ec;
+}
+
+.security-mini-status {
+  padding: 5px 8px;
+
+  border-radius: 20px;
+
+  font-size: 8px;
+
+  font-weight: 750;
+}
+
+.security-mini-status.enabled {
+  color: #087e69;
+
+  background: #e8f7f3;
+}
+
+.security-mini-status.disabled {
+  color: #8a6a22;
+
+  background: #fff7df;
+}
+
+/* ==========================================================================
+   FORMS
+   ========================================================================== */
+
+.security-form {
+  margin-top: 18px;
+
+  padding-top: 17px;
+
+  border-top:
+    1px solid #edf1ef;
+}
+
+.security-field {
+  margin-bottom: 13px;
+}
+
+.security-field label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #4b5954;
+
+  font-size: 10px;
+
+  font-weight: 700;
+}
+
+.security-field input {
+  width: 100%;
+
+  height: 43px;
+
+  padding: 0 10px;
+
+  box-sizing: border-box;
+
+  border:
+    1px solid #dce5e2;
+
+  border-radius: 8px;
+
+  outline: 0;
+
+  color: #283530;
+
+  background: #fff;
+
+  font-size: 11px;
+}
+
+.security-field input:focus {
+  border-color: #0d9278;
+
+  box-shadow:
+    0 0 0 3px
+      rgba(13, 146, 120, 0.08);
+}
+
+.security-form-error,
+.security-form-success {
+  margin-bottom: 13px;
+
+  padding: 9px 10px;
+
+  border-radius: 8px;
+
+  font-size: 9px;
+}
+
+.security-form-error {
+  border:
+    1px solid #fecaca;
+
+  color: #991b1b;
+
+  background: #fff3f2;
+}
+
+.security-form-success {
+  border:
+    1px solid #b7e8d8;
+
+  color: #087e69;
+
+  background: #eaf8f4;
+}
+
+.security-submit,
+.security-primary-button,
+.security-secondary-button,
+.security-danger-button {
+  min-height: 39px;
+
+  padding: 0 13px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-size: 9px;
+
+  font-weight: 750;
+}
+
+.security-submit,
+.security-primary-button {
+  border: 0;
+
+  color: #fff;
+
+  background: #0d9278;
+}
+
+.security-submit:hover,
+.security-primary-button:hover {
+  background: #0a806a;
+}
+
+.security-submit:disabled,
+.security-primary-button:disabled,
+.security-secondary-button:disabled,
+.security-danger-button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   2FA SETUP
+   ========================================================================== */
+
+.two-factor-setup {
+  margin-top: 18px;
+
+  padding-top: 17px;
+
+  border-top:
+    1px solid #edf1ef;
+}
+
+.two-factor-step {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 10px;
+}
+
+.two-factor-step > span {
+  width: 24px;
+  height: 24px;
+
+  flex: 0 0 24px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  color: #087e69;
+
+  background: #e8f7f3;
+
+  font-size: 9px;
+
+  font-weight: 800;
+}
+
+.two-factor-step strong {
+  display: block;
+
+  color: #293632;
+
+  font-size: 10px;
+}
+
+.two-factor-step p {
+  margin: 4px 0 0;
+
+  color: #899490;
+
+  font-size: 9px;
+
+  line-height: 1.5;
+}
+
+.two-factor-qr {
+  width: fit-content;
+
+  margin: 17px auto 13px;
+
+  padding: 10px;
+
+  border:
+    1px solid #e2eae7;
+
+  border-radius: 10px;
+
+  background: #fff;
+}
+
+.two-factor-secret {
+  padding: 9px 10px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  border-radius: 8px;
+
+  background: #f3f7f5;
+}
+
+.two-factor-secret span {
+  color: #899490;
+
+  font-size: 8px;
+}
+
+.two-factor-secret code {
+  overflow-wrap: anywhere;
+
+  color: #2e3c37;
+
+  font-size: 9px;
+
+  font-weight: 700;
+}
+
+.two-factor-setup form {
+  margin-top: 17px;
+}
+
+.two-factor-code {
+  width: 100%;
+
+  height: 49px;
+
+  margin-top: 13px;
+
+  padding: 0 12px;
+
+  box-sizing: border-box;
+
+  border:
+    1px solid #dce5e2;
+
+  border-radius: 9px;
+
+  outline: 0;
+
+  color: #1f302a;
+
+  background: #fff;
+
+  text-align: center;
+
+  font-size: 21px !important;
+
+  font-weight: 800;
+
+  letter-spacing: 0.35em;
+}
+
+.two-factor-code:focus {
+  border-color: #0d9278;
+
+  box-shadow:
+    0 0 0 3px
+      rgba(13, 146, 120, 0.08);
+}
+
+.two-factor-setup .security-primary-button {
+  width: 100%;
+
+  margin-top: 11px;
+}
+
+.two-factor-enabled {
+  margin-top: 18px;
+
+  padding: 13px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  border:
+    1px solid #d8eee7;
+
+  border-radius: 10px;
+
+  background: #f1f9f6;
+}
+
+.two-factor-enabled-icon {
+  width: 32px;
+  height: 32px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  color: #078c74;
+
+  background: #dff4ed;
+
+  font-weight: 800;
+}
+
+.two-factor-enabled strong {
+  display: block;
+
+  color: #2c3a35;
+
+  font-size: 10px;
+}
+
+.two-factor-enabled p {
+  margin: 4px 0 0;
+
+  color: #83918b;
+
+  font-size: 8px;
+}
+
+/* ==========================================================================
+   RECOVERY CODES
+   ========================================================================== */
+
+.recovery-card {
+  margin-top: 14px;
+}
+
+.recovery-code-box {
+  margin-top: 17px;
+
+  padding: 13px;
+
+  border:
+    1px solid #e0e9e5;
+
+  border-radius: 10px;
+
+  background: #fafcfb;
+}
+
+.recovery-code-box > strong {
+  display: block;
+
+  color: #34433d;
+
+  font-size: 9px;
+}
+
+.recovery-codes {
+  margin-top: 11px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 6px;
+}
+
+.recovery-codes code {
+  padding: 8px 5px;
+
+  border-radius: 6px;
+
+  color: #33433d;
+
+  background: #eef3f1;
+
+  text-align: center;
+
+  font-size: 8px;
+
+  font-weight: 750;
+}
+
+.recovery-existing {
+  margin-top: 15px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  color: #087e69;
+
+  font-size: 9px;
+}
+
+.recovery-existing span {
+  width: 22px;
+  height: 22px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #e8f7f3;
+
+  font-weight: 800;
+}
+
+.recovery-existing p {
+  margin: 0;
+}
+
+.recovery-actions {
+  margin-top: 14px;
+}
+
+/* ==========================================================================
+   DANGER
+   ========================================================================== */
+
+.danger-card {
+  margin-top: 14px;
+
+  border-top:
+    3px solid #c56049;
+}
+
+.danger-card
+  .security-card-heading
+  p {
+  color: #c15d46;
+}
+
+.disable-2fa-form {
+  margin-top: 18px;
+
+  padding-top: 17px;
+
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr auto;
+
+  gap: 10px;
+
+  border-top:
+    1px solid #edf1ef;
+}
+
+.disable-2fa-form
+  .security-field {
+  margin: 0;
+}
+
+.security-danger-button {
+  align-self: end;
+
+  border: 0;
+
+  color: #fff;
+
+  background: #bd5a45;
+}
+
+.security-danger-button:hover {
+  background: #a94e3c;
+}
+
+/* ==========================================================================
+   LOADING / ERROR
+   ========================================================================== */
+
+.security-loading,
+.security-error {
+  min-height: 70vh;
+
+  display: grid;
+
+  place-items: center;
+
+  align-content: center;
+
+  text-align: center;
+}
+
+.security-spinner {
+  width: 34px;
+  height: 34px;
+
+  border-radius: 50%;
+
+  border:
+    3px solid #d8e9e4;
+
+  border-top-color: #0d9278;
+
+  animation:
+    security-spin
+    0.7s linear infinite;
+}
+
+.security-loading p {
+  margin-top: 11px;
+
+  color: #7f8a86;
+
+  font-size: 10px;
+}
+
+.security-error-icon {
+  width: 42px;
+  height: 42px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  color: #bd5a45;
+
+  background: #fff0eb;
+
+  font-weight: 800;
+}
+
+.security-error h2 {
+  margin: 12px 0 4px;
+
+  color: #293632;
+
+  font-size: 17px;
+}
+
+.security-error p {
+  margin: 0;
+
+  color: #899490;
+
+  font-size: 10px;
+}
+
+@keyframes security-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .security-page {
+    padding: 27px 24px 45px;
+  }
+
+  .security-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .disable-2fa-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .security-danger-button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .security-page {
+    padding: 20px 15px 35px;
+  }
+
+  .security-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .security-status-badge {
+    align-self: flex-start;
+  }
+
+  .security-card {
+    padding: 18px;
+  }
+
+  .security-card-heading {
+    align-items: flex-start;
+  }
+
+  .recovery-codes {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+  .disable-2fa-form {
+    grid-template-columns: 1fr;
+  }
+
+  .security-danger-button {
+    grid-column: auto;
+
+    width: 100%;
+  }
+}

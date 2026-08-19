@@ -18,6 +18,7 @@ use App\Http\Controllers\SavingsGoalController;
 use App\Http\Controllers\SavingsDepositController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SecurityController;
+use App\Http\Controllers\TwoFactorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +30,7 @@ Route::prefix('auth')->group(function () {
 
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/2fa/verify-login',[AuthController::class, 'verifyTwoFactorLogin']);
     Route::post('/forgot-password',[AuthController::class, 'forgotPassword']);
     Route::post('/reset-password',[AuthController::class, 'resetPassword']);
 
@@ -182,39 +184,34 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
 
-    Route::get(
-        '/security/status',
-        [SecurityController::class, 'status']
-    );
+            Route::get(
+            '/security/status',
+            [SecurityController::class, 'status']
+        );
 
-    Route::put(
-        '/security/password',
-        [SecurityController::class, 'changePassword']
-    );
+        Route::post(
+            '/security/2fa/setup',
+            [TwoFactorController::class, 'setup']
+        );
 
-    Route::post(
-        '/security/2fa/setup',
-        [SecurityController::class, 'setup']
-    );
+        Route::post(
+            '/security/2fa/enable',
+            [TwoFactorController::class, 'enable']
+        );
 
-    Route::post(
-        '/security/2fa/enable',
-        [SecurityController::class, 'enable']
-    );
+        Route::post(
+            '/security/2fa/disable',
+            [TwoFactorController::class, 'disable']
+        );
 
-    Route::post(
-        '/security/2fa/disable',
-        [SecurityController::class, 'disable']
-    );
-
-    Route::post(
-        '/security/2fa/recovery-codes',
-        [
-            SecurityController::class,
-            'regenerateRecoveryCodes',
-        ]
-    );
-});
+        Route::post(
+            '/security/2fa/recovery-codes',
+            [
+                TwoFactorController::class,
+                'regenerateRecoveryCodes',
+            ]
+        );
+    });
 
 });
 

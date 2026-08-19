@@ -1,37 +1,34 @@
+/* ==========================================================================
+   SECURITY PAGE
+   ========================================================================== */
+
 .security-page {
   min-height: 100vh;
 
-  padding: 32px 42px 55px;
+  padding:
+    32px
+    42px
+    55px;
 
   background:
     radial-gradient(
       circle at 88% 0,
-      rgba(13, 146, 120, 0.07),
+      rgba(37, 99, 235, 0.06),
       transparent 28%
     ),
-    #f5f8f7;
-
-  color: #26332f;
-}
-
-.security-page button,
-.security-page input {
-  font: inherit;
+    #f5f8fb;
 }
 
 .security-header,
-.security-grid,
-.security-card,
-.security-alert {
-  width: min(1180px, 100%);
+.security-layout {
+  width: min(
+    1380px,
+    100%
+  );
 
   margin-left: auto;
   margin-right: auto;
 }
-
-/* ==========================================================================
-   HEADER
-   ========================================================================== */
 
 .security-header {
   display: flex;
@@ -46,7 +43,7 @@
 .security-eyebrow {
   margin: 0 0 7px;
 
-  color: #0c9279;
+  color: #2563eb;
 
   font-size: 10px;
 
@@ -58,41 +55,52 @@
 .security-header h1 {
   margin: 0;
 
-  color: #15231f;
+  color: #16233f;
 
-  font-size: clamp(30px, 3vw, 42px);
+  font-size:
+    clamp(
+      30px,
+      3vw,
+      42px
+    );
 
-  line-height: 1.08;
+  line-height: 1;
 
   letter-spacing: -0.045em;
 }
 
 .security-subtitle {
-  max-width: 650px;
+  margin: 9px 0 0;
 
-  margin: 8px 0 0;
-
-  color: #7c8985;
+  color: #7b8794;
 
   font-size: 13px;
 
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
 .security-status-badge {
+  min-width: 145px;
+
+  min-height: 38px;
+
+  padding:
+    0
+    13px;
+
   display: inline-flex;
 
   align-items: center;
 
+  justify-content: center;
+
   gap: 7px;
 
-  padding: 8px 11px;
+  border-radius: 22px;
 
-  border-radius: 20px;
+  font-size: 9px;
 
-  font-size: 8px;
-
-  font-weight: 750;
+  font-weight: 800;
 }
 
 .security-status-badge span {
@@ -105,115 +113,160 @@
 .security-status-badge.enabled {
   color: #087e69;
 
-  background: #e8f7f3;
+  background: #e5f8f2;
 }
 
 .security-status-badge.enabled span {
-  background: #0d9278;
+  background: #12a883;
 }
 
 .security-status-badge.disabled {
-  color: #8a6a22;
+  color: #7e8893;
 
-  background: #fff7df;
+  background: #eef2f5;
 }
 
 .security-status-badge.disabled span {
-  background: #d1a03c;
+  background: #9aa5af;
 }
 
 /* ==========================================================================
-   ALERT
+   ALERTS
    ========================================================================== */
 
 .security-alert {
-  margin-top: 15px;
+  width: min(
+    1380px,
+    100%
+  );
 
-  padding: 10px 12px;
+  margin:
+    16px
+    auto
+    0;
+
+  padding:
+    12px
+    14px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+
+  border-radius: 10px;
+
+  font-size: 9px;
+}
+
+.security-alert strong {
+  font-size: 9px;
+}
+
+.security-alert span {
+  font-size: 8px;
+}
+
+.security-alert.success {
+  color: #087e69;
+
+  border:
+    1px solid #ccefe4;
+
+  background: #effaf7;
+}
+
+.security-alert.error {
+  color: #9b3020;
 
   border:
     1px solid #fecaca;
 
-  border-radius: 9px;
-
-  color: #991b1b;
-
-  background: #fff3f2;
-
-  font-size: 10px;
+  background: #fff3f1;
 }
 
 /* ==========================================================================
-   GRID
+   LAYOUT
    ========================================================================== */
 
-.security-grid {
-  margin-top: 22px;
+.security-layout {
+  margin-top: 17px;
 
   display: grid;
 
   grid-template-columns:
-    1fr 1fr;
+    minmax(0, 1fr)
+    300px;
 
   gap: 14px;
+
+  align-items: start;
 }
 
+/* ==========================================================================
+   MAIN CARD
+   ========================================================================== */
+
 .security-card {
-  padding: 21px;
+  padding: 22px;
 
   border:
-    1px solid #e1e9e6;
+    1px solid #e1e8ee;
 
-  border-radius: 16px;
+  border-radius: 17px;
 
-  background: #fff;
+  background: #ffffff;
 
   box-shadow:
-    0 8px 25px
-      rgba(22, 54, 50, 0.035);
+    0 8px 26px
+      rgba(18, 45, 79, 0.04);
+}
+
+.security-card-header {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 12px;
 }
 
 .security-card-icon {
-  width: 39px;
-  height: 39px;
+  width: 42px;
+  height: 42px;
+
+  flex: 0 0 42px;
 
   display: grid;
 
   place-items: center;
 
-  border-radius: 10px;
+  border-radius: 11px;
 
-  font-size: 16px;
+  color: #2563eb;
+
+  background: #edf4ff;
 }
 
-.security-card-icon.password {
-  color: #6573b4;
+.security-card-icon svg {
+  width: 20px;
+  height: 20px;
 
-  background: #eef1ff;
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+
+  stroke-linejoin: round;
 }
 
-.security-card-icon.two-factor {
-  color: #078c74;
+.security-card-kicker {
+  margin: 0 0 4px;
 
-  background: #e6f7f2;
-}
-
-.security-card-heading {
-  margin-top: 14px;
-
-  display: flex;
-
-  align-items: flex-start;
-
-  justify-content: space-between;
-
-  gap: 15px;
-}
-
-.security-card-heading p {
-  margin: 0 0 5px;
-
-  color: #0d9278;
+  color: #2563eb;
 
   font-size: 8px;
 
@@ -225,354 +278,32 @@
 .security-card-heading h2 {
   margin: 0;
 
-  color: #26332f;
+  color: #243047;
 
-  font-size: 17px;
+  font-size: 18px;
 
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
 
-.security-card-description {
-  margin: 8px 0 0;
+.security-card-heading p {
+  margin: 5px 0 0;
 
-  color: #899490;
-
-  font-size: 10px;
-
-  line-height: 1.6;
-}
-
-.security-card-action {
-  min-height: 34px;
-
-  padding: 0 10px;
-
-  border-radius: 8px;
-
-  color: #087e69;
-
-  background: #e8f7f3;
-
-  cursor: pointer;
-
-  font-size: 9px;
-
-  font-weight: 750;
-}
-
-.security-card-action:hover {
-  background: #dcf3ec;
-}
-
-.security-mini-status {
-  padding: 5px 8px;
-
-  border-radius: 20px;
-
-  font-size: 8px;
-
-  font-weight: 750;
-}
-
-.security-mini-status.enabled {
-  color: #087e69;
-
-  background: #e8f7f3;
-}
-
-.security-mini-status.disabled {
-  color: #8a6a22;
-
-  background: #fff7df;
-}
-
-/* ==========================================================================
-   FORMS
-   ========================================================================== */
-
-.security-form {
-  margin-top: 18px;
-
-  padding-top: 17px;
-
-  border-top:
-    1px solid #edf1ef;
-}
-
-.security-field {
-  margin-bottom: 13px;
-}
-
-.security-field label {
-  display: block;
-
-  margin-bottom: 6px;
-
-  color: #4b5954;
-
-  font-size: 10px;
-
-  font-weight: 700;
-}
-
-.security-field input {
-  width: 100%;
-
-  height: 43px;
-
-  padding: 0 10px;
-
-  box-sizing: border-box;
-
-  border:
-    1px solid #dce5e2;
-
-  border-radius: 8px;
-
-  outline: 0;
-
-  color: #283530;
-
-  background: #fff;
-
-  font-size: 11px;
-}
-
-.security-field input:focus {
-  border-color: #0d9278;
-
-  box-shadow:
-    0 0 0 3px
-      rgba(13, 146, 120, 0.08);
-}
-
-.security-form-error,
-.security-form-success {
-  margin-bottom: 13px;
-
-  padding: 9px 10px;
-
-  border-radius: 8px;
-
-  font-size: 9px;
-}
-
-.security-form-error {
-  border:
-    1px solid #fecaca;
-
-  color: #991b1b;
-
-  background: #fff3f2;
-}
-
-.security-form-success {
-  border:
-    1px solid #b7e8d8;
-
-  color: #087e69;
-
-  background: #eaf8f4;
-}
-
-.security-submit,
-.security-primary-button,
-.security-secondary-button,
-.security-danger-button {
-  min-height: 39px;
-
-  padding: 0 13px;
-
-  border-radius: 8px;
-
-  cursor: pointer;
-
-  font-size: 9px;
-
-  font-weight: 750;
-}
-
-.security-submit,
-.security-primary-button {
-  border: 0;
-
-  color: #fff;
-
-  background: #0d9278;
-}
-
-.security-submit:hover,
-.security-primary-button:hover {
-  background: #0a806a;
-}
-
-.security-submit:disabled,
-.security-primary-button:disabled,
-.security-secondary-button:disabled,
-.security-danger-button:disabled {
-  opacity: 0.55;
-
-  cursor: not-allowed;
-}
-
-/* ==========================================================================
-   2FA SETUP
-   ========================================================================== */
-
-.two-factor-setup {
-  margin-top: 18px;
-
-  padding-top: 17px;
-
-  border-top:
-    1px solid #edf1ef;
-}
-
-.two-factor-step {
-  display: flex;
-
-  align-items: flex-start;
-
-  gap: 10px;
-}
-
-.two-factor-step > span {
-  width: 24px;
-  height: 24px;
-
-  flex: 0 0 24px;
-
-  display: grid;
-
-  place-items: center;
-
-  border-radius: 50%;
-
-  color: #087e69;
-
-  background: #e8f7f3;
-
-  font-size: 9px;
-
-  font-weight: 800;
-}
-
-.two-factor-step strong {
-  display: block;
-
-  color: #293632;
-
-  font-size: 10px;
-}
-
-.two-factor-step p {
-  margin: 4px 0 0;
-
-  color: #899490;
+  color: #8a95a1;
 
   font-size: 9px;
 
   line-height: 1.5;
 }
 
-.two-factor-qr {
-  width: fit-content;
+/* ==========================================================================
+   STATUS
+   ========================================================================== */
 
-  margin: 17px auto 13px;
-
-  padding: 10px;
-
-  border:
-    1px solid #e2eae7;
-
-  border-radius: 10px;
-
-  background: #fff;
-}
-
-.two-factor-secret {
-  padding: 9px 10px;
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 5px;
-
-  border-radius: 8px;
-
-  background: #f3f7f5;
-}
-
-.two-factor-secret span {
-  color: #899490;
-
-  font-size: 8px;
-}
-
-.two-factor-secret code {
-  overflow-wrap: anywhere;
-
-  color: #2e3c37;
-
-  font-size: 9px;
-
-  font-weight: 700;
-}
-
-.two-factor-setup form {
-  margin-top: 17px;
-}
-
-.two-factor-code {
-  width: 100%;
-
-  height: 49px;
-
-  margin-top: 13px;
-
-  padding: 0 12px;
-
-  box-sizing: border-box;
-
-  border:
-    1px solid #dce5e2;
-
-  border-radius: 9px;
-
-  outline: 0;
-
-  color: #1f302a;
-
-  background: #fff;
-
-  text-align: center;
-
-  font-size: 21px !important;
-
-  font-weight: 800;
-
-  letter-spacing: 0.35em;
-}
-
-.two-factor-code:focus {
-  border-color: #0d9278;
-
-  box-shadow:
-    0 0 0 3px
-      rgba(13, 146, 120, 0.08);
-}
-
-.two-factor-setup .security-primary-button {
-  width: 100%;
-
-  margin-top: 11px;
-}
-
-.two-factor-enabled {
+.security-status-panel,
+.security-enabled-panel {
   margin-top: 18px;
 
-  padding: 13px;
+  padding: 12px;
 
   display: flex;
 
@@ -580,17 +311,229 @@
 
   gap: 10px;
 
+  border-radius: 10px;
+}
+
+.security-status-panel {
   border:
-    1px solid #d8eee7;
+    1px solid #e3e9ef;
+
+  background: #f7f9fb;
+}
+
+.security-enabled-panel {
+  border:
+    1px solid #ccefe4;
+
+  background: #effaf7;
+}
+
+.security-disabled-icon,
+.security-enabled-icon {
+  width: 34px;
+  height: 34px;
+
+  flex: 0 0 34px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 9px;
+}
+
+.security-disabled-icon {
+  color: #758291;
+
+  background: #e8edf2;
+}
+
+.security-enabled-icon {
+  color: #087e69;
+
+  background: #d9f5ec;
+
+  font-size: 15px;
+
+  font-weight: 800;
+}
+
+.security-disabled-icon svg {
+  width: 17px;
+  height: 17px;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+
+  stroke-linejoin: round;
+}
+
+.security-status-panel strong,
+.security-enabled-panel strong {
+  display: block;
+
+  color: #263348;
+
+  font-size: 9px;
+}
+
+.security-status-panel span,
+.security-enabled-panel span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #7c8895;
+
+  font-size: 8px;
+
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   INFO GRID
+   ========================================================================== */
+
+.security-info-grid {
+  margin-top: 13px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 9px;
+}
+
+.security-info-grid > div {
+  padding: 11px;
+
+  border:
+    1px solid #e5ebf0;
 
   border-radius: 10px;
 
-  background: #f1f9f6;
+  background: #fbfcfd;
 }
 
-.two-factor-enabled-icon {
-  width: 32px;
-  height: 32px;
+.security-info-grid span {
+  display: block;
+
+  color: #8b96a2;
+
+  font-size: 7px;
+}
+
+.security-info-grid strong {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #29364b;
+
+  font-size: 9px;
+}
+
+.security-positive {
+  color: #078d75 !important;
+}
+
+/* ==========================================================================
+   DISABLED BENEFITS
+   ========================================================================== */
+
+.security-benefits {
+  margin-top: 16px;
+
+  display: grid;
+
+  gap: 9px;
+}
+
+.security-benefits > div {
+  padding: 11px;
+
+  display: grid;
+
+  grid-template-columns:
+    30px
+    minmax(0, 1fr);
+
+  gap: 9px;
+
+  border:
+    1px solid #e6ebef;
+
+  border-radius: 10px;
+
+  background: #fbfcfd;
+}
+
+.security-benefits > div > span {
+  width: 29px;
+  height: 29px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 8px;
+
+  color: #2563eb;
+
+  background: #edf4ff;
+
+  font-size: 8px;
+
+  font-weight: 800;
+}
+
+.security-benefits strong {
+  display: block;
+
+  color: #29364b;
+
+  font-size: 9px;
+}
+
+.security-benefits p {
+  margin: 3px 0 0;
+
+  color: #88939f;
+
+  font-size: 8px;
+
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   SETUP FLOW
+   ========================================================================== */
+
+.security-setup {
+  margin-top: 18px;
+}
+
+.security-step {
+  display: grid;
+
+  grid-template-columns:
+    28px
+    minmax(0, 1fr);
+
+  gap: 9px;
+
+  align-items: start;
+}
+
+.security-step > span {
+  width: 27px;
+  height: 27px;
 
   display: grid;
 
@@ -598,87 +541,254 @@
 
   border-radius: 50%;
 
-  color: #078c74;
+  color: #ffffff;
 
-  background: #dff4ed;
+  background: #2563eb;
+
+  font-size: 8px;
 
   font-weight: 800;
 }
 
-.two-factor-enabled strong {
+.security-step strong {
   display: block;
 
-  color: #2c3a35;
-
-  font-size: 10px;
-}
-
-.two-factor-enabled p {
-  margin: 4px 0 0;
-
-  color: #83918b;
-
-  font-size: 8px;
-}
-
-/* ==========================================================================
-   RECOVERY CODES
-   ========================================================================== */
-
-.recovery-card {
-  margin-top: 14px;
-}
-
-.recovery-code-box {
-  margin-top: 17px;
-
-  padding: 13px;
-
-  border:
-    1px solid #e0e9e5;
-
-  border-radius: 10px;
-
-  background: #fafcfb;
-}
-
-.recovery-code-box > strong {
-  display: block;
-
-  color: #34433d;
+  color: #29364b;
 
   font-size: 9px;
 }
 
-.recovery-codes {
-  margin-top: 11px;
+.security-step p {
+  margin: 4px 0 0;
+
+  color: #86919d;
+
+  font-size: 8px;
+
+  line-height: 1.55;
+}
+
+.security-qr-area {
+  width: 250px;
+  min-height: 250px;
+
+  margin:
+    13px
+    auto;
+
+  display: grid;
+
+  place-items: center;
+}
+
+.security-qr-wrapper {
+  padding: 10px;
+
+  border:
+    1px solid #e2e8ee;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 8px 22px
+      rgba(18, 45, 79, 0.05);
+}
+
+.security-qr-wrapper img {
+  width: 220px;
+  height: 220px;
+
+  display: block;
+}
+
+.security-qr-loading,
+.security-qr-fallback {
+  width: 220px;
+  min-height: 160px;
+
+  padding: 20px;
+
+  display: grid;
+
+  place-items: center;
+
+  text-align: center;
+
+  border:
+    1px dashed #ccd7e2;
+
+  border-radius: 12px;
+
+  color: #8793a0;
+
+  background: #f8fafc;
+
+  font-size: 8px;
+
+  line-height: 1.5;
+}
+
+.security-manual {
+  margin:
+    14px
+    0
+    18px;
+
+  padding: 12px;
+
+  border:
+    1px solid #e1e8ef;
+
+  border-radius: 10px;
+
+  background: #f8fafc;
+}
+
+.security-manual > div:first-child span,
+.security-manual > div:first-child strong {
+  display: block;
+}
+
+.security-manual > div:first-child span {
+  color: #8793a0;
+
+  font-size: 7px;
+}
+
+.security-manual > div:first-child strong {
+  margin-top: 3px;
+
+  color: #334155;
+
+  font-size: 8px;
+}
+
+.security-secret-row {
+  margin-top: 8px;
 
   display: grid;
 
   grid-template-columns:
-    repeat(4, minmax(0, 1fr));
+    minmax(0, 1fr)
+    auto;
 
-  gap: 6px;
+  gap: 7px;
 }
 
-.recovery-codes code {
-  padding: 8px 5px;
+.security-secret-row code {
+  min-width: 0;
 
-  border-radius: 6px;
+  padding:
+    8px
+    9px;
 
-  color: #33433d;
+  overflow: hidden;
 
-  background: #eef3f1;
+  border:
+    1px solid #dae2ea;
 
-  text-align: center;
+  border-radius: 7px;
+
+  color: #344155;
+
+  background: #ffffff;
+
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+
+  font-size: 8px;
+
+  letter-spacing: 0.08em;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.security-secret-row button {
+  min-width: 69px;
+
+  border: 0;
+
+  border-radius: 7px;
+
+  color: #2563eb;
+
+  background: #edf4ff;
+
+  cursor: pointer;
+
+  font-size: 7px;
+
+  font-weight: 750;
+}
+
+.security-secret-row button,
+.security-modal-actions button {
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 5px;
+}
+
+.security-secret-row button svg,
+.security-modal-actions button svg {
+  width: 13px;
+  height: 13px;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+
+  stroke-linejoin: round;
+}
+
+/* ==========================================================================
+   CONFIRMATION
+   ========================================================================== */
+
+.security-confirm-box {
+  margin-top: 13px;
+
+  padding:
+    13px;
+
+  border:
+    1px solid #e2e9f0;
+
+  border-radius: 11px;
+
+  background: #ffffff;
+}
+
+.security-confirm-box label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #344155;
 
   font-size: 8px;
 
   font-weight: 750;
 }
 
-.recovery-existing {
-  margin-top: 15px;
+.security-code-input {
+  height: 45px;
 
   display: flex;
 
@@ -686,84 +796,344 @@
 
   gap: 8px;
 
-  color: #087e69;
+  padding:
+    0
+    10px;
+
+  border:
+    1px solid #dce4ed;
+
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.security-code-input:focus-within {
+  border-color: #5b84ed;
+
+  box-shadow:
+    0 0 0 3px
+      rgba(37, 99, 235, 0.08);
+}
+
+.security-code-input svg {
+  width: 16px;
+  height: 16px;
+
+  flex: 0 0 16px;
+
+  fill: none;
+
+  stroke: #8793a1;
+
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+
+  stroke-linejoin: round;
+}
+
+.security-code-input input {
+  width: 100%;
+
+  border: 0;
+
+  outline: 0;
+
+  color: #1f2937;
+
+  background: transparent;
+
+  font-size: 14px;
+
+  font-weight: 750;
+
+  letter-spacing: 0.28em;
+
+  text-align: center;
+}
+
+/* ==========================================================================
+   ACTION PANELS
+   ========================================================================== */
+
+.security-action-panel {
+  margin-top: 13px;
+
+  padding:
+    12px;
+
+  border:
+    1px solid #e2e9f0;
+
+  border-radius: 10px;
+
+  background: #fbfcfd;
+}
+
+.security-action-panel h3 {
+  margin: 0;
+
+  color: #29364b;
 
   font-size: 9px;
 }
 
-.recovery-existing span {
-  width: 22px;
-  height: 22px;
+.security-action-panel p {
+  margin: 4px 0 0;
+
+  color: #8793a0;
+
+  font-size: 8px;
+
+  line-height: 1.45;
+}
+
+.danger-panel {
+  border-color: #f0d7d2;
+
+  background: #fffaf9;
+}
+
+.security-code-row {
+  margin-top: 9px;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+
+  gap: 7px;
+}
+
+.security-code-row input {
+  min-width: 0;
+
+  height: 40px;
+
+  padding:
+    0
+    10px;
+
+  border:
+    1px solid #dce4ed;
+
+  border-radius: 8px;
+
+  outline: 0;
+
+  color: #29364b;
+
+  background: #ffffff;
+
+  font-size: 11px;
+
+  letter-spacing: 0.16em;
+
+  text-align: center;
+}
+
+.security-code-row input:focus {
+  border-color: #5b84ed;
+
+  box-shadow:
+    0 0 0 3px
+      rgba(37, 99, 235, 0.08);
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+
+.security-primary-button,
+.security-secondary-button,
+.security-danger-button,
+.security-cancel-button {
+  min-height: 41px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-size: 8px;
+
+  font-weight: 800;
+}
+
+.security-primary-button {
+  width: 100%;
+
+  margin-top: 9px;
+
+  border: 0;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      100deg,
+      #315cf6,
+      #2563eb 50%,
+      #18cda3
+    );
+
+  box-shadow:
+    0 8px 18px
+      rgba(37, 99, 235, 0.16);
+}
+
+.security-primary-button:hover:not(:disabled) {
+  box-shadow:
+    0 10px 22px
+      rgba(37, 99, 235, 0.2);
+}
+
+.security-secondary-button {
+  padding:
+    0
+    12px;
+
+  border:
+    1px solid #d7e0e9;
+
+  color: #2563eb;
+
+  background: #ffffff;
+}
+
+.security-danger-button {
+  padding:
+    0
+    12px;
+
+  border: 0;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      180deg,
+      #cf6b58,
+      #bb5745
+    );
+}
+
+.security-cancel-button {
+  width: 100%;
+
+  margin-top: 8px;
+
+  border:
+    1px solid #dce4ed;
+
+  color: #6f7b88;
+
+  background: #ffffff;
+}
+
+.security-primary-button:disabled,
+.security-secondary-button:disabled,
+.security-danger-button:disabled,
+.security-cancel-button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   SIDE CARDS
+   ========================================================================== */
+
+.security-side {
+  display: grid;
+
+  gap: 12px;
+}
+
+.security-side-card {
+  padding: 17px;
+
+  border:
+    1px solid #e2e9f0;
+
+  border-radius: 15px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 8px 24px
+      rgba(18, 45, 79, 0.035);
+}
+
+.security-side-icon {
+  width: 37px;
+  height: 37px;
 
   display: grid;
 
   place-items: center;
 
-  border-radius: 50%;
+  border-radius: 10px;
 
-  background: #e8f7f3;
+  color: #2563eb;
+
+  background: #edf4ff;
+}
+
+.security-side-icon.secondary {
+  color: #0b9f7c;
+
+  background: #e8faf5;
+}
+
+.security-side-icon svg {
+  width: 18px;
+  height: 18px;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+
+  stroke-linejoin: round;
+}
+
+.security-side-card > span {
+  display: block;
+
+  margin-top: 14px;
+
+  color: #2563eb;
+
+  font-size: 7px;
 
   font-weight: 800;
+
+  letter-spacing: 0.12em;
 }
 
-.recovery-existing p {
-  margin: 0;
+.security-side-card h3 {
+  margin: 6px 0 0;
+
+  color: #29364b;
+
+  font-size: 14px;
+
+  letter-spacing: -0.025em;
 }
 
-.recovery-actions {
-  margin-top: 14px;
-}
+.security-side-card p {
+  margin: 6px 0 0;
 
-/* ==========================================================================
-   DANGER
-   ========================================================================== */
+  color: #8793a0;
 
-.danger-card {
-  margin-top: 14px;
+  font-size: 8px;
 
-  border-top:
-    3px solid #c56049;
-}
-
-.danger-card
-  .security-card-heading
-  p {
-  color: #c15d46;
-}
-
-.disable-2fa-form {
-  margin-top: 18px;
-
-  padding-top: 17px;
-
-  display: grid;
-
-  grid-template-columns:
-    1fr 1fr auto;
-
-  gap: 10px;
-
-  border-top:
-    1px solid #edf1ef;
-}
-
-.disable-2fa-form
-  .security-field {
-  margin: 0;
-}
-
-.security-danger-button {
-  align-self: end;
-
-  border: 0;
-
-  color: #fff;
-
-  background: #bd5a45;
-}
-
-.security-danger-button:hover {
-  background: #a94e3c;
+  line-height: 1.6;
 }
 
 /* ==========================================================================
@@ -772,7 +1142,7 @@
 
 .security-loading,
 .security-error {
-  min-height: 70vh;
+  min-height: 55vh;
 
   display: grid;
 
@@ -787,12 +1157,12 @@
   width: 34px;
   height: 34px;
 
-  border-radius: 50%;
-
   border:
-    3px solid #d8e9e4;
+    3px solid #dbe5ef;
 
-  border-top-color: #0d9278;
+  border-top-color: #2563eb;
+
+  border-radius: 50%;
 
   animation:
     security-spin
@@ -802,14 +1172,14 @@
 .security-loading p {
   margin-top: 11px;
 
-  color: #7f8a86;
+  color: #7f8b97;
 
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .security-error-icon {
-  width: 42px;
-  height: 42px;
+  width: 45px;
+  height: 45px;
 
   display: grid;
 
@@ -817,60 +1187,258 @@
 
   border-radius: 50%;
 
-  color: #bd5a45;
+  color: #a33d2d;
 
   background: #fff0eb;
+
+  font-size: 17px;
 
   font-weight: 800;
 }
 
 .security-error h2 {
-  margin: 12px 0 4px;
+  margin: 13px 0 0;
 
-  color: #293632;
+  color: #29364b;
 
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .security-error p {
-  margin: 0;
+  margin: 6px 0 0;
 
-  color: #899490;
+  color: #8793a0;
 
-  font-size: 10px;
+  font-size: 9px;
 }
 
-@keyframes security-spin {
-  to {
-    transform: rotate(360deg);
-  }
+/* ==========================================================================
+   RECOVERY MODAL
+   ========================================================================== */
+
+.security-modal-backdrop {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 1000;
+
+  padding: 20px;
+
+  display: grid;
+
+  place-items: center;
+
+  background:
+    rgba(9, 22, 42, 0.45);
+
+  -webkit-backdrop-filter:
+    blur(8px);
+
+  backdrop-filter:
+    blur(8px);
+}
+
+.security-modal {
+  width: min(
+    100%,
+    500px
+  );
+
+  max-height:
+    calc(100dvh - 40px);
+
+  overflow-y: auto;
+
+  padding:
+    24px;
+
+  border:
+    1px solid #e0e7ee;
+
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 30px 70px
+      rgba(4, 21, 52, 0.22);
+}
+
+.security-modal-icon {
+  width: 45px;
+  height: 45px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 12px;
+
+  color: #2563eb;
+
+  background: #edf4ff;
+}
+
+.security-modal-icon svg {
+  width: 20px;
+  height: 20px;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+
+  stroke-linejoin: round;
+}
+
+.security-modal-kicker {
+  margin: 15px 0 0;
+
+  color: #2563eb;
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+}
+
+.security-modal h2 {
+  margin: 6px 0 0;
+
+  color: #22314a;
+
+  font-size: 25px;
+
+  letter-spacing: -0.035em;
+}
+
+.security-modal > p:not(.security-modal-kicker) {
+  margin: 7px 0 0;
+
+  color: #7e8a97;
+
+  font-size: 9px;
+
+  line-height: 1.6;
+}
+
+.security-recovery-grid {
+  margin-top: 15px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 7px;
+}
+
+.security-recovery-grid code {
+  padding:
+    9px
+    10px;
+
+  border:
+    1px solid #dce4ed;
+
+  border-radius: 8px;
+
+  color: #334155;
+
+  background: #f8fafc;
+
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.06em;
+
+  text-align: center;
+}
+
+.security-modal-actions {
+  margin-top: 14px;
+
+  display: grid;
+
+  grid-template-columns:
+    auto
+    minmax(0, 1fr);
+
+  gap: 8px;
+}
+
+.security-modal-actions .security-primary-button {
+  margin-top: 0;
+}
+
+.security-modal-warning {
+  margin-top: 11px;
+
+  padding:
+    9px
+    10px;
+
+  display: flex;
+
+  gap: 5px;
+
+  border-radius: 8px;
+
+  color: #8c6b18;
+
+  background: #fff8e3;
+
+  font-size: 7px;
+
+  line-height: 1.5;
+}
+
+.security-modal-warning strong {
+  font-weight: 800;
 }
 
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */
 
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
   .security-page {
-    padding: 27px 24px 45px;
+    padding:
+      26px
+      24px
+      45px;
   }
 
-  .security-grid {
+  .security-layout {
     grid-template-columns: 1fr;
   }
 
-  .disable-2fa-form {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .security-danger-button {
-    grid-column: 1 / -1;
+  .security-side {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 680px) {
   .security-page {
-    padding: 20px 15px 35px;
+    padding:
+      21px
+      15px
+      36px;
   }
 
   .security-header {
@@ -880,29 +1448,103 @@
   }
 
   .security-status-badge {
-    align-self: flex-start;
+    align-self: stretch;
+
+    width: 100%;
   }
 
   .security-card {
-    padding: 18px;
+    padding: 16px;
   }
 
-  .security-card-heading {
-    align-items: flex-start;
-  }
-
-  .recovery-codes {
-    grid-template-columns:
-      repeat(2, 1fr);
-  }
-
-  .disable-2fa-form {
+  .security-info-grid {
     grid-template-columns: 1fr;
   }
 
-  .security-danger-button {
-    grid-column: auto;
+  .security-side {
+    grid-template-columns: 1fr;
+  }
 
+  .security-qr-area {
     width: 100%;
+  }
+
+  .security-secret-row {
+    grid-template-columns: 1fr;
+  }
+
+  .security-secret-row button {
+    min-height: 38px;
+  }
+
+  .security-code-row {
+    grid-template-columns: 1fr;
+  }
+
+  .security-secondary-button,
+  .security-danger-button {
+    min-height: 40px;
+  }
+
+  .security-modal-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .security-recovery-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .security-page {
+    padding:
+      17px
+      12px
+      30px;
+  }
+
+  .security-header h1 {
+    font-size: 30px;
+  }
+
+  .security-card-header {
+    gap: 9px;
+  }
+
+  .security-card-icon {
+    width: 38px;
+    height: 38px;
+
+    flex-basis: 38px;
+  }
+
+  .security-card-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .security-qr-wrapper img {
+    width: 190px;
+    height: 190px;
+  }
+
+  .security-modal {
+    padding: 19px;
+  }
+}
+
+/* ==========================================================================
+   ANIMATION
+   ========================================================================== */
+
+@keyframes security-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .security-spinner {
+    animation: none;
   }
 }

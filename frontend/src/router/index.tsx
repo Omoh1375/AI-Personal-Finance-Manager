@@ -7,6 +7,7 @@ import {
 
 import Register from "../pages/auth/Register";
 import Login from "../pages/auth/Login";
+import TwoFactorLogin from "../pages/auth/TwoFactorLogin";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
 import Dashboard from "../pages/Dashboard";
@@ -35,6 +36,10 @@ export default function AppRouter() {
         <Route
           path="/login"
           element={<Login />}
+        />
+       <Route
+          path="/login/2fa"
+          element={<TwoFactorLogin />}
         />
 
         <Route

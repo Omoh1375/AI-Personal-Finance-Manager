@@ -1,0 +1,297 @@
+.two-factor-login-page {
+  position: fixed;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100dvh;
+
+  display: grid;
+
+  place-items: center;
+
+  padding: 20px;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 20% 10%,
+      rgba(37, 99, 235, 0.08),
+      transparent 28%
+    ),
+    #f4f7fb;
+
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+.two-factor-login-card {
+  width: min(
+    100%,
+    430px
+  );
+
+  padding:
+    30px
+    30px
+    25px;
+
+  text-align: center;
+
+  border:
+    1px solid #e2e9f0;
+
+  border-radius: 22px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 24px 65px
+      rgba(15, 42, 78, 0.1);
+}
+
+.two-factor-login-icon {
+  width: 58px;
+  height: 58px;
+
+  margin: 0 auto;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 16px;
+
+  color: #2563eb;
+
+  background: #edf4ff;
+}
+
+.two-factor-login-icon svg {
+  width: 25px;
+  height: 25px;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+
+  stroke-linejoin: round;
+}
+
+.two-factor-login-kicker {
+  margin:
+    17px
+    0
+    0;
+
+  color: #2563eb;
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.14em;
+}
+
+.two-factor-login-card h1 {
+  margin: 7px 0 0;
+
+  color: #16233f;
+
+  font-size: 30px;
+
+  line-height: 1.08;
+
+  letter-spacing: -0.04em;
+}
+
+.two-factor-login-description {
+  max-width: 330px;
+
+  margin:
+    9px auto
+    0;
+
+  color: #718096;
+
+  font-size: 10px;
+
+  line-height: 1.6;
+}
+
+.two-factor-login-error {
+  margin-top: 14px;
+
+  padding:
+    10px
+    11px;
+
+  border:
+    1px solid #fecaca;
+
+  border-radius: 9px;
+
+  color: #963324;
+
+  background: #fff3f1;
+
+  font-size: 8px;
+
+  line-height: 1.5;
+}
+
+.two-factor-login-card form {
+  margin-top: 20px;
+
+  text-align: left;
+}
+
+.two-factor-login-card label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #334155;
+
+  font-size: 9px;
+
+  font-weight: 750;
+}
+
+.two-factor-login-card form input {
+  width: 100%;
+
+  height: 52px;
+
+  padding:
+    0
+    13px;
+
+  border:
+    1px solid #dce4ed;
+
+  border-radius: 10px;
+
+  outline: 0;
+
+  color: #1f2937;
+
+  background: #fff;
+
+  font-size: 19px;
+
+  font-weight: 750;
+
+  letter-spacing: 0.28em;
+
+  text-align: center;
+}
+
+.two-factor-login-card form input:focus {
+  border-color: #5b84ed;
+
+  box-shadow:
+    0 0 0 3px
+      rgba(37, 99, 235, 0.08);
+}
+
+.two-factor-login-card form button {
+  width: 100%;
+
+  min-height: 49px;
+
+  margin-top: 13px;
+
+  border: 0;
+
+  border-radius: 10px;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      100deg,
+      #315cf6,
+      #2563eb 50%,
+      #18cda3
+    );
+
+  cursor: pointer;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  box-shadow:
+    0 10px 24px
+      rgba(37, 99, 235, 0.2);
+}
+
+.two-factor-login-card form button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+.two-factor-recovery-toggle,
+.two-factor-back-button {
+  width: 100%;
+
+  border: 0;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  font-size: 8px;
+
+  font-weight: 750;
+}
+
+.two-factor-recovery-toggle {
+  margin-top: 15px;
+
+  color: #2563eb;
+}
+
+.two-factor-recovery-toggle:hover {
+  color: #1748c7;
+
+  text-decoration: underline;
+}
+
+.two-factor-back-button {
+  min-height: 42px;
+
+  margin-top: 11px;
+
+  border:
+    1px solid #dce3e7;
+
+  border-radius: 9px;
+
+  color: #657383;
+
+  background: #ffffff;
+}
+
+@media (max-width: 480px) {
+  .two-factor-login-page {
+    padding: 12px;
+  }
+
+  .two-factor-login-card {
+    padding:
+      24px
+      20px
+      20px;
+  }
+}

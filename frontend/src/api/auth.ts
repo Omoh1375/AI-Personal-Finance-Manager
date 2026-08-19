@@ -4,14 +4,9 @@ import type {
   AuthResponse,
   LoginPayload,
   RegisterPayload,
+  TwoFactorLoginResponse,
   User,
 } from "../types/auth";
-
-/*
-|--------------------------------------------------------------------------
-| Login
-|--------------------------------------------------------------------------
-*/
 
 export const login = async (
   payload: LoginPayload,
@@ -25,11 +20,23 @@ export const login = async (
   return response.data;
 };
 
-/*
-|--------------------------------------------------------------------------
-| Register
-|--------------------------------------------------------------------------
-*/
+export const verifyTwoFactorLogin =
+  async (
+    challengeToken: string,
+    code: string,
+  ): Promise<TwoFactorLoginResponse> => {
+    const response =
+      await api.post<TwoFactorLoginResponse>(
+        "/auth/2fa/verify-login",
+        {
+          challenge_token:
+            challengeToken,
+          code,
+        },
+      );
+
+    return response.data;
+  };
 
 export const register = async (
   payload: RegisterPayload,
@@ -43,24 +50,12 @@ export const register = async (
   return response.data;
 };
 
-/*
-|--------------------------------------------------------------------------
-| Logout
-|--------------------------------------------------------------------------
-*/
-
 export const logout =
   async (): Promise<void> => {
     await api.post(
       "/auth/logout",
     );
   };
-
-/*
-|--------------------------------------------------------------------------
-| Profile
-|--------------------------------------------------------------------------
-*/
 
 export const getProfile =
   async (): Promise<User> => {
@@ -75,11 +70,7 @@ export const getProfile =
     return response.data.user;
   };
 
-/*
-|--------------------------------------------------------------------------
-| Forgot Password
-|--------------------------------------------------------------------------
-*/
+/* Forgot password */
 
 export interface ForgotPasswordPayload {
   email: string;
@@ -87,7 +78,6 @@ export interface ForgotPasswordPayload {
 
 export interface ForgotPasswordResponse {
   success: boolean;
-
   message: string;
 }
 
@@ -104,25 +94,17 @@ export const forgotPassword =
     return response.data;
   };
 
-/*
-|--------------------------------------------------------------------------
-| Reset Password
-|--------------------------------------------------------------------------
-*/
+/* Reset password */
 
 export interface ResetPasswordPayload {
   token: string;
-
   email: string;
-
   password: string;
-
   password_confirmation: string;
 }
 
 export interface ResetPasswordResponse {
   success: boolean;
-
   message: string;
 }
 

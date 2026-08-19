@@ -238,21 +238,60 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      await login({
-        email:
-          normalizedEmail,
-        password,
-      });
+      const result =
+        await login({
+          email:
+            normalizedEmail,
+          password,
+        });
 
       /*
-       * The current AuthContext handles token storage
-       * and authenticated user state.
-       *
-       * Remember-me is kept in the UI for now and will
-       * be wired into persistent-session handling when
-       * that feature is added to the authentication flow.
-       */
+      |--------------------------------------------------------------------------
+      | Remember me
+      |--------------------------------------------------------------------------
+      |
+      | Kept compatible with the current authentication implementation.
+      | Persistent-session handling can be added later without changing
+      | the login UI.
+      |
+      */
+
       void rememberMe;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Two-factor authentication
+      |--------------------------------------------------------------------------
+      |
+      | When 2FA is enabled, AuthContext does NOT store a Sanctum token.
+      | Instead it returns a short-lived challenge token.
+      |
+      */
+
+      if (
+        result.requiresTwoFactor &&
+        result.challengeToken
+      ) {
+        sessionStorage.setItem(
+          "two_factor_challenge",
+          result.challengeToken,
+        );
+
+        navigate(
+          "/login/2fa",
+          {
+            replace: true,
+          },
+        );
+
+        return;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Normal login
+      |--------------------------------------------------------------------------
+      */
 
       navigate(
         "/dashboard",
@@ -289,6 +328,8 @@ export default function Login() {
     <main className="login-page">
       {/* ================================================================
           LEFT VISUAL
+          The background image already contains the original artwork
+          and marketing text. No duplicate React text is rendered here.
       ================================================================= */}
 
       <section

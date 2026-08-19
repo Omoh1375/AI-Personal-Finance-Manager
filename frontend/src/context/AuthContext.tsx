@@ -39,6 +39,12 @@ interface AuthContextValue {
     token: string,
   ) => void;
 
+  updateUser: (
+    user: User,
+  ) => void;
+
+  refreshUser: () => Promise<void>;
+
   register: (
     payload: RegisterPayload,
   ) => Promise<void>;
@@ -82,10 +88,9 @@ export function AuthProvider({
   const [
     user,
     setUser,
-  ] =
-    useState<User | null>(
-      getStoredUser,
-    );
+  ] = useState<User | null>(
+    getStoredUser,
+  );
 
   const [
     isLoading,
@@ -110,7 +115,9 @@ export function AuthProvider({
 
         localStorage.setItem(
           "auth_user",
-          JSON.stringify(profile),
+          JSON.stringify(
+            profile,
+          ),
         );
       })
       .catch(() => {
@@ -129,6 +136,49 @@ export function AuthProvider({
       });
   }, []);
 
+  /*
+  |--------------------------------------------------------------------------
+  | Update authenticated user
+  |--------------------------------------------------------------------------
+  */
+
+  const updateUser = (
+    updatedUser: User,
+  ) => {
+    setUser(
+      updatedUser,
+    );
+
+    localStorage.setItem(
+      "auth_user",
+      JSON.stringify(
+        updatedUser,
+      ),
+    );
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Refresh authenticated user from backend
+  |--------------------------------------------------------------------------
+  */
+
+  const refreshUser =
+    async () => {
+      const profile =
+        await getProfile();
+
+      updateUser(
+        profile,
+      );
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Login
+  |--------------------------------------------------------------------------
+  */
+
   const login = async (
     payload: LoginPayload,
   ): Promise<LoginResult> => {
@@ -137,28 +187,17 @@ export function AuthProvider({
         payload,
       );
 
-    /*
-    |--------------------------------------------------------------------------
-    | 2FA challenge
-    |--------------------------------------------------------------------------
-    */
-
     if (
       data.requires_two_factor &&
       data.challenge_token
     ) {
       return {
         requiresTwoFactor: true,
+
         challengeToken:
           data.challenge_token,
       };
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Normal login
-    |--------------------------------------------------------------------------
-    */
 
     if (
       !data.token ||
@@ -169,26 +208,25 @@ export function AuthProvider({
       );
     }
 
+    updateUser(
+      data.user,
+    );
+
     localStorage.setItem(
       "auth_token",
       data.token,
-    );
-
-    localStorage.setItem(
-      "auth_user",
-      JSON.stringify(
-        data.user,
-      ),
-    );
-
-    setUser(
-      data.user,
     );
 
     return {
       requiresTwoFactor: false,
     };
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Complete 2FA login
+  |--------------------------------------------------------------------------
+  */
 
   const completeTwoFactorLogin =
     (
@@ -200,17 +238,16 @@ export function AuthProvider({
         token,
       );
 
-      localStorage.setItem(
-        "auth_user",
-        JSON.stringify(
-          authenticatedUser,
-        ),
-      );
-
-      setUser(
+      updateUser(
         authenticatedUser,
       );
     };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Register
+  |--------------------------------------------------------------------------
+  */
 
   const register = async (
     payload: RegisterPayload,
@@ -234,17 +271,16 @@ export function AuthProvider({
       data.token,
     );
 
-    localStorage.setItem(
-      "auth_user",
-      JSON.stringify(
-        data.user,
-      ),
-    );
-
-    setUser(
+    updateUser(
       data.user,
     );
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Logout
+  |--------------------------------------------------------------------------
+  */
 
   const logout = async () => {
     try {
@@ -273,9 +309,17 @@ export function AuthProvider({
         isAuthenticated:
           Boolean(user),
         isLoading,
+
         login,
+
         completeTwoFactorLogin,
+
+        updateUser,
+
+        refreshUser,
+
         register,
+
         logout,
       }),
       [

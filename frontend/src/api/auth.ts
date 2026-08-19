@@ -58,7 +58,7 @@ export const logout =
 
 /*
 |--------------------------------------------------------------------------
-| Current authenticated profile
+| Profile
 |--------------------------------------------------------------------------
 */
 
@@ -67,7 +67,6 @@ export const getProfile =
     const response =
       await api.get<{
         success: boolean;
-
         user: User;
       }>(
         "/auth/profile",
@@ -78,39 +77,62 @@ export const getProfile =
 
 /*
 |--------------------------------------------------------------------------
-| 2FA LOGIN VERIFICATION
+| Forgot Password
 |--------------------------------------------------------------------------
-|
-| This endpoint will be connected when we finish
-| enforcing 2FA during the login process.
-|
 */
 
-export interface TwoFactorLoginPayload {
+export interface ForgotPasswordPayload {
   email: string;
-
-  code: string;
-
-  remember_me?: boolean;
 }
 
-export interface TwoFactorLoginResponse {
+export interface ForgotPasswordResponse {
   success: boolean;
 
-  message?: string;
-
-  token: string;
-
-  user: User;
+  message: string;
 }
 
-export const verifyTwoFactorLogin =
+export const forgotPassword =
   async (
-    payload: TwoFactorLoginPayload,
-  ): Promise<TwoFactorLoginResponse> => {
+    payload: ForgotPasswordPayload,
+  ): Promise<ForgotPasswordResponse> => {
     const response =
-      await api.post<TwoFactorLoginResponse>(
-        "/auth/2fa/verify",
+      await api.post<ForgotPasswordResponse>(
+        "/auth/forgot-password",
+        payload,
+      );
+
+    return response.data;
+  };
+
+/*
+|--------------------------------------------------------------------------
+| Reset Password
+|--------------------------------------------------------------------------
+*/
+
+export interface ResetPasswordPayload {
+  token: string;
+
+  email: string;
+
+  password: string;
+
+  password_confirmation: string;
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+
+  message: string;
+}
+
+export const resetPassword =
+  async (
+    payload: ResetPasswordPayload,
+  ): Promise<ResetPasswordResponse> => {
+    const response =
+      await api.post<ResetPasswordResponse>(
+        "/auth/reset-password",
         payload,
       );
 

@@ -7,7 +7,8 @@ import {
 
 import Register from "../pages/auth/Register";
 import Login from "../pages/auth/Login";
-
+import ForgotPassword from "../pages/auth/ForgotPassword";
+import ResetPassword from "../pages/auth/ResetPassword";
 import Dashboard from "../pages/Dashboard";
 import Accounts from "../pages/Accounts";
 import Transactions from "../pages/Transactions";
@@ -39,6 +40,16 @@ export default function AppRouter() {
         <Route
           path="/register"
           element={<Register />}
+        />
+
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
         />
 
         {/* ============================================================

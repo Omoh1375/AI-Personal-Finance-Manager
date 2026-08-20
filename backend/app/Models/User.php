@@ -128,4 +128,11 @@ class User extends Authenticatable
     {
         return $this->hasOne(NotificationPreference::class);
     }
+
+    public function notificationPreferences(): HasOne
+    {
+        return $this->hasOne(
+            NotificationPreference::class
+        );
+    }
 }

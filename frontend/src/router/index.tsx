@@ -25,6 +25,7 @@ import Security from "../pages/Security";
 import ProtectedRoute from "./ProtectedRoute";
 import AppLayout from "../layouts/AppLayout";
 import Support from "../pages/Support";
+import NotificationSettings from "../pages/NotificationSettings";
 
 export default function AppRouter() {
   return (
@@ -122,6 +123,11 @@ export default function AppRouter() {
             <Route
               path="/notifications"
               element={<Notifications />}
+            />
+
+            <Route
+              path="/notification-settings"
+              element={<NotificationSettings />}
             />
 
             <Route

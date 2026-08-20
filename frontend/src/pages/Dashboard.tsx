@@ -1144,6 +1144,28 @@ export default function Dashboard() {
                       Manage your account
                     </small>
                   </div>
+
+                  <Link
+                      to="/notification-settings"
+                      className="dashboard-profile-link"
+                      onClick={closeProfileMenu}
+                    >
+                      <span className="dashboard-profile-link-icon">
+                        🔔
+                      </span>
+
+                      <div>
+                        <strong>
+                          Notification Settings
+                        </strong>
+
+                        <small>
+                          Manage email alerts
+                        </small>
+                      </div>
+                  </Link>
+
+
                 </Link>
 
                 <div className="dashboard-profile-divider" />

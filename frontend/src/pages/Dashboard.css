@@ -1018,6 +1018,12 @@
   background: #eef3f1;
 }
 
+.support-command {
+  color: #2563eb;
+
+  background: #edf4ff;
+}
+
 .command-card > div {
   min-width: 0;
 
@@ -1495,6 +1501,12 @@
   color: #6172b8;
 
   background: #eef1ff;
+}
+
+.quick-action-icon.support-icon {
+  color: #2563eb;
+
+  background: #edf4ff;
 }
 
 .quick-actions > a::after {

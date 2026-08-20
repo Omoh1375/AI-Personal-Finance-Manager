@@ -15,6 +15,8 @@ use App\Models\Budget;
 use App\Models\SavingsGoal;
 use App\Models\Ledger;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\SupportTicket;
+use App\Models\NotificationPreference;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -116,5 +118,14 @@ class User extends Authenticatable
     public function profile(): HasOne
     {
         return $this->hasOne(UserProfile::class);
+    }
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class);
+    }
+
+    public function notificationPreference(): HasOne
+    {
+        return $this->hasOne(NotificationPreference::class);
     }
 }

@@ -1559,6 +1559,29 @@ export default function Dashboard() {
             </Link>
 
             <Link
+              to="/support"
+              className="command-card"
+            >
+              <span className="command-icon support-command">
+                ?
+              </span>
+
+              <div>
+                <strong>
+                  Customer Support
+                </strong>
+
+                <small>
+                  Get help and track support requests
+                </small>
+              </div>
+
+              <span className="command-arrow">
+                →
+              </span>
+            </Link>
+
+            <Link
               to="/accounts"
               className="command-card"
             >
@@ -1867,6 +1890,22 @@ export default function Dashboard() {
 
                   <small>
                     Password and 2FA
+                  </small>
+                </span>
+              </Link>
+
+              <Link to="/support">
+                <span className="quick-action-icon support-icon">
+                  ?
+                </span>
+
+                <span>
+                  <strong>
+                    Customer support
+                  </strong>
+
+                  <small>
+                    Get help and track requests
                   </small>
                 </span>
               </Link>
@@ -2265,6 +2304,13 @@ export default function Dashboard() {
             ◉
           </span>
           Notifications
+        </Link>
+
+        <Link to="/support">
+          <span>
+            ?
+          </span>
+          Customer support
         </Link>
       </section>
 

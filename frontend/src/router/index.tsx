@@ -24,6 +24,7 @@ import Security from "../pages/Security";
 
 import ProtectedRoute from "./ProtectedRoute";
 import AppLayout from "../layouts/AppLayout";
+import Support from "../pages/Support";
 
 export default function AppRouter() {
   return (
@@ -121,6 +122,11 @@ export default function AppRouter() {
             <Route
               path="/notifications"
               element={<Notifications />}
+            />
+
+            <Route
+              path="/support"
+              element={<Support />}
             />
 
             <Route

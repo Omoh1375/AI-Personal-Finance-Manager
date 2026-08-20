@@ -19,6 +19,8 @@ use App\Http\Controllers\SavingsDepositController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\SupportTicketController;
+use App\Http\Controllers\NotificationPreferenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +41,8 @@ Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
 
         Route::get('/profile', [AuthController::class, 'profile']);
+
+
 
     });
 
@@ -95,6 +99,21 @@ Route::middleware('auth:sanctum')->group(function () {
             'destroy',
         ]);
 
+
+        Route::get(
+            '/support/tickets',
+            [SupportTicketController::class, 'index']
+        );
+
+        Route::post(
+            '/support/tickets',
+            [SupportTicketController::class, 'store']
+        );
+
+        Route::get(
+            '/support/tickets/{supportTicket}',
+            [SupportTicketController::class, 'show']
+        );
     /*
     |--------------------------------------------------------------------------
     | Dashboard
@@ -181,6 +200,16 @@ Route::middleware('auth:sanctum')->group(function () {
         '/profile/photo',
         [ProfileController::class, 'deletePhoto']
     );
+
+    Route::get(
+            '/notification-preferences',
+            [NotificationPreferenceController::class, 'show']
+        );
+
+        Route::put(
+            '/notification-preferences',
+            [NotificationPreferenceController::class, 'update']
+        );
 
     Route::middleware('auth:sanctum')->group(function () {
 

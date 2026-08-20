@@ -673,3 +673,379 @@
     min-height: calc(100vh - 62px);
   }
 }
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+  --theme-page-bg: #f5f8f7;
+  --theme-surface: #ffffff;
+  --theme-surface-soft: #f8fbfa;
+  --theme-border: #dfe8e4;
+  --theme-text: #26332f;
+  --theme-text-strong: #19312b;
+  --theme-text-muted: #7b8983;
+  --theme-text-faint: #9aa5a1;
+  --theme-green: #0d9278;
+  --theme-green-soft: #e7f7f2;
+  --theme-blue: #2563eb;
+  --theme-input: #ffffff;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --theme-page-bg: #0d1517;
+  --theme-surface: #151f22;
+  --theme-surface-soft: #182427;
+  --theme-border: #2a3a3d;
+  --theme-text: #e7f0ed;
+  --theme-text-strong: #f1f7f4;
+  --theme-text-muted: #a3b0ac;
+  --theme-text-faint: #7e8d88;
+  --theme-green: #28b898;
+  --theme-green-soft: #173a35;
+  --theme-blue: #6790ff;
+  --theme-input: #111b1e;
+}
+
+html,
+body,
+#root {
+  background: var(--theme-page-bg);
+  color: var(--theme-text);
+}
+
+:root[data-theme="dark"] .app-shell {
+  color: var(--theme-text);
+  background: var(--theme-page-bg);
+}
+
+:root[data-theme="dark"] .app-sidebar {
+  border-color: var(--theme-border);
+  background: linear-gradient(180deg, #151f22 0%, #111a1c 100%);
+  box-shadow: 6px 0 25px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="dark"] .brand-link,
+:root[data-theme="dark"] .brand-copy strong {
+  color: var(--theme-text-strong);
+}
+
+:root[data-theme="dark"] .brand-copy small,
+:root[data-theme="dark"] .sidebar-user-info span,
+:root[data-theme="dark"] .navigation-label,
+:root[data-theme="dark"] .topbar-page-title span,
+:root[data-theme="dark"] .topbar-user-copy span {
+  color: var(--theme-text-faint);
+}
+
+:root[data-theme="dark"] .sidebar-user {
+  border-color: var(--theme-border);
+  background: var(--theme-surface-soft);
+}
+
+:root[data-theme="dark"] .sidebar-user-info strong,
+:root[data-theme="dark"] .topbar-user-copy strong,
+:root[data-theme="dark"] .topbar-page-title strong {
+  color: var(--theme-text);
+}
+
+:root[data-theme="dark"] .app-nav-link,
+:root[data-theme="dark"] .app-nav-link:visited {
+  color: #a0afaa;
+}
+
+:root[data-theme="dark"] .app-nav-link:hover {
+  color: #e7f0ed;
+  background: #1d2b2e;
+}
+
+:root[data-theme="dark"] .app-nav-link.active {
+  color: #6ee1c3;
+  background: linear-gradient(90deg, #173a34, #18312e);
+  box-shadow: inset 3px 0 0 var(--theme-green);
+}
+
+:root[data-theme="dark"] .nav-chevron {
+  color: #71817c;
+}
+
+:root[data-theme="dark"] .sidebar-bottom {
+  border-color: var(--theme-border);
+}
+
+:root[data-theme="dark"] .sidebar-security {
+  background: #172523;
+}
+
+:root[data-theme="dark"] .sidebar-security strong {
+  color: #bdcbc6;
+}
+
+:root[data-theme="dark"] .sidebar-security small {
+  color: #7c8c87;
+}
+
+:root[data-theme="dark"] .app-topbar {
+  border-color: rgba(42, 58, 61, 0.9);
+  background: rgba(15, 24, 27, 0.9);
+}
+
+:root[data-theme="dark"] .topbar-icon-button {
+  border-color: var(--theme-border);
+  color: #a7b5b0;
+  background: var(--theme-surface);
+}
+
+:root[data-theme="dark"] .topbar-insight-link {
+  color: #70dfc0;
+  background: #173a34;
+}
+
+:root[data-theme="dark"] .topbar-divider {
+  background: var(--theme-border);
+}
+
+:root[data-theme="dark"] .mobile-menu-button {
+  border-color: var(--theme-border);
+  color: #a7b5b0;
+  background: var(--theme-surface);
+}
+
+:root[data-theme="dark"] .sidebar-collapse-button {
+  color: #84938e;
+}
+
+:root[data-theme="dark"] .sidebar-logout:hover {
+  color: #f18b78;
+  background: #34211e;
+}
+
+.theme-toggle-button {
+  min-height: 36px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #e1e9e6;
+  border-radius: 9px;
+  color: #687570;
+  background: #fff;
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.theme-toggle-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.theme-toggle-button:hover {
+  background: #f3f7f5;
+}
+
+:root[data-theme="dark"] .theme-toggle-button {
+  border-color: var(--theme-border);
+  color: #d5e0dc;
+  background: var(--theme-surface);
+}
+
+:root[data-theme="dark"] .theme-toggle-button:hover {
+  background: #1d2b2e;
+}
+
+/* Page backgrounds */
+:root[data-theme="dark"] .dashboard-page,
+:root[data-theme="dark"] .accounts-page,
+:root[data-theme="dark"] .transactions-page,
+:root[data-theme="dark"] .budgets-page,
+:root[data-theme="dark"] .savings-page,
+:root[data-theme="dark"] .reports-page,
+:root[data-theme="dark"] .insights-page,
+:root[data-theme="dark"] .notifications-page,
+:root[data-theme="dark"] .profile-page,
+:root[data-theme="dark"] .security-page,
+:root[data-theme="dark"] .support-page {
+  background: var(--theme-page-bg);
+  color: var(--theme-text);
+}
+
+/* Main cards and panels */
+:root[data-theme="dark"] .dashboard-page .money-center,
+:root[data-theme="dark"] .dashboard-page .dashboard-insights,
+:root[data-theme="dark"] .dashboard-page .dashboard-footer-tools,
+:root[data-theme="dark"] .dashboard-page .dashboard-content > *,
+:root[data-theme="dark"] .dashboard-page .dashboard-lower-grid > *,
+:root[data-theme="dark"] .accounts-page article,
+:root[data-theme="dark"] .transactions-page article,
+:root[data-theme="dark"] .budgets-page article,
+:root[data-theme="dark"] .savings-page article,
+:root[data-theme="dark"] .reports-page article,
+:root[data-theme="dark"] .insights-page article,
+:root[data-theme="dark"] .notifications-panel,
+:root[data-theme="dark"] .profile-sidebar-card,
+:root[data-theme="dark"] .profile-main-card,
+:root[data-theme="dark"] .profile-security-card,
+:root[data-theme="dark"] .security-card,
+:root[data-theme="dark"] .security-side-card,
+:root[data-theme="dark"] .support-quick-help,
+:root[data-theme="dark"] .support-ticket-panel {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+}
+
+/* Dashboard specific surfaces */
+:root[data-theme="dark"] .dashboard-page .account-card,
+:root[data-theme="dark"] .dashboard-page .quick-card,
+:root[data-theme="dark"] .dashboard-page .planning-panel,
+:root[data-theme="dark"] .dashboard-page .insight-box {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+}
+
+/* Typography */
+:root[data-theme="dark"] .dashboard-page h1,
+:root[data-theme="dark"] .dashboard-page h2,
+:root[data-theme="dark"] .dashboard-page h3,
+:root[data-theme="dark"] .accounts-page h1,
+:root[data-theme="dark"] .accounts-page h2,
+:root[data-theme="dark"] .transactions-page h1,
+:root[data-theme="dark"] .transactions-page h2,
+:root[data-theme="dark"] .budgets-page h1,
+:root[data-theme="dark"] .budgets-page h2,
+:root[data-theme="dark"] .savings-page h1,
+:root[data-theme="dark"] .savings-page h2,
+:root[data-theme="dark"] .reports-page h1,
+:root[data-theme="dark"] .reports-page h2,
+:root[data-theme="dark"] .insights-page h1,
+:root[data-theme="dark"] .insights-page h2,
+:root[data-theme="dark"] .insights-page h3,
+:root[data-theme="dark"] .notifications-page h1,
+:root[data-theme="dark"] .notifications-page h2,
+:root[data-theme="dark"] .notifications-page h3,
+:root[data-theme="dark"] .profile-page h1,
+:root[data-theme="dark"] .profile-page h2,
+:root[data-theme="dark"] .profile-page h3,
+:root[data-theme="dark"] .security-page h1,
+:root[data-theme="dark"] .security-page h2,
+:root[data-theme="dark"] .security-page h3,
+:root[data-theme="dark"] .support-page h1,
+:root[data-theme="dark"] .support-page h2,
+:root[data-theme="dark"] .support-page h3 {
+  color: var(--theme-text-strong);
+}
+
+/* Inputs and controls */
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] select {
+  color: var(--theme-text);
+  background: var(--theme-input);
+  border-color: var(--theme-border);
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: #687872;
+}
+
+:root[data-theme="dark"] option {
+  color: var(--theme-text);
+  background: var(--theme-input);
+}
+
+/* Dropdowns and modals */
+:root[data-theme="dark"] .dashboard-profile-dropdown,
+:root[data-theme="dark"] .dashboard-modal,
+:root[data-theme="dark"] .security-modal,
+:root[data-theme="dark"] .support-modal,
+:root[data-theme="dark"] .support-detail-modal {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+}
+
+:root[data-theme="dark"] .dashboard-profile-summary,
+:root[data-theme="dark"] .dashboard-profile-link:hover,
+:root[data-theme="dark"] .security-action-panel,
+:root[data-theme="dark"] .security-confirm-box,
+:root[data-theme="dark"] .support-message-card,
+:root[data-theme="dark"] .support-awaiting {
+  background: var(--theme-surface-soft);
+  border-color: var(--theme-border);
+}
+
+:root[data-theme="dark"] .dashboard-profile-divider,
+:root[data-theme="dark"] .support-ticket-row,
+:root[data-theme="dark"] .notifications-toolbar,
+:root[data-theme="dark"] .profile-form-actions {
+  border-color: var(--theme-border);
+}
+
+:root[data-theme="dark"] .dashboard-profile-link strong {
+  color: var(--theme-text);
+}
+
+:root[data-theme="dark"] .dashboard-profile-link small {
+  color: var(--theme-text-muted);
+}
+
+/* Table/list rows */
+:root[data-theme="dark"] .notification-row,
+:root[data-theme="dark"] .support-ticket-row {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+}
+
+:root[data-theme="dark"] .notification-row.unread:hover,
+:root[data-theme="dark"] .support-ticket-row:hover {
+  background: var(--theme-surface-soft);
+}
+
+/* Soft green areas */
+:root[data-theme="dark"] .dashboard-page .balance-card,
+:root[data-theme="dark"] .notification-tabs button.active,
+:root[data-theme="dark"] .security-enabled-panel,
+:root[data-theme="dark"] .profile-feedback.success,
+:root[data-theme="dark"] .support-success {
+  background: var(--theme-green-soft);
+}
+
+:root[data-theme="dark"] .dashboard-page .balance-card strong,
+:root[data-theme="dark"] .dashboard-page .metric-card strong {
+  color: #8ae7d2;
+}
+
+/* Empty states */
+:root[data-theme="dark"] .notifications-empty,
+:root[data-theme="dark"] .notifications-loading,
+:root[data-theme="dark"] .notifications-error,
+:root[data-theme="dark"] .profile-loading,
+:root[data-theme="dark"] .profile-error,
+:root[data-theme="dark"] .security-loading,
+:root[data-theme="dark"] .security-error,
+:root[data-theme="dark"] .support-loading,
+:root[data-theme="dark"] .support-error {
+  color: var(--theme-text);
+}
+
+@media (max-width: 650px) {
+  .theme-toggle-label {
+    display: none;
+  }
+
+  .theme-toggle-button {
+    width: 36px;
+    padding: 0;
+  }
+}

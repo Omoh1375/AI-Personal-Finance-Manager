@@ -19,7 +19,10 @@ class TransferController extends Controller
 
     public function index()
     {
-        $this->authorize('viewAny', Transfer::class);
+        $this->authorize(
+            'viewAny',
+            Transfer::class
+        );
 
         return $this->success(
             TransferResource::collection(
@@ -28,13 +31,18 @@ class TransferController extends Controller
         );
     }
 
-    public function store(TransferRequest $request)
-    {
-        $this->authorize('create', Transfer::class);
-
-        $transfer = $this->transferService->store(
-            $request->validated()
+    public function store(
+        TransferRequest $request
+    ) {
+        $this->authorize(
+            'create',
+            Transfer::class
         );
+
+        $transfer =
+            $this->transferService->store(
+                $request->validated()
+            );
 
         return $this->success(
             new TransferResource(
@@ -48,23 +56,61 @@ class TransferController extends Controller
         );
     }
 
-    public function show(Transfer $transfer)
-    {
-        $this->authorize('view', $transfer);
+    public function show(
+        Transfer $transfer
+    ) {
+        $this->authorize(
+            'view',
+            $transfer
+        );
 
         return $this->success(
             new TransferResource(
-                $this->transferService->show($transfer)
+                $this->transferService->show(
+                    $transfer
+                )
             ),
             'Transfer retrieved successfully.'
         );
     }
 
-    public function destroy(Transfer $transfer)
-    {
-        $this->authorize('delete', $transfer);
+    public function update(
+        TransferRequest $request,
+        Transfer $transfer
+    ) {
+        $this->authorize(
+            'update',
+            $transfer
+        );
 
-        $this->transferService->delete($transfer);
+        $updatedTransfer =
+            $this->transferService->update(
+                $transfer,
+                $request->validated()
+            );
+
+        return $this->success(
+            new TransferResource(
+                $updatedTransfer->load([
+                    'fromAccount',
+                    'toAccount',
+                ])
+            ),
+            'Transfer updated successfully.'
+        );
+    }
+
+    public function destroy(
+        Transfer $transfer
+    ) {
+        $this->authorize(
+            'delete',
+            $transfer
+        );
+
+        $this->transferService->delete(
+            $transfer
+        );
 
         return $this->success(
             null,

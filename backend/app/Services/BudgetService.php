@@ -12,94 +12,225 @@ use Illuminate\Support\Facades\Auth;
 class BudgetService
 {
     use AuthorizesRequests;
+
     public function index()
     {
-        return Budget::with('category')
-            ->where('user_id', Auth::id())
+        return Budget::with(
+            'category'
+        )
+            ->where(
+                'user_id',
+                Auth::id()
+            )
             ->latest()
             ->get()
-            ->map(fn ($budget) => $this->formatBudget($budget));
+            ->map(
+                fn ($budget) =>
+                    $this->formatBudget(
+                        $budget
+                    )
+            );
     }
 
-    public function store(array $data)
-    {
-        $category = Category::where('id', $data['category_id'])
-            ->where(function ($query) {
-                $query->where('is_default', true)
-                      ->orWhere('user_id', Auth::id());
-            })
-            ->firstOrFail();
+    public function store(
+        array $data
+    ) {
+        $category =
+            $this->getOwnedCategory(
+                $data['category_id']
+            );
 
-        $data['user_id'] = Auth::id();
+        $data['user_id'] =
+            Auth::id();
 
-        $budget = Budget::create($data);
-
-        return $this->formatBudget($budget->load('category'));
-    }
-
-    public function show(Budget $budget)
-    {
-        $this->authorize('view', $budget);
+        $budget =
+            Budget::create(
+                $data
+            );
 
         return $this->formatBudget(
-            $budget->load('category')
+            $budget->load(
+                'category'
+            )
         );
     }
 
-    public function destroy(Budget $budget): void
-    {
-        $this->authorize('delete', $budget);
+    public function show(
+        Budget $budget
+    ) {
+        $this->authorize(
+            'view',
+            $budget
+        );
+
+        return $this->formatBudget(
+            $budget->load(
+                'category'
+            )
+        );
+    }
+
+    public function update(
+        Budget $budget,
+        array $data
+    ) {
+        $this->authorize(
+            'update',
+            $budget
+        );
+
+        $this->getOwnedCategory(
+            $data['category_id']
+        );
+
+        $budget->update([
+            'category_id' =>
+                $data['category_id'],
+
+            'amount' =>
+                $data['amount'],
+
+            'start_date' =>
+                $data['start_date'],
+
+            'end_date' =>
+                $data['end_date'],
+
+            'is_active' =>
+                $data['is_active'],
+        ]);
+
+        return $this->formatBudget(
+            $budget->fresh(
+                'category'
+            )
+        );
+    }
+
+    public function destroy(
+        Budget $budget
+    ): void {
+        $this->authorize(
+            'delete',
+            $budget
+        );
 
         $budget->delete();
     }
 
-    private function formatBudget(Budget $budget): array
-    {
-        $spent = Expense::where('user_id', Auth::id())
-            ->where('category_id', $budget->category_id)
-            ->whereBetween('spent_at', [
-                Carbon::parse($budget->start_date)->startOfDay(),
-                Carbon::parse($budget->end_date)->endOfDay(),
-            ])
-            ->sum('amount');
+    private function getOwnedCategory(
+        int $categoryId
+    ): Category {
+        return Category::where(
+            'id',
+            $categoryId
+        )
+            ->where(
+                function ($query) {
+                    $query->where(
+                        'is_default',
+                        true
+                    )
+                        ->orWhere(
+                            'user_id',
+                            Auth::id()
+                        );
+                }
+            )
+            ->firstOrFail();
+    }
 
-        $remaining = max(0, $budget->amount - $spent);
+    private function formatBudget(
+        Budget $budget
+    ): array {
+        $spent =
+            Expense::where(
+                'user_id',
+                Auth::id()
+            )
+                ->where(
+                    'category_id',
+                    $budget->category_id
+                )
+                ->whereBetween(
+                    'spent_at',
+                    [
+                        Carbon::parse(
+                            $budget->start_date
+                        )->startOfDay(),
 
-        $progress = $budget->amount > 0
-            ? round(($spent / $budget->amount) * 100, 2)
-            : 0;
+                        Carbon::parse(
+                            $budget->end_date
+                        )->endOfDay(),
+                    ]
+                )
+                ->sum('amount');
+
+        $remaining =
+            max(
+                0,
+                (float) $budget->amount -
+                (float) $spent
+            );
+
+        $progress =
+            (float) $budget->amount > 0
+                ? round(
+                    (
+                        $spent /
+                        $budget->amount
+                    ) * 100,
+                    2
+                )
+                : 0;
 
         return [
+            'id' =>
+                $budget->id,
 
-            'id' => $budget->id,
+            'category' =>
+                $budget->category->name,
 
-            'category' => $budget->category->name,
+            'budget' =>
+                (float) $budget->amount,
 
-            'budget' => (float) $budget->amount,
+            'spent' =>
+                (float) $spent,
 
-            'spent' => (float) $spent,
+            'remaining' =>
+                (float) $remaining,
 
-            'remaining' => (float) $remaining,
+            'progress' =>
+                $progress,
 
-            'progress' => $progress,
+            'status' =>
+                $this->status(
+                    $progress
+                ),
 
-            'status' => $this->status($progress),
+            'start_date' =>
+                $budget->start_date,
 
-            'start_date' => $budget->start_date,
+            'end_date' =>
+                $budget->end_date,
 
-            'end_date' => $budget->end_date,
-
-            'is_active' => $budget->is_active,
-
+            'is_active' =>
+                $budget->is_active,
         ];
     }
 
-    private function status(float $progress): string
-    {
+    private function status(
+        float $progress
+    ): string {
         return match (true) {
-            $progress >= 100 => 'Exceeded',
-            $progress >= 80 => 'Near Limit',
-            default => 'On Track',
+            $progress >= 100 =>
+                'Exceeded',
+
+            $progress >= 80 =>
+                'Near Limit',
+
+            default =>
+                'On Track',
         };
     }
 }

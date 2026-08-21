@@ -19,7 +19,10 @@ class ExpenseController extends Controller
 
     public function index()
     {
-        $this->authorize('viewAny', Expense::class);
+        $this->authorize(
+            'viewAny',
+            Expense::class
+        );
 
         return $this->success(
             ExpenseResource::collection(
@@ -28,40 +31,87 @@ class ExpenseController extends Controller
         );
     }
 
-    public function store(ExpenseRequest $request)
-    {
-        $this->authorize('create', Expense::class);
-
-        $expense = $this->expenseService->store(
-            $request->validated()
+    public function store(
+        ExpenseRequest $request
+    ) {
+        $this->authorize(
+            'create',
+            Expense::class
         );
+
+        $expense =
+            $this->expenseService->store(
+                $request->validated()
+            );
 
         return $this->success(
             new ExpenseResource(
-                $expense->load(['account', 'category'])
+                $expense->load([
+                    'account',
+                    'category',
+                ])
             ),
             'Expense created successfully.',
             201
         );
     }
 
-    public function show(Expense $expense)
-    {
-        $this->authorize('view', $expense);
+    public function show(
+        Expense $expense
+    ) {
+        $this->authorize(
+            'view',
+            $expense
+        );
 
         return $this->success(
             new ExpenseResource(
-                $expense->load(['account', 'category'])
+                $expense->load([
+                    'account',
+                    'category',
+                ])
             ),
             'Expense retrieved successfully.'
         );
     }
 
-    public function destroy(Expense $expense)
-    {
-        $this->authorize('delete', $expense);
+    public function update(
+        ExpenseRequest $request,
+        Expense $expense
+    ) {
+        $this->authorize(
+            'update',
+            $expense
+        );
 
-        $this->expenseService->delete($expense);
+        $updatedExpense =
+            $this->expenseService->update(
+                $expense,
+                $request->validated()
+            );
+
+        return $this->success(
+            new ExpenseResource(
+                $updatedExpense->load([
+                    'account',
+                    'category',
+                ])
+            ),
+            'Expense updated successfully.'
+        );
+    }
+
+    public function destroy(
+        Expense $expense
+    ) {
+        $this->authorize(
+            'delete',
+            $expense
+        );
+
+        $this->expenseService->delete(
+            $expense
+        );
 
         return $this->success(
             null,

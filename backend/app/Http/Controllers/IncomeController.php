@@ -19,7 +19,10 @@ class IncomeController extends Controller
 
     public function index()
     {
-        $this->authorize('viewAny', Income::class);
+        $this->authorize(
+            'viewAny',
+            Income::class
+        );
 
         return $this->success(
             IncomeResource::collection(
@@ -28,9 +31,13 @@ class IncomeController extends Controller
         );
     }
 
-    public function store(IncomeRequest $request)
-    {
-        $this->authorize('create', Income::class);
+    public function store(
+        IncomeRequest $request
+    ) {
+        $this->authorize(
+            'create',
+            Income::class
+        );
 
         $income = $this->incomeService->store(
             $request->validated()
@@ -38,30 +45,72 @@ class IncomeController extends Controller
 
         return $this->success(
             new IncomeResource(
-                $income->load(['account', 'category'])
+                $income->load([
+                    'account',
+                    'category',
+                ])
             ),
             'Income created successfully.',
             201
         );
     }
 
-    public function show(Income $income)
-    {
-        $this->authorize('view', $income);
+    public function show(
+        Income $income
+    ) {
+        $this->authorize(
+            'view',
+            $income
+        );
 
         return $this->success(
             new IncomeResource(
-                $income->load(['account', 'category'])
+                $income->load([
+                    'account',
+                    'category',
+                ])
             ),
             'Income retrieved successfully.'
         );
     }
 
-    public function destroy(Income $income)
-    {
-        $this->authorize('delete', $income);
+    public function update(
+        IncomeRequest $request,
+        Income $income
+    ) {
+        $this->authorize(
+            'update',
+            $income
+        );
 
-        $this->incomeService->delete($income);
+        $updatedIncome =
+            $this->incomeService->update(
+                $income,
+                $request->validated()
+            );
+
+        return $this->success(
+            new IncomeResource(
+                $updatedIncome->load([
+                    'account',
+                    'category',
+                ])
+            ),
+            'Income updated successfully.'
+        );
+    }
+
+    public function destroy(
+        Income $income
+    ) {
+        $this->authorize(
+            'delete',
+            $income
+        );
+
+        $this->incomeService->delete(
+            $income
+        );
 
         return $this->success(
             null,

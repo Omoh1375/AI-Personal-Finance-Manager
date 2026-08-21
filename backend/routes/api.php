@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\API\Auth\AuthController;
+
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
@@ -30,27 +32,60 @@ use App\Http\Controllers\NotificationPreferenceController;
 
 Route::prefix('auth')->group(function () {
 
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/2fa/verify-login',[AuthController::class, 'verifyTwoFactorLogin']);
-    Route::post('/forgot-password',[AuthController::class, 'forgotPassword']);
-    Route::post('/reset-password',[AuthController::class, 'resetPassword']);
+    /*
+    |--------------------------------------------------------------------------
+    | Public Authentication
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/register',
+        [AuthController::class, 'register']
+    );
+
+    Route::post(
+        '/login',
+        [AuthController::class, 'login']
+    );
+
+    Route::post(
+        '/2fa/verify-login',
+        [AuthController::class, 'verifyTwoFactorLogin']
+    );
+
+    Route::post(
+        '/forgot-password',
+        [AuthController::class, 'forgotPassword']
+    );
+
+    Route::post(
+        '/reset-password',
+        [AuthController::class, 'resetPassword']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authenticated Authentication
+    |--------------------------------------------------------------------------
+    */
 
     Route::middleware('auth:sanctum')->group(function () {
 
-        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post(
+            '/logout',
+            [AuthController::class, 'logout']
+        );
 
-        Route::get('/profile', [AuthController::class, 'profile']);
-
-
-
+        Route::get(
+            '/profile',
+            [AuthController::class, 'profile']
+        );
     });
-
 });
 
 /*
 |--------------------------------------------------------------------------
-| Protected Finance Routes
+| Protected Application Routes
 |--------------------------------------------------------------------------
 */
 
@@ -62,17 +97,35 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::apiResource('categories', CategoryController::class);
+    Route::apiResource(
+        'categories',
+        CategoryController::class
+    );
 
-    Route::apiResource('accounts', AccountController::class);
+    Route::apiResource(
+        'accounts',
+        AccountController::class
+    );
 
-    Route::apiResource('incomes', IncomeController::class);
+    Route::apiResource(
+        'incomes',
+        IncomeController::class
+    );
 
-    Route::apiResource('expenses', ExpenseController::class);
+    Route::apiResource(
+        'expenses',
+        ExpenseController::class
+    );
 
-    Route::apiResource('transfers', TransferController::class);
+    Route::apiResource(
+        'transfers',
+        TransferController::class
+    );
 
-    Route::apiResource('budgets', BudgetController::class);
+    Route::apiResource(
+        'budgets',
+        BudgetController::class
+    );
 
     Route::apiResource(
         'recurring-transactions',
@@ -80,40 +133,25 @@ Route::middleware('auth:sanctum')->group(function () {
     );
 
     Route::apiResource(
-            'savings-goals',
-            SavingsGoalController::class
-        )->only([
-            'index',
-            'store',
-            'show',
-            'destroy',
-        ]);
+        'savings-goals',
+        SavingsGoalController::class
+    )->only([
+        'index',
+        'store',
+        'show',
+        'destroy',
+    ]);
 
-        Route::apiResource(
-            'savings-deposits',
-            SavingsDepositController::class
-        )->only([
-            'index',
-            'store',
-            'show',
-            'destroy',
-        ]);
+    Route::apiResource(
+        'savings-deposits',
+        SavingsDepositController::class
+    )->only([
+        'index',
+        'store',
+        'show',
+        'destroy',
+    ]);
 
-
-        Route::get(
-            '/support/tickets',
-            [SupportTicketController::class, 'index']
-        );
-
-        Route::post(
-            '/support/tickets',
-            [SupportTicketController::class, 'store']
-        );
-
-        Route::get(
-            '/support/tickets/{supportTicket}',
-            [SupportTicketController::class, 'show']
-        );
     /*
     |--------------------------------------------------------------------------
     | Dashboard
@@ -179,71 +217,117 @@ Route::middleware('auth:sanctum')->group(function () {
         [UserNotificationController::class, 'markAsRead']
     );
 
-    Route::middleware('auth:sanctum')->group(function () {
+    /*
+    |--------------------------------------------------------------------------
+    | Profile
+    |--------------------------------------------------------------------------
+    */
 
     Route::get(
-        '/profile',
+        'profile',
         [ProfileController::class, 'show']
     );
 
     Route::put(
-        '/profile',
+        'profile',
         [ProfileController::class, 'update']
     );
 
     Route::post(
-        '/profile/photo',
+        'profile/photo',
         [ProfileController::class, 'uploadPhoto']
     );
 
     Route::delete(
-        '/profile/photo',
+        'profile/photo',
         [ProfileController::class, 'deletePhoto']
     );
 
+    /*
+    |--------------------------------------------------------------------------
+    | Notification Preferences
+    |--------------------------------------------------------------------------
+    */
+
     Route::get(
-            '/notification-preferences',
-            [NotificationPreferenceController::class, 'show']
-        );
+        'notification-preferences',
+        [NotificationPreferenceController::class, 'show']
+    );
 
-        Route::put(
-            '/notification-preferences',
-            [NotificationPreferenceController::class, 'update']
-        );
+    Route::put(
+        'notification-preferences',
+        [NotificationPreferenceController::class, 'update']
+    );
 
-    Route::middleware('auth:sanctum')->group(function () {
+    /*
+    |--------------------------------------------------------------------------
+    | Security
+    |--------------------------------------------------------------------------
+    */
 
-            Route::get(
-            '/security/status',
-            [SecurityController::class, 'status']
-        );
+    Route::get(
+        'security/status',
+        [SecurityController::class, 'status']
+    );
 
-        Route::post(
-            '/security/2fa/setup',
-            [TwoFactorController::class, 'setup']
-        );
+    Route::put(
+        'security/password',
+        [SecurityController::class, 'changePassword']
+    );
 
-        Route::post(
-            '/security/2fa/enable',
-            [TwoFactorController::class, 'enable']
-        );
+    /*
+    |--------------------------------------------------------------------------
+    | Two-Factor Authentication
+    |--------------------------------------------------------------------------
+    */
 
-        Route::post(
-            '/security/2fa/disable',
-            [TwoFactorController::class, 'disable']
-        );
+    Route::post(
+        'security/2fa/setup',
+        [TwoFactorController::class, 'setup']
+    );
 
-        Route::post(
-            '/security/2fa/recovery-codes',
-            [
-                TwoFactorController::class,
-                'regenerateRecoveryCodes',
-            ]
-        );
-    });
+    Route::post(
+        'security/2fa/enable',
+        [TwoFactorController::class, 'enable']
+    );
 
-});
+    Route::post(
+        'security/2fa/disable',
+        [TwoFactorController::class, 'disable']
+    );
 
+    Route::post(
+        'security/2fa/recovery-codes',
+        [
+            TwoFactorController::class,
+            'regenerateRecoveryCodes',
+        ]
+    );
 
+    /*
+    |--------------------------------------------------------------------------
+    | Customer Support
+    |--------------------------------------------------------------------------
+    */
 
+    Route::get(
+        'support/tickets',
+        [SupportTicketController::class, 'index']
+    );
+
+    Route::post(
+        'support/tickets',
+        [SupportTicketController::class, 'store']
+    );
+
+    Route::get(
+        'support/tickets/{supportTicket}',
+        [SupportTicketController::class, 'show']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | End Protected Routes
+    |--------------------------------------------------------------------------
+    */
 });

@@ -57,10 +57,25 @@ const AuthContext =
     AuthContextValue | undefined
   >(undefined);
 
+/*
+|--------------------------------------------------------------------------
+| Storage helpers
+|--------------------------------------------------------------------------
+*/
+
+const AUTH_TOKEN_KEY =
+  "auth_token";
+
+const AUTH_USER_KEY =
+  "auth_user";
+
+const TWO_FACTOR_CHALLENGE_KEY =
+  "two_factor_challenge";
+
 function getStoredUser(): User | null {
   const stored =
     localStorage.getItem(
-      "auth_user",
+      AUTH_USER_KEY,
     );
 
   if (!stored) {
@@ -73,12 +88,32 @@ function getStoredUser(): User | null {
     ) as User;
   } catch {
     localStorage.removeItem(
-      "auth_user",
+      AUTH_USER_KEY,
     );
 
     return null;
   }
 }
+
+function clearAuthenticationState(): void {
+  localStorage.removeItem(
+    AUTH_TOKEN_KEY,
+  );
+
+  localStorage.removeItem(
+    AUTH_USER_KEY,
+  );
+
+  sessionStorage.removeItem(
+    TWO_FACTOR_CHALLENGE_KEY,
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Provider
+|--------------------------------------------------------------------------
+*/
 
 export function AuthProvider({
   children,
@@ -97,10 +132,16 @@ export function AuthProvider({
     setIsLoading,
   ] = useState(true);
 
+  /*
+  |--------------------------------------------------------------------------
+  | Restore existing authenticated session
+  |--------------------------------------------------------------------------
+  */
+
   useEffect(() => {
     const token =
       localStorage.getItem(
-        "auth_token",
+        AUTH_TOKEN_KEY,
       );
 
     if (!token) {
@@ -114,20 +155,14 @@ export function AuthProvider({
         setUser(profile);
 
         localStorage.setItem(
-          "auth_user",
+          AUTH_USER_KEY,
           JSON.stringify(
             profile,
           ),
         );
       })
       .catch(() => {
-        localStorage.removeItem(
-          "auth_token",
-        );
-
-        localStorage.removeItem(
-          "auth_user",
-        );
+        clearAuthenticationState();
 
         setUser(null);
       })
@@ -150,7 +185,7 @@ export function AuthProvider({
     );
 
     localStorage.setItem(
-      "auth_user",
+      AUTH_USER_KEY,
       JSON.stringify(
         updatedUser,
       ),
@@ -159,7 +194,7 @@ export function AuthProvider({
 
   /*
   |--------------------------------------------------------------------------
-  | Refresh authenticated user from backend
+  | Refresh authenticated user
   |--------------------------------------------------------------------------
   */
 
@@ -182,15 +217,37 @@ export function AuthProvider({
   const login = async (
     payload: LoginPayload,
   ): Promise<LoginResult> => {
+    /*
+    |--------------------------------------------------------------------------
+    | Clear any stale 2FA challenge before starting
+    | a completely new login attempt.
+    |--------------------------------------------------------------------------
+    */
+
+    sessionStorage.removeItem(
+      TWO_FACTOR_CHALLENGE_KEY,
+    );
+
     const data =
       await loginRequest(
         payload,
       );
 
+    /*
+    |--------------------------------------------------------------------------
+    | 2FA required
+    |--------------------------------------------------------------------------
+    */
+
     if (
       data.requires_two_factor &&
       data.challenge_token
     ) {
+      sessionStorage.setItem(
+        TWO_FACTOR_CHALLENGE_KEY,
+        data.challenge_token,
+      );
+
       return {
         requiresTwoFactor: true,
 
@@ -198,6 +255,12 @@ export function AuthProvider({
           data.challenge_token,
       };
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Normal login
+    |--------------------------------------------------------------------------
+    */
 
     if (
       !data.token ||
@@ -208,13 +271,23 @@ export function AuthProvider({
       );
     }
 
-    updateUser(
-      data.user,
+    /*
+    |--------------------------------------------------------------------------
+    | Make sure no stale challenge remains.
+    |--------------------------------------------------------------------------
+    */
+
+    sessionStorage.removeItem(
+      TWO_FACTOR_CHALLENGE_KEY,
     );
 
     localStorage.setItem(
-      "auth_token",
+      AUTH_TOKEN_KEY,
       data.token,
+    );
+
+    updateUser(
+      data.user,
     );
 
     return {
@@ -228,20 +301,29 @@ export function AuthProvider({
   |--------------------------------------------------------------------------
   */
 
-  const completeTwoFactorLogin =
-    (
-      authenticatedUser: User,
-      token: string,
-    ) => {
-      localStorage.setItem(
-        "auth_token",
-        token,
-      );
+  const completeTwoFactorLogin = (
+    authenticatedUser: User,
+    token: string,
+  ) => {
+    localStorage.setItem(
+      AUTH_TOKEN_KEY,
+      token,
+    );
 
-      updateUser(
-        authenticatedUser,
-      );
-    };
+    updateUser(
+      authenticatedUser,
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | The challenge has now been consumed.
+    |--------------------------------------------------------------------------
+    */
+
+    sessionStorage.removeItem(
+      TWO_FACTOR_CHALLENGE_KEY,
+    );
+  };
 
   /*
   |--------------------------------------------------------------------------
@@ -266,8 +348,19 @@ export function AuthProvider({
       );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Registration creates an authenticated session,
+    | so any stale 2FA challenge should be removed.
+    |--------------------------------------------------------------------------
+    */
+
+    sessionStorage.removeItem(
+      TWO_FACTOR_CHALLENGE_KEY,
+    );
+
     localStorage.setItem(
-      "auth_token",
+      AUTH_TOKEN_KEY,
       data.token,
     );
 
@@ -284,30 +377,42 @@ export function AuthProvider({
 
   const logout = async () => {
     try {
-      await logoutRequest();
+      /*
+      |--------------------------------------------------------------------------
+      | Only call the backend when we actually have
+      | an authenticated token.
+      |--------------------------------------------------------------------------
+      */
+
+      const token =
+        localStorage.getItem(
+          AUTH_TOKEN_KEY,
+        );
+
+      if (token) {
+        await logoutRequest();
+      }
     } finally {
-      localStorage.removeItem(
-        "auth_token",
-      );
-
-      localStorage.removeItem(
-        "auth_user",
-      );
-
-      sessionStorage.removeItem(
-        "two_factor_challenge",
-      );
+      clearAuthenticationState();
 
       setUser(null);
     }
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Context value
+  |--------------------------------------------------------------------------
+  */
+
   const value =
     useMemo(
       () => ({
         user,
+
         isAuthenticated:
           Boolean(user),
+
         isLoading,
 
         login,
@@ -336,6 +441,12 @@ export function AuthProvider({
     </AuthContext.Provider>
   );
 }
+
+/*
+|--------------------------------------------------------------------------
+| Hook
+|--------------------------------------------------------------------------
+*/
 
 export function useAuth(): AuthContextValue {
   const context =

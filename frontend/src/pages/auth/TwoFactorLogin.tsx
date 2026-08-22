@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
   type FormEvent,
 } from "react";
@@ -24,6 +25,7 @@ function ShieldIcon() {
       aria-hidden="true"
     >
       <path d="M12 3 20 6v6c0 5-3.4 8.1-8 9-4.6-.9-8-4-8-9V6l8-3Z" />
+
       <path d="m9 12 2 2 4-4" />
     </svg>
   );
@@ -36,11 +38,6 @@ export default function TwoFactorLogin() {
   const {
     completeTwoFactorLogin,
   } = useAuth();
-
-  const challengeToken =
-    sessionStorage.getItem(
-      "two_factor_challenge",
-    );
 
   const [
     code,
@@ -62,6 +59,25 @@ export default function TwoFactorLogin() {
     setUseRecoveryCode,
   ] = useState(false);
 
+  const challengeToken =
+    sessionStorage.getItem(
+      "two_factor_challenge",
+    );
+
+  useEffect(() => {
+    if (!challengeToken) {
+      navigate(
+        "/login",
+        {
+          replace: true,
+        },
+      );
+    }
+  }, [
+    challengeToken,
+    navigate,
+  ]);
+
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
   ) => {
@@ -77,28 +93,44 @@ export default function TwoFactorLogin() {
       return;
     }
 
+    const normalizedCode =
+      code.trim();
+
     if (
       useRecoveryCode
-        ? !code.trim()
-        : code.length !== 6
+        ? !normalizedCode
+        : !/^\d{6}$/.test(
+            normalizedCode,
+          )
     ) {
       setError(
         useRecoveryCode
-          ? "Enter a recovery code."
+          ? "Enter your recovery code."
           : "Enter the 6-digit code from your authenticator app.",
       );
 
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(
+      true
+    );
 
     try {
       const response =
         await verifyTwoFactorLogin(
           challengeToken,
-          code.trim(),
+          normalizedCode,
         );
+
+      if (
+        !response.token ||
+        !response.user
+      ) {
+        throw new Error(
+          "Two-factor verification did not return a valid session.",
+        );
+      }
 
       completeTwoFactorLogin(
         response.user,
@@ -120,28 +152,28 @@ export default function TwoFactorLogin() {
     ) {
       setError(
         err?.response?.data?.message ??
+          err?.message ??
           "The verification code is invalid or has expired.",
       );
     } finally {
       setIsSubmitting(
-        false,
+        false
       );
     }
   };
 
-  const cancel =
-    () => {
-      sessionStorage.removeItem(
-        "two_factor_challenge",
-      );
+  const cancel = () => {
+    sessionStorage.removeItem(
+      "two_factor_challenge",
+    );
 
-      navigate(
-        "/login",
-        {
-          replace: true,
-        },
-      );
-    };
+    navigate(
+      "/login",
+      {
+        replace: true,
+      },
+    );
+  };
 
   return (
     <main className="two-factor-login-page">
@@ -173,9 +205,7 @@ export default function TwoFactorLogin() {
         )}
 
         <form
-          onSubmit={
-            handleSubmit
-          }
+          onSubmit={handleSubmit}
         >
           <label htmlFor="login-2fa-code">
             {useRecoveryCode
@@ -203,31 +233,30 @@ export default function TwoFactorLogin() {
             }
             autoFocus
             value={code}
-            onChange={(
-              event,
-            ) =>
+            onChange={(event) => {
+              const value =
+                event.target.value;
+
               setCode(
                 useRecoveryCode
-                  ? event.target.value
+                  ? value
                       .toUpperCase()
                       .replace(
                         /[^A-Z0-9]/g,
                         "",
                       )
-                  : event.target.value.replace(
+                  : value.replace(
                       /\D/g,
                       "",
                     ),
-              )
-            }
+              );
+            }}
             placeholder={
               useRecoveryCode
                 ? "XXXXXXXXXX"
                 : "000000"
             }
-            disabled={
-              isSubmitting
-            }
+            disabled={isSubmitting}
           />
 
           <button
@@ -247,9 +276,7 @@ export default function TwoFactorLogin() {
           className="two-factor-recovery-toggle"
           onClick={() => {
             setUseRecoveryCode(
-              (
-                current,
-              ) =>
+              (current) =>
                 !current,
             );
 

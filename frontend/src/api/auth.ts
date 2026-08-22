@@ -8,11 +8,24 @@ import type {
   User,
 } from "../types/auth";
 
+export interface LoginResponse {
+  success: boolean;
+  message?: string;
+
+  requires_two_factor?: boolean;
+
+  challenge_token?: string;
+
+  token?: string;
+
+  user?: User;
+}
+
 export const login = async (
   payload: LoginPayload,
-): Promise<AuthResponse> => {
+): Promise<LoginResponse> => {
   const response =
-    await api.post<AuthResponse>(
+    await api.post<LoginResponse>(
       "/auth/login",
       payload,
     );
@@ -31,6 +44,7 @@ export const verifyTwoFactorLogin =
         {
           challenge_token:
             challengeToken,
+
           code,
         },
       );
@@ -70,8 +84,6 @@ export const getProfile =
     return response.data.user;
   };
 
-/* Forgot password */
-
 export interface ForgotPasswordPayload {
   email: string;
 }
@@ -93,8 +105,6 @@ export const forgotPassword =
 
     return response.data;
   };
-
-/* Reset password */
 
 export interface ResetPasswordPayload {
   token: string;

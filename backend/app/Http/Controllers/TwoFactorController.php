@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
 
@@ -13,7 +11,9 @@ class TwoFactorController extends Controller
 {
     private function google2fa(): Google2FA
     {
-        return app(Google2FA::class);
+        return app(
+            Google2FA::class
+        );
     }
 
     /**
@@ -22,12 +22,16 @@ class TwoFactorController extends Controller
     public function status(
         Request $request
     ): JsonResponse {
-        $user = $request->user();
+        $user =
+            $request->user();
 
         return response()->json([
-            'success' => true,
+            'success' =>
+                true,
+
             'two_factor_enabled' =>
-                (bool) $user->two_factor_enabled,
+                (bool)
+                $user->two_factor_enabled,
 
             'has_recovery_codes' =>
                 is_array(
@@ -48,56 +52,69 @@ class TwoFactorController extends Controller
     public function setup(
         Request $request
     ): JsonResponse {
-        $user = $request->user();
+        $user =
+            $request->user();
 
-        if ($user->two_factor_enabled) {
+        if (
+            $user->two_factor_enabled
+        ) {
             return response()->json([
-                'success' => false,
+                'success' =>
+                    false,
+
                 'message' =>
                     'Two-factor authentication is already enabled.',
             ], 409);
         }
 
-        $google2fa = $this->google2fa();
+        $google2fa =
+            $this->google2fa();
 
         $secret =
-            $google2fa->generateSecretKey();
+            $google2fa
+                ->generateSecretKey();
 
         $qrUrl =
             $google2fa->getQRCodeUrl(
                 config(
                     'app.name',
-                    'AI Personal Finance Manager'
+                    'FinPilot AI'
                 ),
                 $user->email,
                 $secret
             );
 
-        /*
-         * Store the secret encrypted through the
-         * User model cast.
-         */
         $user->forceFill([
-            'two_factor_secret' => $secret,
-            'two_factor_confirmed_at' => null,
-            'two_factor_recovery_codes' => null,
-            'two_factor_enabled' => false,
+            'two_factor_secret' =>
+                $secret,
+
+            'two_factor_confirmed_at' =>
+                null,
+
+            'two_factor_recovery_codes' =>
+                null,
+
+            'two_factor_enabled' =>
+                false,
         ])->save();
 
         return response()->json([
-            'success' => true,
+            'success' =>
+                true,
 
             'message' =>
                 'Two-factor setup initialized.',
 
-            'secret' => $secret,
+            'secret' =>
+                $secret,
 
-            'qr_code_url' => $qrUrl,
+            'qr_code_url' =>
+                $qrUrl,
         ]);
     }
 
     /**
-     * Confirm the first authenticator code and enable 2FA.
+     * Confirm authenticator code and enable 2FA.
      */
     public function enable(
         Request $request
@@ -109,33 +126,47 @@ class TwoFactorController extends Controller
             ],
         ]);
 
-        $user = $request->user();
+        $user =
+            $request->user();
 
-        if (! $user->two_factor_secret) {
+        if (
+            ! $user->two_factor_secret
+        ) {
             return response()->json([
-                'success' => false,
+                'success' =>
+                    false,
+
                 'message' =>
                     'Please initialize 2FA setup first.',
             ], 422);
         }
 
-        if ($user->two_factor_enabled) {
+        if (
+            $user->two_factor_enabled
+        ) {
             return response()->json([
-                'success' => false,
+                'success' =>
+                    false,
+
                 'message' =>
                     'Two-factor authentication is already enabled.',
             ], 409);
         }
 
         $valid =
-            $this->google2fa()->verifyKey(
-                $user->two_factor_secret,
-                $request->string('code')->toString()
-            );
+            $this->google2fa()
+                ->verifyKey(
+                    $user->two_factor_secret,
+                    $request
+                        ->string('code')
+                        ->toString()
+                );
 
         if (! $valid) {
             return response()->json([
-                'success' => false,
+                'success' =>
+                    false,
+
                 'message' =>
                     'The authenticator code is invalid or expired.',
             ], 422);
@@ -145,7 +176,8 @@ class TwoFactorController extends Controller
             $this->generateRecoveryCodes();
 
         $user->forceFill([
-            'two_factor_enabled' => true,
+            'two_factor_enabled' =>
+                true,
 
             'two_factor_confirmed_at' =>
                 now(),
@@ -155,7 +187,8 @@ class TwoFactorController extends Controller
         ])->save();
 
         return response()->json([
-            'success' => true,
+            'success' =>
+                true,
 
             'message' =>
                 'Two-factor authentication has been enabled.',
@@ -166,7 +199,7 @@ class TwoFactorController extends Controller
     }
 
     /**
-     * Disable 2FA after verifying the current authenticator code.
+     * Disable 2FA.
      */
     public function disable(
         Request $request
@@ -178,39 +211,57 @@ class TwoFactorController extends Controller
             ],
         ]);
 
-        $user = $request->user();
+        $user =
+            $request->user();
 
-        if (! $user->two_factor_enabled) {
+        if (
+            ! $user->two_factor_enabled
+        ) {
             return response()->json([
-                'success' => false,
+                'success' =>
+                    false,
+
                 'message' =>
                     'Two-factor authentication is already disabled.',
             ], 409);
         }
 
         $valid =
-            $this->google2fa()->verifyKey(
-                $user->two_factor_secret,
-                $request->string('code')->toString()
-            );
+            $this->google2fa()
+                ->verifyKey(
+                    $user->two_factor_secret,
+                    $request
+                        ->string('code')
+                        ->toString()
+                );
 
         if (! $valid) {
             return response()->json([
-                'success' => false,
+                'success' =>
+                    false,
+
                 'message' =>
                     'The authenticator code is invalid or expired.',
             ], 422);
         }
 
         $user->forceFill([
-            'two_factor_enabled' => false,
-            'two_factor_secret' => null,
-            'two_factor_confirmed_at' => null,
-            'two_factor_recovery_codes' => null,
+            'two_factor_enabled' =>
+                false,
+
+            'two_factor_secret' =>
+                null,
+
+            'two_factor_confirmed_at' =>
+                null,
+
+            'two_factor_recovery_codes' =>
+                null,
         ])->save();
 
         return response()->json([
-            'success' => true,
+            'success' =>
+                true,
 
             'message' =>
                 'Two-factor authentication has been disabled.',
@@ -218,7 +269,7 @@ class TwoFactorController extends Controller
     }
 
     /**
-     * Generate a new set of recovery codes.
+     * Regenerate recovery codes.
      */
     public function regenerateRecoveryCodes(
         Request $request
@@ -230,25 +281,35 @@ class TwoFactorController extends Controller
             ],
         ]);
 
-        $user = $request->user();
+        $user =
+            $request->user();
 
-        if (! $user->two_factor_enabled) {
+        if (
+            ! $user->two_factor_enabled
+        ) {
             return response()->json([
-                'success' => false,
+                'success' =>
+                    false,
+
                 'message' =>
                     'Enable two-factor authentication first.',
             ], 422);
         }
 
         $valid =
-            $this->google2fa()->verifyKey(
-                $user->two_factor_secret,
-                $request->string('code')->toString()
-            );
+            $this->google2fa()
+                ->verifyKey(
+                    $user->two_factor_secret,
+                    $request
+                        ->string('code')
+                        ->toString()
+                );
 
         if (! $valid) {
             return response()->json([
-                'success' => false,
+                'success' =>
+                    false,
+
                 'message' =>
                     'The authenticator code is invalid or expired.',
             ], 422);
@@ -263,7 +324,8 @@ class TwoFactorController extends Controller
         ])->save();
 
         return response()->json([
-            'success' => true,
+            'success' =>
+                true,
 
             'message' =>
                 'Recovery codes regenerated successfully.',
@@ -277,7 +339,11 @@ class TwoFactorController extends Controller
     {
         $codes = [];
 
-        for ($i = 0; $i < 8; $i++) {
+        for (
+            $i = 0;
+            $i < 8;
+            $i++
+        ) {
             $codes[] =
                 strtoupper(
                     Str::random(10)

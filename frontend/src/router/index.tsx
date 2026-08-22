@@ -1,180 +1,333 @@
 import {
+  lazy,
+  Suspense,
+} from "react";
+
+import {
   BrowserRouter,
   Navigate,
   Route,
   Routes,
 } from "react-router-dom";
 
-import Register from "../pages/auth/Register";
-import Login from "../pages/auth/Login";
-import TwoFactorLogin from "../pages/auth/TwoFactorLogin";
-import ForgotPassword from "../pages/auth/ForgotPassword";
-import ResetPassword from "../pages/auth/ResetPassword";
-import Dashboard from "../pages/Dashboard";
-import Accounts from "../pages/Accounts";
-import Transactions from "../pages/Transactions";
-import Transfers from "../pages/Transfers";
-import Budgets from "../pages/Budgets";
-import Savings from "../pages/Savings";
-import Reports from "../pages/Reports";
-import FinancialInsights from "../pages/FinancialInsights";
-import Notifications from "../pages/Notifications";
-import Profile from "../pages/Profile";
-import Security from "../pages/Security";
+/*
+|--------------------------------------------------------------------------
+| PUBLIC PAGES
+|--------------------------------------------------------------------------
+*/
+
+const Login = lazy(
+  () => import("../pages/auth/Login"),
+);
+
+const Register = lazy(
+  () => import("../pages/auth/Register"),
+);
+
+const TwoFactorLogin = lazy(
+  () => import("../pages/auth/TwoFactorLogin"),
+);
+
+const ForgotPassword = lazy(
+  () => import("../pages/auth/ForgotPassword"),
+);
+
+const ResetPassword = lazy(
+  () => import("../pages/auth/ResetPassword"),
+);
+
+/*
+|--------------------------------------------------------------------------
+| PROTECTED PAGES
+|--------------------------------------------------------------------------
+*/
+
+const Dashboard = lazy(
+  () => import("../pages/Dashboard"),
+);
+
+const Accounts = lazy(
+  () => import("../pages/Accounts"),
+);
+
+const Transactions = lazy(
+  () => import("../pages/Transactions"),
+);
+
+const Transfers = lazy(
+  () => import("../pages/Transfers"),
+);
+
+const Budgets = lazy(
+  () => import("../pages/Budgets"),
+);
+
+const Savings = lazy(
+  () => import("../pages/Savings"),
+);
+
+const Reports = lazy(
+  () => import("../pages/Reports"),
+);
+
+const FinancialInsights = lazy(
+  () => import("../pages/FinancialInsights"),
+);
+
+const Notifications = lazy(
+  () => import("../pages/Notifications"),
+);
+
+const NotificationSettings = lazy(
+  () => import("../pages/NotificationSettings"),
+);
+
+const Support = lazy(
+  () => import("../pages/Support"),
+);
+
+const Profile = lazy(
+  () => import("../pages/Profile"),
+);
+
+const Security = lazy(
+  () => import("../pages/Security"),
+);
+
+/*
+|--------------------------------------------------------------------------
+| ROUTE / LAYOUT COMPONENTS
+|--------------------------------------------------------------------------
+*/
 
 import ProtectedRoute from "./ProtectedRoute";
 import AppLayout from "../layouts/AppLayout";
-import Support from "../pages/Support";
-import NotificationSettings from "../pages/NotificationSettings";
+
+/*
+|--------------------------------------------------------------------------
+| PAGE LOADING FALLBACK
+|--------------------------------------------------------------------------
+*/
+
+function PageLoader() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        background: "#f5f8f7",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "12px",
+        }}
+      >
+        <div
+          style={{
+            width: "34px",
+            height: "34px",
+            borderRadius: "50%",
+            border: "3px solid #d7e8e4",
+            borderTopColor: "#0d9278",
+            animation:
+              "router-spin 0.7s linear infinite",
+          }}
+        />
+
+        <p
+          style={{
+            margin: 0,
+            color: "#7f8a86",
+            fontSize: "13px",
+          }}
+        >
+          Loading...
+        </p>
+      </div>
+
+      <style>
+        {`
+          @keyframes router-spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+        `}
+      </style>
+    </div>
+  );
+}
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* ============================================================
-            PUBLIC ROUTES
-        ============================================================ */}
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
 
-        <Route
-          path="/login"
-          element={<Login />}
-        />
-       <Route
-          path="/login/2fa"
-          element={<TwoFactorLogin />}
-        />
+          {/* ============================================================
+              PUBLIC ROUTES
+          ============================================================ */}
 
-        <Route
-          path="/register"
-          element={<Register />}
-        />
+          <Route
+            path="/login"
+            element={<Login />}
+          />
 
-        <Route
-          path="/forgot-password"
-          element={<ForgotPassword />}
-        />
+          <Route
+            path="/login/2fa"
+            element={<TwoFactorLogin />}
+          />
 
-        <Route
-          path="/reset-password"
-          element={<ResetPassword />}
-        />
+          <Route
+            path="/register"
+            element={<Register />}
+          />
 
-        {/* ============================================================
-            PROTECTED ROUTES
-        ============================================================ */}
+          <Route
+            path="/forgot-password"
+            element={<ForgotPassword />}
+          />
 
-        <Route element={<ProtectedRoute />}>
-          <Route element={<AppLayout />}>
+          <Route
+            path="/reset-password"
+            element={<ResetPassword />}
+          />
+
+          {/* ============================================================
+              PROTECTED ROUTES
+          ============================================================ */}
+
+          <Route
+            element={
+              <ProtectedRoute />
+            }
+          >
             <Route
-              path="/dashboard"
-              element={<Dashboard />}
-            />
+              element={
+                <AppLayout />
+              }
+            >
 
-            <Route
-              path="/accounts"
-              element={<Accounts />}
-            />
+              <Route
+                path="/dashboard"
+                element={<Dashboard />}
+              />
 
-            <Route
-              path="/transactions"
-              element={<Transactions />}
-            />
+              <Route
+                path="/accounts"
+                element={<Accounts />}
+              />
 
-            <Route
-              path="/income"
-              element={<Transactions />}
-            />
+              <Route
+                path="/transactions"
+                element={<Transactions />}
+              />
 
-            <Route
-              path="/expenses"
-              element={<Transactions />}
-            />
+              <Route
+                path="/income"
+                element={<Transactions />}
+              />
 
-            <Route
-              path="/transfers"
-              element={<Transfers />}
-            />
+              <Route
+                path="/expenses"
+                element={<Transactions />}
+              />
 
-            <Route
-              path="/budgets"
-              element={<Budgets />}
-            />
+              <Route
+                path="/transfers"
+                element={<Transfers />}
+              />
 
-            <Route
-              path="/savings"
-              element={<Savings />}
-            />
+              <Route
+                path="/budgets"
+                element={<Budgets />}
+              />
 
-            <Route
-              path="/savings-goals"
-              element={<Savings />}
-            />
+              <Route
+                path="/savings"
+                element={<Savings />}
+              />
 
-            <Route
-              path="/reports"
-              element={<Reports />}
-            />
+              <Route
+                path="/savings-goals"
+                element={<Savings />}
+              />
 
-            <Route
-              path="/financial-insights"
-              element={<FinancialInsights />}
-            />
+              <Route
+                path="/reports"
+                element={<Reports />}
+              />
 
-            <Route
-              path="/notifications"
-              element={<Notifications />}
-            />
+              <Route
+                path="/financial-insights"
+                element={<FinancialInsights />}
+              />
 
-            <Route
-              path="/notification-settings"
-              element={<NotificationSettings />}
-            />
+              <Route
+                path="/notifications"
+                element={<Notifications />}
+              />
 
-            <Route
-              path="/support"
-              element={<Support />}
-            />
+              <Route
+                path="/notification-settings"
+                element={
+                  <NotificationSettings />
+                }
+              />
 
-            <Route
-              path="/profile"
-              element={<Profile />}
-            />
+              <Route
+                path="/support"
+                element={<Support />}
+              />
 
-            <Route
-              path="/security"
-              element={<Security />}
-            />
+              <Route
+                path="/profile"
+                element={<Profile />}
+              />
+
+              <Route
+                path="/security"
+                element={<Security />}
+              />
+
+            </Route>
           </Route>
-        </Route>
 
-        {/* ============================================================
-            ROOT
-        ============================================================ */}
+          {/* ============================================================
+              ROOT
+          ============================================================ */}
 
-        <Route
-          path="/"
-          element={
-            <Navigate
-              to="/dashboard"
-              replace
-            />
-          }
-        />
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to="/dashboard"
+                replace
+              />
+            }
+          />
 
-        {/* ============================================================
-            FALLBACK
-        ============================================================ */}
+          {/* ============================================================
+              FALLBACK
+          ============================================================ */}
 
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to="/dashboard"
-              replace
-            />
-          }
-        />
-      </Routes>
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to="/dashboard"
+                replace
+              />
+            }
+          />
+
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

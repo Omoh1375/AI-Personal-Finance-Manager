@@ -16,6 +16,7 @@ import {
   createBudget,
   deleteBudget,
   getBudgets,
+  updateBudget,
 } from "../api/budgets";
 
 import type { Category } from "../types/category";
@@ -168,6 +169,9 @@ export default function Budgets() {
   const [showModal, setShowModal] =
     useState(false);
 
+  const [editingBudgetId, setEditingBudgetId] =
+    useState<number | null>(null);
+
   const [search, setSearch] =
     useState("");
 
@@ -305,6 +309,67 @@ export default function Budgets() {
                 ?.message ??
               error?.message ??
               "Unable to create budget.",
+        );
+      },
+    });
+
+  /*
+  |--------------------------------------------------------------------------
+  | UPDATE
+  |--------------------------------------------------------------------------
+  */
+
+  const updateMutation =
+    useMutation({
+      mutationFn: ({
+        id,
+        payload,
+      }: {
+        id: number;
+        payload: BudgetPayload;
+      }) =>
+        updateBudget(
+          id,
+          payload,
+        ),
+
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ["budgets"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["dashboard"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["financial-insights"],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["notifications"],
+        });
+
+        closeModal();
+      },
+
+      onError: (error: any) => {
+        const errors =
+          error?.response?.data?.errors;
+
+        const firstError =
+          errors
+            ? Object.values(errors)
+                .flat()
+                .find(Boolean)
+            : null;
+
+        setFormError(
+          typeof firstError === "string"
+            ? firstError
+            : error?.response?.data?.message ??
+                error?.message ??
+                "Unable to update budget.",
         );
       },
     });
@@ -510,6 +575,14 @@ export default function Budgets() {
   */
 
   const openModal = () => {
+    if (
+      createMutation.isPending ||
+      updateMutation.isPending
+    ) {
+      return;
+    }
+
+    setEditingBudgetId(null);
     setFormError("");
 
     setForm({
@@ -523,14 +596,56 @@ export default function Budgets() {
     setShowModal(true);
   };
 
+  const openEditModal = (
+    budget: {
+      id: number;
+      category_id?: number;
+      category: string;
+      budget: number;
+      start_date: string;
+      end_date: string;
+      is_active: boolean;
+    },
+  ) => {
+    setFormError("");
+
+    setEditingBudgetId(
+      budget.id,
+    );
+
+    setForm({
+      category_id:
+        Number(
+          budget.category_id ?? 0,
+        ),
+
+      amount:
+        Number(budget.budget),
+
+      start_date:
+        budget.start_date,
+
+      end_date:
+        budget.end_date,
+
+      is_active:
+        budget.is_active,
+    });
+
+    setShowModal(true);
+  };
+
   const closeModal = () => {
     if (
-      createMutation.isPending
+      createMutation.isPending ||
+      updateMutation.isPending
     ) {
       return;
     }
 
     setShowModal(false);
+
+    setEditingBudgetId(null);
 
     setFormError("");
   };
@@ -596,7 +711,7 @@ export default function Budgets() {
       return;
     }
 
-    createMutation.mutate({
+    const payload: BudgetPayload = {
       category_id:
         Number(
           form.category_id,
@@ -613,7 +728,20 @@ export default function Budgets() {
 
       is_active:
         form.is_active ?? true,
-    });
+    };
+
+    if (editingBudgetId !== null) {
+      updateMutation.mutate({
+        id: editingBudgetId,
+        payload,
+      });
+
+      return;
+    }
+
+    createMutation.mutate(
+      payload,
+    );
   };
 
   /*
@@ -1240,19 +1368,40 @@ export default function Budgets() {
                           )}
                       </span>
 
-                      <button
-                        onClick={() =>
-                          handleDelete(
-                            budget.id,
-                            budget.category,
-                          )
-                        }
-                        disabled={
-                          deleteMutation.isPending
-                        }
-                      >
-                        Delete
-                      </button>
+                      <div className="budget-card-actions">
+                        <button
+                          className="budget-edit-button"
+                          type="button"
+                          onClick={() =>
+                            openEditModal(
+                              budget,
+                            )
+                          }
+                          disabled={
+                            deleteMutation.isPending ||
+                            updateMutation.isPending
+                          }
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          className="budget-delete-button"
+                          type="button"
+                          onClick={() =>
+                            handleDelete(
+                              budget.id,
+                              budget.category,
+                            )
+                          }
+                          disabled={
+                            deleteMutation.isPending ||
+                            updateMutation.isPending
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </article>
                 );
@@ -1293,7 +1442,9 @@ export default function Budgets() {
                 </p>
 
                 <h2 id="budget-modal-title">
-                  Create budget
+                  {editingBudgetId !== null
+                    ? "Edit budget"
+                    : "Create budget"}
                 </h2>
               </div>
 
@@ -1494,7 +1645,8 @@ export default function Budgets() {
                     closeModal
                   }
                   disabled={
-                    createMutation.isPending
+                    createMutation.isPending ||
+                    updateMutation.isPending
                   }
                 >
                   Cancel
@@ -1505,12 +1657,18 @@ export default function Budgets() {
                   className="budget-submit"
                   disabled={
                     createMutation.isPending ||
+                    updateMutation.isPending ||
                     categoriesLoading
                   }
                 >
-                  {createMutation.isPending
-                    ? "Creating..."
-                    : "Create budget"}
+                  {createMutation.isPending ||
+                  updateMutation.isPending
+                    ? editingBudgetId !== null
+                      ? "Saving..."
+                      : "Creating..."
+                    : editingBudgetId !== null
+                      ? "Save changes"
+                      : "Create budget"}
                 </button>
               </div>
             </form>

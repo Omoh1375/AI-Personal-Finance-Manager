@@ -1320,3 +1320,104 @@
     width: 100%;
   }
 }
+
+/* ==========================================================================
+   BUDGET CARD ACTIONS
+   ========================================================================== */
+
+.budget-card-actions {
+  flex: 0 0 auto;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+}
+
+.budget-card-footer button {
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.budget-edit-button {
+  min-height: 31px;
+
+  padding: 0 10px;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  color: #0b856e;
+
+  background: #e9f7f3;
+
+  cursor: pointer;
+
+  font-size: 10px;
+
+  font-weight: 700;
+}
+
+.budget-edit-button:hover {
+  color: #08725f;
+
+  background: #dff1ec;
+
+  transform: translateY(-1px);
+}
+
+.budget-delete-button {
+  min-height: 31px;
+
+  padding: 0 10px;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  color: #b85b48;
+
+  background: #fff1ed;
+
+  cursor: pointer;
+
+  font-size: 10px;
+
+  font-weight: 700;
+}
+
+.budget-delete-button:hover {
+  background: #ffe7e1;
+
+  transform: translateY(-1px);
+}
+
+.budget-edit-button:disabled,
+.budget-delete-button:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+@media (max-width: 560px) {
+  .budget-card-footer {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .budget-card-actions {
+    width: 100%;
+  }
+
+  .budget-edit-button,
+  .budget-delete-button {
+    flex: 1;
+  }
+}

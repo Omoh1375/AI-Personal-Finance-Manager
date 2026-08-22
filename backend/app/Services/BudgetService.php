@@ -188,6 +188,9 @@ class BudgetService
             'id' =>
                 $budget->id,
 
+            'category_id' =>
+                $budget->category_id,
+
             'category' =>
                 $budget->category->name,
 

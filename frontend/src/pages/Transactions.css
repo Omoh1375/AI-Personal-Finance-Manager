@@ -442,38 +442,73 @@
   color: #c35d45;
 }
 
+
 .transaction-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 5px;
 }
 
 .transaction-actions button {
   width: 30px;
   height: 30px;
-
   display: grid;
   place-items: center;
-
+  padding: 0;
+  border: 0;
   border-radius: 8px;
-
-  color: #9ba5a2;
-
   background: transparent;
-
   cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
 
+.transaction-edit-button {
+  color: #0d9278;
+  font-size: 17px;
+}
+
+.transaction-edit-button:hover:not(:disabled) {
+  color: #087e69;
+  background: #e8f7f3;
+  transform: translateY(-1px);
+}
+
+.transaction-delete-button {
+  color: #9ba5a2;
   font-size: 20px;
 }
 
-.transaction-actions button:hover {
+.transaction-delete-button:hover:not(:disabled) {
   color: #c65c45;
   background: #fff0ec;
+  transform: translateY(-1px);
+}
+
+.transaction-actions button:focus-visible {
+  outline: 2px solid rgba(13, 146, 120, 0.22);
+  outline-offset: 1px;
 }
 
 .transaction-actions button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  transform: none;
 }
+
+:root[data-theme="dark"] .transaction-edit-button:hover:not(:disabled) {
+  color: #7de4c6;
+  background: #173a35;
+}
+
+:root[data-theme="dark"] .transaction-delete-button:hover:not(:disabled) {
+  color: #f18b78;
+  background: #34211e;
+}
+
 
 .transactions-loading,
 .transactions-empty {

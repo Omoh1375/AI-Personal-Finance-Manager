@@ -1,59 +1,37 @@
-import api from "./axios";
+export type BudgetStatus =
+  | "On Track"
+  | "Near Limit"
+  | "Exceeded";
 
-import type {
-  ExpensePayload,
-  IncomePayload,
-  Transaction,
-  TransactionsResponse,
-  TransactionResponse,
-} from "../types/transaction";
+export interface Budget {
+  id: number;
+  category: string;
+  budget: number;
+  spent: number;
+  remaining: number;
+  progress: number;
+  status: BudgetStatus;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+}
 
-export const getIncomes = async (): Promise<Transaction[]> => {
-  const response =
-    await api.get<TransactionsResponse>("/incomes");
+export interface BudgetPayload {
+  category_id: number;
+  amount: number;
+  start_date: string;
+  end_date: string;
+  is_active?: boolean;
+}
 
-  return response.data.data;
-};
+export interface BudgetsResponse {
+  success: boolean;
+  message?: string;
+  data: Budget[];
+}
 
-export const getExpenses = async (): Promise<Transaction[]> => {
-  const response =
-    await api.get<TransactionsResponse>("/expenses");
-
-  return response.data.data;
-};
-
-export const createIncome = async (
-  payload: IncomePayload,
-): Promise<Transaction> => {
-  const response =
-    await api.post<TransactionResponse>(
-      "/incomes",
-      payload,
-    );
-
-  return response.data.data;
-};
-
-export const createExpense = async (
-  payload: ExpensePayload,
-): Promise<Transaction> => {
-  const response =
-    await api.post<TransactionResponse>(
-      "/expenses",
-      payload,
-    );
-
-  return response.data.data;
-};
-
-export const deleteIncome = async (
-  id: number,
-): Promise<void> => {
-  await api.delete(`/incomes/${id}`);
-};
-
-export const deleteExpense = async (
-  id: number,
-): Promise<void> => {
-  await api.delete(`/expenses/${id}`);
-};
+export interface BudgetResponse {
+  success: boolean;
+  message?: string;
+  data: Budget;
+}

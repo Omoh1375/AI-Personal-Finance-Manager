@@ -14,11 +14,13 @@ import {
   createTransfer,
   deleteTransfer,
   getTransfers,
+  updateTransfer,
 } from "../api/transfers";
 
 import { getAccounts } from "../api/accounts";
 
 import type {
+  Transfer,
   TransferPayload,
 } from "../types/transfer";
 
@@ -65,8 +67,13 @@ function formatDateTime(
   }).format(new Date(value));
 }
 
-function dateInputValue() {
-  const date = new Date();
+function dateInputValue(
+  value: Date | string = new Date(),
+) {
+  const date =
+    value instanceof Date
+      ? value
+      : new Date(value);
 
   const year =
     date.getFullYear();
@@ -120,6 +127,9 @@ export default function Transfers() {
 
   const [formError, setFormError] =
     useState("");
+
+  const [editingTransferId, setEditingTransferId] =
+    useState<number | null>(null);
 
   /*
   |--------------------------------------------------------------------------
@@ -298,69 +308,61 @@ export default function Transfers() {
 
   /*
   |--------------------------------------------------------------------------
-  | CREATE
+  | CREATE / UPDATE
   |--------------------------------------------------------------------------
   */
 
-  const createMutation =
+  const saveMutation =
     useMutation({
       mutationFn: (
         payload: TransferPayload,
       ) =>
-        createTransfer(
-          payload,
-        ),
+        editingTransferId
+          ? updateTransfer(
+              editingTransferId,
+              payload,
+            )
+          : createTransfer(payload),
 
       onSuccess: () => {
-        queryClient.invalidateQueries(
-          {
-            queryKey: [
-              "transfers",
-            ],
-          },
-        );
+        queryClient.invalidateQueries({
+          queryKey: [
+            "transfers",
+          ],
+        });
 
-        queryClient.invalidateQueries(
-          {
-            queryKey: [
-              "accounts",
-            ],
-          },
-        );
+        queryClient.invalidateQueries({
+          queryKey: [
+            "accounts",
+          ],
+        });
 
-        queryClient.invalidateQueries(
-          {
-            queryKey: [
-              "dashboard",
-            ],
-          },
-        );
+        queryClient.invalidateQueries({
+          queryKey: [
+            "dashboard",
+          ],
+        });
 
-        queryClient.invalidateQueries(
-          {
-            queryKey: [
-              "incomes",
-            ],
-          },
-        );
+        queryClient.invalidateQueries({
+          queryKey: [
+            "incomes",
+          ],
+        });
 
-        queryClient.invalidateQueries(
-          {
-            queryKey: [
-              "expenses",
-            ],
-          },
-        );
+        queryClient.invalidateQueries({
+          queryKey: [
+            "expenses",
+          ],
+        });
 
-        queryClient.invalidateQueries(
-          {
-            queryKey: [
-              "transactions",
-            ],
-          },
-        );
+        queryClient.invalidateQueries({
+          queryKey: [
+            "transactions",
+          ],
+        });
 
         setShowModal(false);
+        setEditingTransferId(null);
 
         setForm({
           ...emptyForm,
@@ -390,10 +392,9 @@ export default function Transfers() {
             "string"
             ? firstError
             : error?.response
-                ?.data
-                ?.message ??
-              error?.message ??
-              "Unable to complete this transfer.",
+                ?.data?.message ??
+                error?.message ??
+                "Unable to save this transfer.",
         );
       },
     });
@@ -460,6 +461,7 @@ export default function Transfers() {
   */
 
   const openModal = () => {
+    setEditingTransferId(null);
     setFormError("");
 
     const firstAccount =
@@ -495,12 +497,13 @@ export default function Transfers() {
 
   const closeModal = () => {
     if (
-      createMutation.isPending
+      saveMutation.isPending
     ) {
       return;
     }
 
     setShowModal(false);
+    setEditingTransferId(null);
 
     setFormError("");
 
@@ -509,6 +512,49 @@ export default function Transfers() {
       transferred_at:
         dateInputValue(),
     });
+  };
+
+  const openEditModal = (
+    transfer: Transfer,
+  ) => {
+    setFormError("");
+    setEditingTransferId(
+      transfer.id,
+    );
+
+    setForm({
+      from_account_id:
+        String(
+          transfer.from_account_id,
+        ),
+
+      to_account_id:
+        String(
+          transfer.to_account_id,
+        ),
+
+      amount:
+        String(
+          transfer.amount,
+        ),
+
+      reference:
+        transfer.reference ?? "",
+
+      description:
+        transfer.description ?? "",
+
+      transferred_at:
+        transfer.transferred_at
+          ? dateInputValue(
+              new Date(
+                transfer.transferred_at,
+              ),
+            )
+          : dateInputValue(),
+    });
+
+    setShowModal(true);
   };
 
   /*
@@ -563,11 +609,40 @@ export default function Transfers() {
       return;
     }
 
+    const editingTransfer =
+      editingTransferId
+        ? transfers.find(
+            (transfer) =>
+              transfer.id ===
+              editingTransferId,
+          )
+        : null;
+
+    const oldSourceAccountId =
+      editingTransfer
+        ?.from_account_id ?? null;
+
+    const oldAmount =
+      editingTransfer
+        ? Number(
+            editingTransfer.amount,
+          )
+        : 0;
+
+    const availableSourceBalance =
+      sourceAccount
+        ? Number(
+            sourceAccount.balance,
+          ) +
+          (oldSourceAccountId ===
+          fromId
+            ? oldAmount
+            : 0)
+        : 0;
+
     if (
       sourceAccount &&
-      Number(
-        sourceAccount.balance,
-      ) < amount
+      availableSourceBalance < amount
     ) {
       setFormError(
         "Insufficient balance in the source account.",
@@ -622,7 +697,7 @@ export default function Transfers() {
           form.transferred_at,
       };
 
-    createMutation.mutate(
+    saveMutation.mutate(
       payload,
     );
   };
@@ -1020,21 +1095,41 @@ export default function Transfers() {
                       )}
                     </div>
 
-                    <button
-                      className="transfer-delete"
-                      onClick={() =>
-                        handleDelete(
-                          transfer.id,
-                        )
-                      }
-                      disabled={
-                        deleteMutation.isPending
-                      }
-                      title="Delete transfer"
-                      aria-label={`Delete transfer from ${fromName} to ${toName}`}
-                    >
-                      ×
-                    </button>
+                    <div className="transfer-actions">
+                      <button
+                        className="transfer-edit"
+                        onClick={() =>
+                          openEditModal(
+                            transfer,
+                          )
+                        }
+                        disabled={
+                          deleteMutation.isPending ||
+                          saveMutation.isPending
+                        }
+                        title="Edit transfer"
+                        aria-label={`Edit transfer from ${fromName} to ${toName}`}
+                      >
+                        ✎
+                      </button>
+
+                      <button
+                        className="transfer-delete"
+                        onClick={() =>
+                          handleDelete(
+                            transfer.id,
+                          )
+                        }
+                        disabled={
+                          deleteMutation.isPending ||
+                          saveMutation.isPending
+                        }
+                        title="Delete transfer"
+                        aria-label={`Delete transfer from ${fromName} to ${toName}`}
+                      >
+                        ×
+                      </button>
+                    </div>
                   </article>
                 );
               },
@@ -1293,7 +1388,17 @@ export default function Transfers() {
                             0,
                             Number(
                               sourceAccount.balance,
-                            ) -
+                            ) +
+                              (editingTransferId
+                                ? Number(
+                                    transfers.find(
+                                      (item) =>
+                                        item.id ===
+                                        editingTransferId,
+                                    )?.amount ??
+                                      0,
+                                  )
+                                : 0) -
                               Number(
                                 form.amount ||
                                   0,
@@ -1442,7 +1547,7 @@ export default function Transfers() {
                     closeModal
                   }
                   disabled={
-                    createMutation.isPending
+                    saveMutation.isPending
                   }
                 >
                   Cancel
@@ -1452,14 +1557,18 @@ export default function Transfers() {
                   type="submit"
                   className="transfer-submit"
                   disabled={
-                    createMutation.isPending ||
+                    saveMutation.isPending ||
                     accounts.length <
                       2
                   }
                 >
-                  {createMutation.isPending
-                    ? "Transferring..."
-                    : "Complete transfer"}
+                  {saveMutation.isPending
+                    ? editingTransferId
+                      ? "Saving changes..."
+                      : "Transferring..."
+                    : editingTransferId
+                      ? "Save changes"
+                      : "Complete transfer"}
                 </button>
               </div>
             </form>

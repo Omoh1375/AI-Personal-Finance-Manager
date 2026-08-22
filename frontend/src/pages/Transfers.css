@@ -994,3 +994,203 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   TRANSFER ACTIONS
+   ========================================================================== */
+
+.transfer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.transfer-actions button {
+  width: 30px;
+  height: 30px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  font-size: 16px;
+
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.transfer-actions button:hover {
+  transform: translateY(-1px);
+}
+
+.transfer-edit {
+  color: #6273b5;
+}
+
+.transfer-edit:hover {
+  color: #4f60a7;
+  background: #eef1ff;
+}
+
+.transfer-delete {
+  color: #9ba5a2;
+}
+
+.transfer-delete:hover {
+  color: #c65c45;
+  background: #fff0ec;
+}
+
+.transfer-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+
+:root[data-theme="dark"] .transfers-page {
+  background:
+    radial-gradient(
+      circle at 90% 0,
+      rgba(40, 184, 152, 0.08),
+      transparent 28%
+    ),
+    var(--theme-page-bg);
+  color: var(--theme-text);
+}
+
+:root[data-theme="dark"] .transfer-summary-card,
+:root[data-theme="dark"] .transfer-workspace,
+:root[data-theme="dark"] .transfer-modal {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+}
+
+:root[data-theme="dark"] .transfer-summary-card strong,
+:root[data-theme="dark"] .transfer-toolbar h2,
+:root[data-theme="dark"] .transfer-route strong,
+:root[data-theme="dark"] .transfer-amount,
+:root[data-theme="dark"] .transfer-modal-heading h2,
+:root[data-theme="dark"] .transfer-field label,
+:root[data-theme="dark"] .transfer-preview strong {
+  color: var(--theme-text-strong);
+}
+
+:root[data-theme="dark"] .transfer-summary-card span,
+:root[data-theme="dark"] .transfer-summary-card small,
+:root[data-theme="dark"] .transfer-toolbar p,
+:root[data-theme="dark"] .transfer-route small,
+:root[data-theme="dark"] .transfer-date,
+:root[data-theme="dark"] .transfer-date small {
+  color: var(--theme-text-muted);
+}
+
+:root[data-theme="dark"] .transfer-toolbar,
+:root[data-theme="dark"] .transfer-row {
+  border-color: var(--theme-border);
+}
+
+:root[data-theme="dark"] .transfer-search,
+:root[data-theme="dark"] .transfer-account-filter,
+:root[data-theme="dark"] .transfer-field input,
+:root[data-theme="dark"] .transfer-field select,
+:root[data-theme="dark"] .transfer-field textarea {
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+  background: var(--theme-input);
+}
+
+:root[data-theme="dark"] .transfer-search input {
+  color: var(--theme-text);
+}
+
+:root[data-theme="dark"] .transfer-search input::placeholder,
+:root[data-theme="dark"] .transfer-field input::placeholder,
+:root[data-theme="dark"] .transfer-field textarea::placeholder {
+  color: #687872;
+}
+
+:root[data-theme="dark"] .account-transfer-balance {
+  color: var(--theme-text-muted);
+  background: var(--theme-surface-soft);
+}
+
+:root[data-theme="dark"] .transfer-preview {
+  border-color: var(--theme-border);
+  background: linear-gradient(
+    135deg,
+    #172a27,
+    #162521
+  );
+}
+
+:root[data-theme="dark"] .transfer-notice {
+  color: #e2c96b;
+  background: #2c291b;
+  border-color: #4b4325;
+}
+
+:root[data-theme="dark"] .transfer-notice strong {
+  color: #f1dc83;
+}
+
+:root[data-theme="dark"] .transfer-notice span {
+  color: #c8ba78;
+}
+
+:root[data-theme="dark"] .transfer-modal-close,
+:root[data-theme="dark"] .transfer-cancel {
+  color: #c0cbc7;
+  background: var(--theme-surface-soft);
+}
+
+:root[data-theme="dark"] .transfer-form-error {
+  color: #fecaca;
+  background: #351f20;
+  border-color: #6f3434;
+}
+
+:root[data-theme="dark"] .transfer-edit {
+  color: #91a5ff;
+}
+
+:root[data-theme="dark"] .transfer-edit:hover {
+  color: #b2beff;
+  background: #202746;
+}
+
+:root[data-theme="dark"] .transfer-delete {
+  color: #9daaa5;
+}
+
+:root[data-theme="dark"] .transfer-delete:hover {
+  color: #f18b78;
+  background: #34211e;
+}
+
+@media (max-width: 980px) {
+  .transfer-row {
+    grid-template-columns:
+      auto minmax(0, 1fr) 100px 110px 76px;
+  }
+}
+
+@media (max-width: 720px) {
+  .transfer-list {
+    min-width: 700px;
+  }
+}

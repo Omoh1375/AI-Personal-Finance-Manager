@@ -26,6 +26,19 @@ export const createTransfer = async (
   return response.data.data;
 };
 
+export const updateTransfer = async (
+  id: number,
+  payload: TransferPayload,
+): Promise<Transfer> => {
+  const response =
+    await api.put<TransferResponse>(
+      `/transfers/${id}`,
+      payload,
+    );
+
+  return response.data.data;
+};
+
 export const deleteTransfer = async (
   id: number,
 ): Promise<void> => {

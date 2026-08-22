@@ -16,15 +16,6 @@ import {
 } from "react-router-dom";
 
 import {
-  createExpense,
-  createIncome,
-  deleteExpense,
-  deleteIncome,
-  getExpenses,
-  getIncomes,
-} from "../api/transactions";
-
-import {
   createTransfer,
   deleteTransfer,
   getTransfers,
@@ -54,6 +45,136 @@ import type {
 } from "../types/transfer";
 
 import "./Transactions.css";
+
+const getIncomes = async (): Promise<Transaction[]> => {
+  const response = await fetch("/api/incomes", {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load incomes.");
+  }
+
+  const body = await response.json();
+  return Array.isArray(body) ? body : body.data ?? [];
+};
+
+const getExpenses = async (): Promise<Transaction[]> => {
+  const response = await fetch("/api/expenses", {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load expenses.");
+  }
+
+  const body = await response.json();
+  return Array.isArray(body) ? body : body.data ?? [];
+};
+
+const createIncome = async (
+  payload: IncomePayload,
+): Promise<Transaction> => {
+  const response = await fetch("/api/incomes", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to create income.");
+  }
+
+  const body = await response.json();
+  return body?.data ?? body;
+};
+
+const updateIncome = async (
+  id: number,
+  payload: IncomePayload,
+): Promise<Transaction> => {
+  const response = await fetch(`/api/incomes/${id}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to update income.");
+  }
+
+  const body = await response.json();
+  return body?.data ?? body;
+};
+
+const createExpense = async (
+  payload: ExpensePayload,
+): Promise<Transaction> => {
+  const response = await fetch("/api/expenses", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to create expense.");
+  }
+
+  const body = await response.json();
+  return body?.data ?? body;
+};
+
+const updateExpense = async (
+  id: number,
+  payload: ExpensePayload,
+): Promise<Transaction> => {
+  const response = await fetch(`/api/expenses/${id}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to update expense.");
+  }
+
+  const body = await response.json();
+  return body?.data ?? body;
+};
+
+const deleteIncome = async (id: number): Promise<void> => {
+  const response = await fetch(`/api/incomes/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to delete income.");
+  }
+};
+
+const deleteExpense = async (id: number): Promise<void> => {
+  const response = await fetch(`/api/expenses/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to delete expense.");
+  }
+};
 
 type TransactionView =
   | "all"
@@ -241,6 +362,9 @@ export default function Transactions() {
       from_account_id: "",
       to_account_id: "",
     });
+
+  const [editingTransaction, setEditingTransaction] =
+    useState<UnifiedTransaction | null>(null);
 
   /*
   |--------------------------------------------------------------------------
@@ -738,47 +862,31 @@ export default function Transactions() {
 
   /*
   |--------------------------------------------------------------------------
-  | CREATE
+  | CREATE / UPDATE
   |--------------------------------------------------------------------------
   */
 
-  const createMutation =
+  const saveMutation =
     useMutation({
       mutationFn: async () => {
-        const amount =
-          Number(
-            transactionForm.amount,
-          );
+        const amount = Number(
+          transactionForm.amount,
+        );
 
-        if (
-          !amount ||
-          amount <= 0
-        ) {
+        if (!amount || amount <= 0) {
           throw new Error(
             "Please enter a valid amount.",
           );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | TRANSFER
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-          view === "transfer"
-        ) {
-          if (
-            !transactionForm.from_account_id
-          ) {
+        if (view === "transfer") {
+          if (!transactionForm.from_account_id) {
             throw new Error(
               "Please select the source account.",
             );
           }
 
-          if (
-            !transactionForm.to_account_id
-          ) {
+          if (!transactionForm.to_account_id) {
             throw new Error(
               "Please select the destination account.",
             );
@@ -793,29 +901,22 @@ export default function Transactions() {
             );
           }
 
-          const fromAccount =
-            accounts.find(
-              (account) =>
-                account.id ===
-                Number(
-                  transactionForm.from_account_id,
-                ),
-            );
+          const fromAccount = accounts.find(
+            (account) =>
+              account.id ===
+              Number(transactionForm.from_account_id),
+          );
 
-          const toAccount =
-            accounts.find(
-              (account) =>
-                account.id ===
-                Number(
-                  transactionForm.to_account_id,
-                ),
-            );
+          const toAccount = accounts.find(
+            (account) =>
+              account.id ===
+              Number(transactionForm.to_account_id),
+          );
 
           if (
             fromAccount &&
-            Number(
-              fromAccount.balance,
-            ) < amount
+            Number(fromAccount.balance) < amount &&
+            !editingTransaction
           ) {
             throw new Error(
               "Insufficient balance in the source account.",
@@ -825,164 +926,127 @@ export default function Transactions() {
           if (
             fromAccount &&
             toAccount &&
-            fromAccount.currency !==
-              toAccount.currency
+            fromAccount.currency !== toAccount.currency
           ) {
             throw new Error(
               `Cross-currency transfers are not supported. Both accounts must use the same currency (${fromAccount.currency}).`,
             );
           }
 
-          const payload: TransferPayload =
-            {
-              from_account_id:
-                Number(
-                  transactionForm.from_account_id,
-                ),
+          if (editingTransaction) {
+            throw new Error(
+              "Transfer editing is not available in this screen yet.",
+            );
+          }
 
-              to_account_id:
-                Number(
-                  transactionForm.to_account_id,
-                ),
+          const payload: TransferPayload = {
+            from_account_id: Number(
+              transactionForm.from_account_id,
+            ),
+            to_account_id: Number(
+              transactionForm.to_account_id,
+            ),
+            amount,
+            reference:
+              transactionForm.reference.trim() ||
+              undefined,
+            description:
+              transactionForm.description.trim() ||
+              undefined,
+            transferred_at:
+              transactionForm.date,
+          };
 
-              amount,
-
-              reference:
-                transactionForm.reference.trim() ||
-                undefined,
-
-              description:
-                transactionForm.description.trim() ||
-                undefined,
-
-              transferred_at:
-                transactionForm.date,
-            };
-
-          return createTransfer(
-            payload,
-          );
+          return createTransfer(payload);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | INCOME / EXPENSE
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-          !transactionForm.account_id
-        ) {
+        if (!transactionForm.account_id) {
           throw new Error(
             "Please select an account.",
           );
         }
 
-        if (
-          !transactionForm.category_id
-        ) {
+        if (!transactionForm.category_id) {
           throw new Error(
             "Please select a category.",
           );
         }
 
-        if (
-          view === "income"
-        ) {
-          const payload: IncomePayload =
-            {
-              account_id:
-                Number(
-                  transactionForm.account_id,
-                ),
-
-              category_id:
-                Number(
-                  transactionForm.category_id,
-                ),
-
-              amount,
-
-              reference:
-                transactionForm.reference.trim() ||
-                undefined,
-
-              description:
-                transactionForm.description.trim() ||
-                undefined,
-
-              received_at:
-                transactionForm.date,
-            };
-
-          return createIncome(
-            payload,
-          );
-        }
-
-        const payload: ExpensePayload =
-          {
-            account_id:
-              Number(
-                transactionForm.account_id,
-              ),
-
-            category_id:
-              Number(
-                transactionForm.category_id,
-              ),
-
+        if (view === "income") {
+          const payload: IncomePayload = {
+            account_id: Number(
+              transactionForm.account_id,
+            ),
+            category_id: Number(
+              transactionForm.category_id,
+            ),
             amount,
-
             reference:
               transactionForm.reference.trim() ||
               undefined,
-
-            merchant:
-              transactionForm.merchant.trim() ||
-              undefined,
-
             description:
               transactionForm.description.trim() ||
               undefined,
-
-            spent_at:
+            received_at:
               transactionForm.date,
           };
 
-        return createExpense(
-          payload,
-        );
+          return editingTransaction
+            ? updateIncome(
+                editingTransaction.numericId,
+                payload,
+              )
+            : createIncome(payload);
+        }
+
+        const payload: ExpensePayload = {
+          account_id: Number(
+            transactionForm.account_id,
+          ),
+          category_id: Number(
+            transactionForm.category_id,
+          ),
+          amount,
+          reference:
+            transactionForm.reference.trim() ||
+            undefined,
+          merchant:
+            transactionForm.merchant.trim() ||
+            undefined,
+          description:
+            transactionForm.description.trim() ||
+            undefined,
+          spent_at:
+            transactionForm.date,
+        };
+
+        return editingTransaction
+          ? updateExpense(
+              editingTransaction.numericId,
+              payload,
+            )
+          : createExpense(payload);
       },
 
       onSuccess: () => {
         invalidateFinancialData();
-
         closeModal();
       },
 
-      onError: (
-        error: any,
-      ) => {
+      onError: (error: any) => {
         const backendErrors =
-          error?.response?.data
-            ?.errors;
+          error?.response?.data?.errors;
 
-        const firstError =
-          backendErrors
-            ? Object.values(
-                backendErrors,
-              )
-                .flat()
-                .find(Boolean)
-            : null;
+        const firstError = backendErrors
+          ? Object.values(backendErrors)
+              .flat()
+              .find(Boolean)
+          : null;
 
         setFormError(
-          typeof firstError ===
-            "string"
+          typeof firstError === "string"
             ? firstError
-            : error?.response?.data
-                ?.message ??
+            : error?.response?.data?.message ??
                 error?.message ??
                 "Unable to save this transaction.",
         );
@@ -1052,13 +1116,12 @@ export default function Transactions() {
   */
 
   const closeModal = () => {
-    if (
-      createMutation.isPending
-    ) {
+    if (saveMutation.isPending) {
       return;
     }
 
     setShowModal(false);
+    setEditingTransaction(null);
 
     setFormError("");
 
@@ -1076,6 +1139,7 @@ export default function Transactions() {
   };
 
   const openModal = () => {
+    setEditingTransaction(null);
     setFormError("");
 
     setTransactionForm({
@@ -1106,7 +1170,55 @@ export default function Transactions() {
 
     setFormError("");
 
-    createMutation.mutate();
+    saveMutation.mutate();
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | EDIT
+  |--------------------------------------------------------------------------
+  */
+
+  const openEditModal = (
+    transaction: UnifiedTransaction,
+  ) => {
+    if (transaction.kind === "transfer") {
+      setFormError(
+        "Transfer editing is not available here yet.",
+      );
+      return;
+    }
+
+    const item =
+      transaction.original as Transaction;
+
+    const nextView = transaction.kind;
+
+    setView(nextView);
+    setSelectedCategory("");
+    setSelectedAccount("");
+    setEditingTransaction(transaction);
+    setFormError("");
+
+    setTransactionForm({
+      account_id: String(item.account_id),
+      category_id: String(item.category_id),
+      amount: String(item.amount ?? ""),
+      reference: item.reference ?? "",
+      merchant: item.merchant ?? "",
+      description: item.description ?? "",
+      date: formatDateInput(
+        item.received_at
+          ? new Date(item.received_at)
+          : item.spent_at
+            ? new Date(item.spent_at)
+            : new Date(),
+      ),
+      from_account_id: "",
+      to_account_id: "",
+    });
+
+    setShowModal(true);
   };
 
   /*
@@ -1154,21 +1266,30 @@ export default function Transactions() {
     view === "expense";
 
   const modalTitle =
-    view === "transfer"
-      ? "New transfer"
-      : view === "income"
-        ? "Add income"
-        : view ===
-            "expense"
-          ? "Add expense"
-          : "Add transaction";
+    editingTransaction
+      ? view === "income"
+        ? "Edit income"
+        : view === "expense"
+          ? "Edit expense"
+          : "Edit transaction"
+      : view === "transfer"
+        ? "New transfer"
+        : view === "income"
+          ? "Add income"
+          : view === "expense"
+            ? "Add expense"
+            : "Add transaction";
 
   const modalLabel =
-    view === "transfer"
-      ? "ACCOUNT TRANSFER"
-      : view === "income"
-        ? "MONEY IN"
-        : "MONEY OUT";
+    editingTransaction
+      ? view === "income"
+        ? "EDIT MONEY IN"
+        : "EDIT MONEY OUT"
+      : view === "transfer"
+        ? "ACCOUNT TRANSFER"
+        : view === "income"
+          ? "MONEY IN"
+          : "MONEY OUT";
 
   /*
   |--------------------------------------------------------------------------
@@ -1665,7 +1786,27 @@ export default function Transactions() {
                       </div>
 
                       <div className="transaction-actions">
+                        {transaction.kind !== "transfer" && (
+                          <button
+                            className="transaction-edit-button"
+                            onClick={() =>
+                              openEditModal(
+                                transaction,
+                              )
+                            }
+                            disabled={
+                              saveMutation.isPending ||
+                              deleteMutation.isPending
+                            }
+                            title="Edit transaction"
+                            aria-label="Edit transaction"
+                          >
+                            ✎
+                          </button>
+                        )}
+
                         <button
+                          className="transaction-delete-button"
                           onClick={() =>
                             handleDelete(
                               transaction,
@@ -2131,7 +2272,7 @@ export default function Transactions() {
                     closeModal
                   }
                   disabled={
-                    createMutation.isPending
+                    saveMutation.isPending
                   }
                 >
                   Cancel
@@ -2149,18 +2290,20 @@ export default function Transactions() {
                         : "transaction-save transfer"
                   }
                   disabled={
-                    createMutation.isPending
+                    saveMutation.isPending
                   }
                 >
-                  {createMutation.isPending
-                    ? "Saving..."
-                    : view ===
-                        "transfer"
-                      ? "Complete transfer"
-                      : view ===
-                          "income"
-                        ? "Add income"
-                        : "Add expense"}
+                  {saveMutation.isPending
+                    ? editingTransaction
+                      ? "Saving changes..."
+                      : "Saving..."
+                    : editingTransaction
+                      ? "Save changes"
+                      : view === "transfer"
+                        ? "Complete transfer"
+                        : view === "income"
+                          ? "Add income"
+                          : "Add expense"}
                 </button>
               </div>
             </form>

@@ -1049,3 +1049,129 @@ body,
     padding: 0;
   }
 }
+
+/* ==========================================================================
+   TRANSACTIONS SIDEBAR SUBMENU
+   ========================================================================== */
+
+.nav-submenu {
+  position: relative;
+  margin: -1px 0 7px;
+  padding: 4px 8px 5px 38px;
+}
+
+.nav-submenu::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 5px;
+  left: 20px;
+  width: 1px;
+  background: #dfe8e4;
+}
+
+.nav-submenu a {
+  min-height: 34px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 2px 0;
+  padding: 0 10px 0 13px;
+  border-radius: 8px;
+  color: #81908a;
+  background: transparent;
+  text-decoration: none;
+  font-size: 9px;
+  font-weight: 650;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.nav-submenu a::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  width: 7px;
+  height: 7px;
+  border: 1.5px solid #c5d2cd;
+  border-radius: 50%;
+  background: #fff;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.nav-submenu a:hover {
+  color: #31564c;
+  background: #f2f7f5;
+  transform: translateX(1px);
+}
+
+.nav-submenu a:hover::before {
+  border-color: #0d9278;
+}
+
+.nav-submenu a.active {
+  color: #087e69;
+  background: #eaf7f3;
+  font-weight: 750;
+}
+
+.nav-submenu a.active::before {
+  width: 8px;
+  height: 8px;
+  left: -18.5px;
+  border-color: #0d9278;
+  background: #0d9278;
+  box-shadow: 0 0 0 3px rgba(13, 146, 120, 0.10);
+}
+
+.sidebar-collapsed .nav-submenu {
+  display: none;
+}
+
+/* Dark mode */
+
+:root[data-theme="dark"] .nav-submenu::before {
+  background: #324449;
+}
+
+:root[data-theme="dark"] .nav-submenu a {
+  color: #8fa09a;
+}
+
+:root[data-theme="dark"] .nav-submenu a::before {
+  border-color: #506269;
+  background: #151f22;
+}
+
+:root[data-theme="dark"] .nav-submenu a:hover {
+  color: #dfeae6;
+  background: #1d2b2e;
+}
+
+:root[data-theme="dark"] .nav-submenu a.active {
+  color: #70dfc0;
+  background: #173a34;
+}
+
+:root[data-theme="dark"] .nav-submenu a.active::before {
+  border-color: #28b898;
+  background: #28b898;
+  box-shadow: 0 0 0 3px rgba(40, 184, 152, 0.12);
+}
+
+@media (max-width: 900px) {
+  .nav-submenu {
+    padding-left: 38px;
+  }
+}
+
+@media (max-width: 650px) {
+  .nav-submenu a {
+    min-height: 36px;
+  }
+}

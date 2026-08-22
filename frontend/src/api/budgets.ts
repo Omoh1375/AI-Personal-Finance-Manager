@@ -26,6 +26,19 @@ export const createBudget = async (
   return response.data.data;
 };
 
+export const updateBudget = async (
+  id: number,
+  payload: BudgetPayload,
+): Promise<Budget> => {
+  const response =
+    await api.put<BudgetResponse>(
+      `/budgets/${id}`,
+      payload,
+    );
+
+  return response.data.data;
+};
+
 export const deleteBudget = async (
   id: number,
 ): Promise<void> => {

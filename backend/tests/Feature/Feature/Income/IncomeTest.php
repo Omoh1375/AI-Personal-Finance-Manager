@@ -41,12 +41,18 @@ class IncomeTest extends FeatureTestCase
 
         $account->refresh();
 
-        $this->assertEquals(1500, (float) $account->balance);
+        $this->assertEquals(
+            1500,
+            (float) $account->balance
+        );
     }
 
     public function test_guest_cannot_create_income(): void
     {
-        $response = $this->postJson('/api/incomes', []);
+        $response = $this->postJson(
+            '/api/incomes',
+            []
+        );
 
         $response->assertUnauthorized();
     }
@@ -55,31 +61,54 @@ class IncomeTest extends FeatureTestCase
     {
         $owner = User::factory()->create();
 
-        $account = $this->createAccount($owner);
+        $account = $this->createAccount(
+            $owner
+        );
 
-        $category = $this->createIncomeCategory($owner);
+        $category =
+            $this->createIncomeCategory(
+                $owner
+            );
 
-        $anotherUser = User::factory()->create();
+        $anotherUser =
+            User::factory()->create();
 
-        Sanctum::actingAs($anotherUser);
+        Sanctum::actingAs(
+            $anotherUser
+        );
 
-        $response = $this->postJson('/api/incomes', [
-            'account_id'  => $account->id,
-            'category_id' => $category->id,
-            'amount'      => 500,
-            'received_at' => now()->toDateString(),
-        ]);
+        $response = $this->postJson(
+            '/api/incomes',
+            [
+                'account_id' =>
+                    $account->id,
+
+                'category_id' =>
+                    $category->id,
+
+                'amount' => 500,
+
+                'received_at' =>
+                    now()->toDateString(),
+            ]
+        );
 
         $response->assertNotFound();
 
-        $this->assertDatabaseCount('incomes', 0);
+        $this->assertDatabaseCount(
+            'incomes',
+            0
+        );
     }
 
     public function test_income_requires_valid_data(): void
     {
         $this->login();
 
-        $response = $this->postJson('/api/incomes', []);
+        $response = $this->postJson(
+            '/api/incomes',
+            []
+        );
 
         $response->assertStatus(422);
 
@@ -95,80 +124,411 @@ class IncomeTest extends FeatureTestCase
     {
         $user = $this->login();
 
-        $account = $this->createAccount($user);
+        $account =
+            $this->createAccount(
+                $user
+            );
 
-        $category = $this->createIncomeCategory($user);
+        $category =
+            $this->createIncomeCategory(
+                $user
+            );
 
-        $income = Income::factory()->create([
-            'user_id'     => $user->id,
-            'account_id'  => $account->id,
-            'category_id' => $category->id,
-        ]);
+        $income =
+            Income::factory()->create([
+                'user_id' =>
+                    $user->id,
 
-        $response = $this->getJson("/api/incomes/{$income->id}");
+                'account_id' =>
+                    $account->id,
+
+                'category_id' =>
+                    $category->id,
+            ]);
+
+        $response =
+            $this->getJson(
+                "/api/incomes/{$income->id}"
+            );
 
         $response->assertOk();
+    }
+
+    public function test_user_can_update_own_income_and_balance_is_correct(): void
+    {
+        $user = $this->login();
+
+        $account =
+            $this->createAccount(
+                $user,
+                [
+                    'balance' => 1500,
+                ]
+            );
+
+        $category =
+            $this->createIncomeCategory(
+                $user
+            );
+
+        $income =
+            Income::create([
+                'user_id' =>
+                    $user->id,
+
+                'account_id' =>
+                    $account->id,
+
+                'category_id' =>
+                    $category->id,
+
+                'amount' =>
+                    500,
+
+                'reference' =>
+                    'INC-001',
+
+                'description' =>
+                    'Original income',
+
+                'received_at' =>
+                    now(),
+            ]);
+
+        $response =
+            $this->putJson(
+                "/api/incomes/{$income->id}",
+                [
+                    'account_id' =>
+                        $account->id,
+
+                    'category_id' =>
+                        $category->id,
+
+                    'amount' =>
+                        800,
+
+                    'reference' =>
+                        'INC-002',
+
+                    'description' =>
+                        'Updated income',
+
+                    'received_at' =>
+                        now()->toDateString(),
+                ]
+            );
+
+        $response->assertOk();
+
+        $income->refresh();
+        $account->refresh();
+
+        $this->assertEquals(
+            800,
+            (float) $income->amount
+        );
+
+        $this->assertEquals(
+            'INC-002',
+            $income->reference
+        );
+
+        /*
+         * Original account balance:
+         * 1500
+         *
+         * Reverse old income:
+         * 1500 - 500 = 1000
+         *
+         * Apply updated income:
+         * 1000 + 800 = 1800
+         */
+        $this->assertEquals(
+            1800,
+            (float) $account->balance
+        );
+    }
+
+    public function test_user_can_move_income_to_another_owned_account(): void
+    {
+        $user = $this->login();
+
+        $oldAccount =
+            $this->createAccount(
+                $user,
+                [
+                    'balance' => 1500,
+                ]
+            );
+
+        $newAccount =
+            $this->createAccount(
+                $user,
+                [
+                    'balance' => 500,
+                ]
+            );
+
+        $category =
+            $this->createIncomeCategory(
+                $user
+            );
+
+        $income =
+            Income::create([
+                'user_id' =>
+                    $user->id,
+
+                'account_id' =>
+                    $oldAccount->id,
+
+                'category_id' =>
+                    $category->id,
+
+                'amount' =>
+                    500,
+
+                'received_at' =>
+                    now(),
+            ]);
+
+        $response =
+            $this->putJson(
+                "/api/incomes/{$income->id}",
+                [
+                    'account_id' =>
+                        $newAccount->id,
+
+                    'category_id' =>
+                        $category->id,
+
+                    'amount' =>
+                        700,
+
+                    'reference' =>
+                        'MOVED-001',
+
+                    'description' =>
+                        'Moved income',
+
+                    'received_at' =>
+                        now()->toDateString(),
+                ]
+            );
+
+        $response->assertOk();
+
+        $oldAccount->refresh();
+        $newAccount->refresh();
+
+        $this->assertEquals(
+            1000,
+            (float) $oldAccount->balance
+        );
+
+        $this->assertEquals(
+            1200,
+            (float) $newAccount->balance
+        );
+    }
+
+    public function test_user_cannot_update_another_users_income(): void
+    {
+        $owner =
+            User::factory()->create();
+
+        $ownerAccount =
+            $this->createAccount(
+                $owner,
+                [
+                    'balance' => 1500,
+                ]
+            );
+
+        $ownerCategory =
+            $this->createIncomeCategory(
+                $owner
+            );
+
+        $income =
+            Income::create([
+                'user_id' =>
+                    $owner->id,
+
+                'account_id' =>
+                    $ownerAccount->id,
+
+                'category_id' =>
+                    $ownerCategory->id,
+
+                'amount' =>
+                    500,
+
+                'received_at' =>
+                    now(),
+            ]);
+
+        $anotherUser =
+            User::factory()->create();
+
+        $anotherAccount =
+            $this->createAccount(
+                $anotherUser
+            );
+
+        $anotherCategory =
+            $this->createIncomeCategory(
+                $anotherUser
+            );
+
+        Sanctum::actingAs(
+            $anotherUser
+        );
+
+        $response =
+            $this->putJson(
+                "/api/incomes/{$income->id}",
+                [
+                    'account_id' =>
+                        $anotherAccount->id,
+
+                    'category_id' =>
+                        $anotherCategory->id,
+
+                    'amount' =>
+                        900,
+
+                    'received_at' =>
+                        now()->toDateString(),
+                ]
+            );
+
+        $response->assertForbidden();
+
+        $income->refresh();
+
+        $this->assertEquals(
+            500,
+            (float) $income->amount
+        );
     }
 
     public function test_user_can_delete_income_and_balance_is_restored(): void
     {
         $user = $this->login();
 
-        $account = $this->createAccount($user, [
-            'balance' => 1000,
-        ]);
+        $account =
+            $this->createAccount(
+                $user,
+                [
+                    'balance' => 1000,
+                ]
+            );
 
-        $category = $this->createIncomeCategory($user);
+        $category =
+            $this->createIncomeCategory(
+                $user
+            );
 
-        $income = Income::create([
-            'user_id'     => $user->id,
-            'account_id'  => $account->id,
-            'category_id' => $category->id,
-            'amount'      => 500,
-            'reference'   => 'INC-001',
-            'description' => 'Salary',
-            'received_at' => now(),
-        ]);
+        $income =
+            Income::create([
+                'user_id' =>
+                    $user->id,
 
-        $account->increment('balance', 500);
+                'account_id' =>
+                    $account->id,
 
-        $response = $this->deleteJson("/api/incomes/{$income->id}");
+                'category_id' =>
+                    $category->id,
+
+                'amount' =>
+                    500,
+
+                'reference' =>
+                    'INC-001',
+
+                'description' =>
+                    'Salary',
+
+                'received_at' =>
+                    now(),
+            ]);
+
+        $account->increment(
+            'balance',
+            500
+        );
+
+        $response =
+            $this->deleteJson(
+                "/api/incomes/{$income->id}"
+            );
 
         $response->assertOk();
 
-        $this->assertDatabaseMissing('incomes', [
-            'id' => $income->id,
-        ]);
+        $this->assertDatabaseMissing(
+            'incomes',
+            [
+                'id' => $income->id,
+            ]
+        );
 
         $account->refresh();
 
-        $this->assertEquals(1000, (float) $account->balance);
+        $this->assertEquals(
+            1000,
+            (float) $account->balance
+        );
     }
 
     public function test_user_cannot_delete_another_users_income(): void
     {
-        $owner = User::factory()->create();
+        $owner =
+            User::factory()->create();
 
-        $account = $this->createAccount($owner);
+        $account =
+            $this->createAccount(
+                $owner
+            );
 
-        $category = $this->createIncomeCategory($owner);
+        $category =
+            $this->createIncomeCategory(
+                $owner
+            );
 
-        $income = Income::factory()->create([
-            'user_id'     => $owner->id,
-            'account_id'  => $account->id,
-            'category_id' => $category->id,
-        ]);
+        $income =
+            Income::factory()->create([
+                'user_id' =>
+                    $owner->id,
 
-        $anotherUser = User::factory()->create();
+                'account_id' =>
+                    $account->id,
 
-        Sanctum::actingAs($anotherUser);
+                'category_id' =>
+                    $category->id,
+            ]);
 
-        $response = $this->deleteJson("/api/incomes/{$income->id}");
+        $anotherUser =
+            User::factory()->create();
+
+        Sanctum::actingAs(
+            $anotherUser
+        );
+
+        $response =
+            $this->deleteJson(
+                "/api/incomes/{$income->id}"
+            );
 
         $response->assertForbidden();
 
-        $this->assertDatabaseHas('incomes', [
-            'id' => $income->id,
-        ]);
+        $this->assertDatabaseHas(
+            'incomes',
+            [
+                'id' =>
+                    $income->id,
+            ]
+        );
     }
 }
